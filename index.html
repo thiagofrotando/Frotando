@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <meta name="theme-color" content="#0D2B3E">
 <meta name="mobile-web-app-capable" content="yes">
@@ -125,8 +126,9 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
   <div class="lc">
     <div class="lf"><label>E-MAIL</label><input type="email" id="ie" placeholder="seu@email.com"></div>
     <div class="lf"><label>SENHA</label><input type="password" id="is" placeholder="••••••••"></div>
-    <button class="bt btp btf" style="font-size:15px;padding:13px;margin-top:4px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent" onclick="login()">Entrar →</button>
-    <button class="bt btf" style="margin-top:9px;background:rgba(255,255,255,.07);color:rgba(255,255,255,.55);border:1.5px solid rgba(255,255,255,.14);font-size:12px;padding:10px" onclick="login()">🔒 Entrar com biometria</button>
+    <button class="bt btp btf" id="btn-login" style="font-size:15px;padding:13px;margin-top:4px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent" onclick="login()">Entrar →</button>
+    <button class="bt btf" style="margin-top:8px;background:rgba(255,255,255,.07);color:rgba(255,255,255,.7);border:1.5px solid rgba(255,255,255,.2);font-size:12px;padding:10px" onclick="cadastrar()">Criar conta gratuita</button>
+    <div id="login-msg" style="margin-top:10px;font-size:12px;text-align:center;color:rgba(255,255,255,.55);min-height:18px"></div>
   </div>
   <div style="margin-top:16px;font-size:10px;color:rgba(255,255,255,.18)">Frotando v2.0 · Dados salvos localmente no dispositivo</div>
 </div>
@@ -718,11 +720,45 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 
 <script>
 // ── STORAGE ───────────────────────────────────────────────────────────────────
+// ── SUPABASE ──────────────────────────────────────────────────────────────────
+const _SB_URL='https://tytmcpmyemnyzgnuflhq.supabase.co';
+const _SB_KEY='sb_publishable_gWJQJyXvw-9kF1kWQj4Ejg_7UZazcAk';
+const _sb=supabase.createClient(_SB_URL,_SB_KEY);
+let _sbUser=null;
+let _syncTimer=null;
+const _pendingSync=new Set();
+
 const LS={
   get:k=>{try{return JSON.parse(localStorage.getItem('fr_'+k))}catch{return null}},
   set:(k,v)=>{try{localStorage.setItem('fr_'+k,JSON.stringify(v))}catch{}},
   del:k=>{try{localStorage.removeItem('fr_'+k)}catch{}}
 };
+
+// Salva no localStorage E agenda sync para o Supabase
+async function sbSync(chave){
+  if(!_sbUser) return;
+  try{
+    await _sb.from('frotando_data').upsert({
+      user_id:_sbUser.id,
+      chave,
+      valor:DB[chave]
+    },{onConflict:'user_id,chave'});
+  }catch(e){console.error('Sync error:',chave,e);}
+}
+
+// Carrega todos os dados do Supabase para DB e localStorage
+async function sbLoad(){
+  if(!_sbUser) return false;
+  try{
+    const{data,error}=await _sb.from('frotando_data').select('chave,valor').eq('user_id',_sbUser.id);
+    if(error||!data?.length) return false;
+    data.forEach(row=>{
+      DB[row.chave]=row.valor;
+      LS.set(row.chave,row.valor);
+    });
+    return true;
+  }catch(e){console.error('sbLoad error:',e);return false;}
+}
 
 // ── DADOS INICIAIS ────────────────────────────────────────────────────────────
 const INIT_DATA={
@@ -789,7 +825,10 @@ function _migrarDataVenc(){
   });
   if(alterou){saveDB('pags');markDirty('pag','dash','rel');}
 }
-function saveDB(k){LS.set(k,DB[k]);}
+function saveDB(k){
+  LS.set(k,DB[k]);
+  sbSync(k); // sync to Supabase in background
+}
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 const uid=()=>Math.random().toString(36).slice(2,10);
@@ -4342,11 +4381,14 @@ function _buildInsights(){
   return h;
 }
 
-function logout(){
+async function logout(){
+  await _sb.auth.signOut();
+  _sbUser=null;
   document.getElementById('app').style.display='none';
   document.getElementById('nav').style.display='none';
   const l=document.getElementById('ls');l.style.display='flex';l.style.opacity='0';
   setTimeout(()=>{l.style.opacity='1';l.style.transition='opacity .25s';},10);
+  _loginMsg('');
 }
 function calcSaldo(f){let s=f.vFin;for(let i=0;i<(f.npg||0);i++){const j=s*f.taxa;s=Math.max(0,s-(f.parcela-j));}return Math.round(s);}
 
@@ -4721,37 +4763,77 @@ function updateBadges(){
 }
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
-function login(){
+function _loginMsg(msg,cor='rgba(255,255,255,.55)'){
+  const el=document.getElementById('login-msg');
+  if(el){el.textContent=msg;el.style.color=cor;}
+}
+function _setBtnLogin(loading){
+  const btn=document.getElementById('btn-login');
+  if(btn){btn.textContent=loading?'Entrando...':'Entrar →';btn.disabled=loading;}
+}
+
+async function login(){
   try{
+    const email=document.getElementById('ie')?.value?.trim();
+    const senha=document.getElementById('is')?.value;
+    if(!email||!senha){_loginMsg('Preencha e-mail e senha','#f87171');return;}
+    _setBtnLogin(true);_loginMsg('Verificando...');
+    const{data,error}=await _sb.auth.signInWithPassword({email,password:senha});
+    if(error){
+      _loginMsg(error.message.includes('Invalid')?'E-mail ou senha incorretos':error.message,'#f87171');
+      _setBtnLogin(false);return;
+    }
+    _sbUser=data.user;
+    _loginMsg('Carregando dados...','#34d399');
+    const temDados=await sbLoad();
+    if(!temDados) loadDB(); else _migrarDataVenc();
+    gerarParcelasPendentes();
+    _entrarNoApp();
+  }catch(e){console.error('login error:',e);_loginMsg('Erro ao conectar','#f87171');_setBtnLogin(false);}
+}
+
+async function cadastrar(){
+  const email=document.getElementById('ie')?.value?.trim();
+  const senha=document.getElementById('is')?.value;
+  if(!email||!senha){_loginMsg('Preencha e-mail e senha para criar a conta','#f87171');return;}
+  if(senha.length<6){_loginMsg('A senha deve ter ao menos 6 caracteres','#f87171');return;}
+  _setBtnLogin(true);_loginMsg('Criando conta...');
+  const{data,error}=await _sb.auth.signUp({email,password:senha});
+  if(error){_loginMsg(error.message,'#f87171');_setBtnLogin(false);return;}
+  _sbUser=data.user;
+  loadDB();
+  // Salvar dados iniciais no Supabase
+  const chaves=['config','carros','motos','locs','pags','evs','kms','fins','semAtual'];
+  await Promise.all(chaves.map(k=>sbSync(k)));
+  _loginMsg('Conta criada! ✓','#34d399');
+  setTimeout(()=>_entrarNoApp(),600);
+}
+
+function _entrarNoApp(){
+  _setBtnLogin(false);
   const l=document.getElementById('ls');
   if(!l) return;
-  // Esconde login e mostra app + nav instantaneamente
   l.style.display='none';
   const appEl=document.getElementById('app');
   if(!appEl) return;
   appEl.style.display='flex';
   const navEl=document.getElementById('nav');
   if(navEl) navEl.style.display='flex';
-  // Ativa dashboard na nav sem renderizar ainda
   document.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   document.getElementById('sc-dash').classList.add('on');
   const navDash=document.querySelector('[data-s=dash]');
   if(navDash) navDash.classList.add('on');
   document.getElementById('pt').textContent='';
-  // Render do dashboard em 2 frames para não travar
   requestAnimationFrame(()=>{
-    // Frame 1: KPIs e frota (rápido)
     _renderDashKpis();
     updateBadges();
     requestAnimationFrame(()=>{
-      // Frame 2: gráfico e alertas (mais pesado)
       _renderDashExtras();
       _rendered.add('dash');
       renderBancos();
     });
   });
-  }catch(e){console.error('login error:',e);}
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
@@ -4760,20 +4842,31 @@ window.onerror=function(msg,src,line,col,err){
   console.error('Frotando error:',msg,'@',line);
   return false;
 };
-document.addEventListener('DOMContentLoaded',()=>{
-  try{
-    loadDB();
-  }catch(e){
-    console.error('loadDB error:',e);
-  }
+document.addEventListener('DOMContentLoaded',async()=>{
   const ieEl=document.getElementById('ie');
   const isEl=document.getElementById('is');
-  if(ieEl) ieEl.value='demo@frotando.app';
-  if(isEl) isEl.value='1234';
   // Enter nos campos de login
   [ieEl,isEl].forEach(el=>{
     if(el) el.addEventListener('keydown',e=>{if(e.key==='Enter')login();});
   });
+  // Verificar sessão existente
+  try{
+    const{data:{session}}=await _sb.auth.getSession();
+    if(session?.user){
+      _sbUser=session.user;
+      _loginMsg('Carregando seus dados...','#34d399');
+      const temDados=await sbLoad();
+      if(!temDados) loadDB(); else _migrarDataVenc();
+      gerarParcelasPendentes();
+      _entrarNoApp();
+    } else {
+      // Sem sessão — mostrar tela de login limpa
+      loadDB(); // carrega dados demo locais
+    }
+  }catch(e){
+    console.error('init error:',e);
+    loadDB();
+  }
   updateBadges();
 });
 </script>
