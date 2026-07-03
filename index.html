@@ -4184,37 +4184,38 @@ function _vEx(v){
 // ── EDITAR / EXCLUIR CONTRATO (LOC) ──────────────────────────────────────────
 function editarLoc(id){
   const l=DB.locs.find(x=>x.id===id);if(!l) return;
-  const fields={
-    'ml-val':l.val,
-    'ml-cauc':l.cauc,
-    'ml-km':l.kmIni||'',
-    'ml-kmlim':l.kmLim||DB.config.kmLim||7000,
-  };
-  Object.entries(fields).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.value=v||'';});
-  // Data de início: garantir formato yyyy-mm-dd
-  const mlIni=document.getElementById('ml-inicio');
-  if(mlIni) mlIni.value=l.inicio||'';
-  const mcd=document.getElementById('ml-diavenc');if(mcd) mcd.value=String(l.diaVenc??6);
-  const mcm=document.getElementById('ml-cauc-modo');
-  if(mcm){
-    mcm.value=l.caucModo||'integral';
-    mlAtualizarCauc();
-    if(l.caucModo==='parcelado'){
-      const mcp=document.getElementById('ml-cauc-parc');if(mcp) mcp.value=l.caucParcSem||'';
-      mlAtualizarCauc();
-    }
-  }
-  // Mudar o título e o botão do modal para "editar"
-  const mt=document.querySelector('#ml .mt');if(mt) mt.textContent='Editar Contrato';
-  const btn=document.querySelector('#ml button.btp');
-  if(btn){btn.textContent='Salvar alterações';btn.onclick=()=>salvarEditLoc(id);}
+  // Abrir modal primeiro (ele seta today() e defaults)
   abrirModal('ml',{});
-  // Preencher carro e moto APÓS o modal ser aberto (selects já populados)
+  // Sobrescrever com dados reais no próximo frame — APÓS abrirModal ter rodado
   requestAnimationFrame(()=>{
+    // Campos numéricos e texto
+    const setV=(elId,v)=>{const el=document.getElementById(elId);if(el&&v!==undefined&&v!=='')el.value=v;};
+    setV('ml-inicio', l.inicio);   // yyyy-mm-dd — sobrescreve o today()
+    setV('ml-val',    l.val);
+    setV('ml-cauc',   l.cauc);
+    setV('ml-km',     l.kmIni||'');
+    setV('ml-kmlim',  l.kmLim||DB.config.kmLim||7000);
+    // Dia de vencimento
+    const mcd=document.getElementById('ml-diavenc');if(mcd) mcd.value=String(l.diaVenc??6);
+    // Caução modo
+    const mcm=document.getElementById('ml-cauc-modo');
+    if(mcm){
+      mcm.value=l.caucModo||'integral';
+      mlAtualizarCauc();
+      if(l.caucModo==='parcelado'){
+        const mcp=document.getElementById('ml-cauc-parc');if(mcp) mcp.value=l.caucParcSem||'';
+        mlAtualizarCauc();
+      }
+    }
+    // Selects de carro e motorista
     const mc=document.getElementById('ml-carro');
     const mm=document.getElementById('ml-moto');
     if(mc) Array.from(mc.options).forEach(o=>{o.selected=o.value===l.carroId;});
     if(mm) Array.from(mm.options).forEach(o=>{o.selected=o.value===l.motoId;});
+    // Título e botão
+    const mt=document.querySelector('#ml .mt');if(mt) mt.textContent='Editar Contrato';
+    const btn=document.querySelector('#ml button.btp');
+    if(btn){btn.textContent='Salvar alterações';btn.onclick=()=>salvarEditLoc(id);}
   });
 }
 
@@ -4306,42 +4307,37 @@ function _mpOnLocChange(){
 // ── EDITAR EVENTO ─────────────────────────────────────────────────────────────
 function editarEv(id){
   const e=DB.evs.find(x=>x.id===id);if(!e) return;
-  const tipoEl=document.getElementById('mev-tipo');
-  const carroEl=document.getElementById('mev-carro');
-  const dataEl=document.getElementById('mev-data');
-  const custoEl=document.getElementById('mev-custo');
-  const descEl=document.getElementById('mev-desc');
-  if(tipoEl) tipoEl.value=e.tipo||'Manutenção';
-  if(carroEl) carroEl.value=e.carroId||'';
-  if(dataEl&&e.data){
-    // Handle both dd/mm/yyyy and yyyy-mm-dd formats
-    if(e.data.includes('/')){
-      const pts=e.data.split('/');
-      if(pts.length===3) dataEl.value=`${pts[2]}-${pts[1]}-${pts[0]}`;
-    } else {
-      dataEl.value=e.data;
-    }
-  }
-  if(custoEl) custoEl.value=e.custo||0;
-  if(descEl) descEl.value=e.desc||'';
-  // Restaurar abono
-  const chk=document.getElementById('mev-abono-ativo');
-  if(chk){chk.checked=!!e.abonoAtivo;mevToggleAbono(!!e.abonoAtivo);}
-  if(e.abonoAtivo){
-    setTimeout(()=>{
-      const locSel=document.getElementById('mev-abono-loc');
-      if(locSel) locSel.value=e.abonoLocId||'';
-      const modoSel=document.getElementById('mev-abono-modo');
-      if(modoSel) modoSel.value=e.abonoModo||'valor';
-      const valInp=document.getElementById('mev-abono-val');
-      if(valInp) valInp.value=e.abonoVal||0;
-      mevAtualizarAbono();
-    },50);
-  }
-  const mt=document.querySelector('#mev .mt');if(mt) mt.textContent='Editar Evento';
-  const btn=document.querySelector('#mev button.btp');
-  if(btn){btn.textContent='Salvar alterações';btn.onclick=()=>salvarEditEv(id);}
   abrirModal('mev',{});
+  requestAnimationFrame(()=>{
+    const tipoEl=document.getElementById('mev-tipo');
+    const carroEl=document.getElementById('mev-carro');
+    const dataEl=document.getElementById('mev-data');
+    const custoEl=document.getElementById('mev-custo');
+    const descEl=document.getElementById('mev-desc');
+    if(tipoEl) tipoEl.value=e.tipo||'Manutenção';
+    if(carroEl) carroEl.value=e.carroId||'';
+    if(dataEl&&e.data){
+      if(e.data.includes('/')){
+        const pts=e.data.split('/');
+        if(pts.length===3) dataEl.value=`${pts[2]}-${pts[1]}-${pts[0]}`;
+      } else { dataEl.value=e.data; }
+    }
+    if(custoEl) custoEl.value=e.custo||0;
+    if(descEl) descEl.value=e.desc||'';
+    const chk=document.getElementById('mev-abono-ativo');
+    if(chk){chk.checked=!!e.abonoAtivo;mevToggleAbono(!!e.abonoAtivo);}
+    if(e.abonoAtivo){
+      setTimeout(()=>{
+        const locSel=document.getElementById('mev-abono-loc');if(locSel) locSel.value=e.abonoLocId||'';
+        const modoSel=document.getElementById('mev-abono-modo');if(modoSel) modoSel.value=e.abonoModo||'valor';
+        const valInp=document.getElementById('mev-abono-val');if(valInp) valInp.value=e.abonoVal||0;
+        mevAtualizarAbono();
+      },50);
+    }
+    const mt=document.querySelector('#mev .mt');if(mt) mt.textContent='Editar Evento';
+    const btn=document.querySelector('#mev button.btp');
+    if(btn){btn.textContent='Salvar alterações';btn.onclick=()=>salvarEditEv(id);}
+  });
 }
 
 function salvarEditEv(id){
