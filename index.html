@@ -975,7 +975,7 @@ function abrirModal(id,dados){
     const sm=document.getElementById('ml-moto');
     sm.innerHTML='<option value="">Selecionar...</option>';
     DB.motos.filter(m=>m.status==='Ativo').forEach(m=>{const o=document.createElement('option');o.value=m.id;o.textContent=m.nome;sm.appendChild(o);});
-    document.getElementById('ml-inicio').value=today();
+    if(!dados.id) document.getElementById('ml-inicio').value=today();
     document.getElementById('ml-val').value=DB.config.alug||600;
     document.getElementById('ml-cauc').value=DB.config.cauc||1400;
   }
@@ -1004,7 +1004,7 @@ function abrirModal(id,dados){
     const sc=document.getElementById('mfin-carro');
     sc.innerHTML='<option value="">Selecionar...</option>';
     DB.carros.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=`${c.placa} — ${c.modelo.split(' ').slice(0,3).join(' ')}`;sc.appendChild(o);});
-    document.getElementById('mfin-inicio').value=today();
+    if(!dados.id) document.getElementById('mfin-inicio').value=today();
     document.getElementById('mfin-taxa').value='2.03';
     document.getElementById('mfin-np').value='36';
     if(dados.id){
@@ -1025,8 +1025,8 @@ function abrirModal(id,dados){
   if(id==='mkm')document.getElementById('mkm-data').value=today();
   // Preencher campos se edição
   if(dados.id){
-    if(id==='mc'){document.getElementById('mc-t').textContent='Editar Carro';document.getElementById('mc-placa').value=dados.placa||'';document.getElementById('mc-modelo').value=dados.modelo||'';document.getElementById('mc-cor').value=dados.cor||'';document.getElementById('mc-ren').value=dados.ren||'';document.getElementById('mc-km').value=dados.km||0;}
-    if(id==='mm'){document.getElementById('mm-t').textContent='Editar Motorista';document.getElementById('mm-nome').value=dados.nome||'';document.getElementById('mm-cpf').value=dados.cpf||'';document.getElementById('mm-rg').value=dados.rg||'';document.getElementById('mm-cnh').value=dados.cnh||'';document.getElementById('mm-vcnh').value=dados.vcnh||'';document.getElementById('mm-tel').value=dados.tel||'';document.getElementById('mm-end').value=dados.endereco||'';document.getElementById('mm-plat').value=dados.plat||'';document.getElementById('mm-nota').value=dados.nota||'';}
+    if(id==='mc'){document.getElementById('mc-t').textContent='Editar Carro';document.getElementById('mc-placa').value=dados.placa||'';document.getElementById('mc-modelo').value=dados.modelo||'';document.getElementById('mc-cor').value=dados.cor||'';document.getElementById('mc-ren').value=dados.renavam||dados.ren||'';document.getElementById('mc-km').value=dados.km||0;const mcAno=document.getElementById('mc-ano');if(mcAno)mcAno.value=dados.ano||'';const mcVal=document.getElementById('mc-valor');if(mcVal)mcVal.value=dados.valor||'';}
+    if(id==='mm'){document.getElementById('mm-t').textContent='Editar Motorista';document.getElementById('mm-nome').value=dados.nome||'';document.getElementById('mm-cpf').value=dados.cpf||'';document.getElementById('mm-rg').value=dados.rg||'';document.getElementById('mm-cnh').value=dados.cnh||'';document.getElementById('mm-vcnh').value=dados.vCNH||dados.vcnh||'';document.getElementById('mm-tel').value=dados.tel||'';document.getElementById('mm-end').value=dados.endereco||'';document.getElementById('mm-plat').value=dados.plat||'';document.getElementById('mm-nota').value=dados.nota||'';}
   } else {
     if(id==='mc'){document.getElementById('mc-t').textContent='Novo Carro';['mc-placa','mc-modelo','mc-cor','mc-ren'].forEach(i=>document.getElementById(i).value='');document.getElementById('mc-km').value=0;}
     if(id==='mm'){document.getElementById('mm-t').textContent='Novo Motorista';['mm-nome','mm-cpf','mm-rg','mm-cnh','mm-vcnh','mm-tel','mm-end','mm-plat','mm-nota'].forEach(i=>document.getElementById(i).value='');}
@@ -1040,7 +1040,7 @@ function salvarCarro(){
   const placa=document.getElementById('mc-placa').value.trim().toUpperCase();
   const modelo=document.getElementById('mc-modelo').value.trim();
   if(!placa||!modelo){toast('Placa e modelo obrigatórios','er');return;}
-  if(_curId){DB.carros=DB.carros.map(c=>c.id===_curId?{...c,placa,modelo,cor:document.getElementById('mc-cor').value,ren:document.getElementById('mc-ren').value,km:Number(document.getElementById('mc-km').value)||0}:c);}
+  if(_curId){DB.carros=DB.carros.map(c=>c.id===_curId?{...c,placa,modelo,cor:document.getElementById('mc-cor').value,renavam:document.getElementById('mc-ren').value,ren:document.getElementById('mc-ren').value,km:Number(document.getElementById('mc-km').value)||0}:c);}
   else{DB.carros.push({id:'c'+uid(),placa,modelo,cor:document.getElementById('mc-cor').value,ren:document.getElementById('mc-ren').value,km:Number(document.getElementById('mc-km').value)||0,status:'Disponível'});}
   saveDB('carros');markDirty('carros','dash','loc','pag','km','financ','rel','contrato');fecharModal('mc');goTo('carros',document.querySelector('[data-s=carros]'));toast(_curId?'Carro atualizado! ✓':'Carro cadastrado! ✓');
 }
@@ -4185,13 +4185,15 @@ function _vEx(v){
 function editarLoc(id){
   const l=DB.locs.find(x=>x.id===id);if(!l) return;
   const fields={
-    'ml-inicio':l.inicio,
     'ml-val':l.val,
     'ml-cauc':l.cauc,
     'ml-km':l.kmIni||'',
     'ml-kmlim':l.kmLim||DB.config.kmLim||7000,
   };
   Object.entries(fields).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.value=v||'';});
+  // Data de início: garantir formato yyyy-mm-dd
+  const mlIni=document.getElementById('ml-inicio');
+  if(mlIni) mlIni.value=l.inicio||'';
   const mcd=document.getElementById('ml-diavenc');if(mcd) mcd.value=String(l.diaVenc??6);
   const mcm=document.getElementById('ml-cauc-modo');
   if(mcm){
@@ -4312,8 +4314,13 @@ function editarEv(id){
   if(tipoEl) tipoEl.value=e.tipo||'Manutenção';
   if(carroEl) carroEl.value=e.carroId||'';
   if(dataEl&&e.data){
-    const pts=e.data.split('/');
-    if(pts.length===3) dataEl.value=`${pts[2]}-${pts[1]}-${pts[0]}`;
+    // Handle both dd/mm/yyyy and yyyy-mm-dd formats
+    if(e.data.includes('/')){
+      const pts=e.data.split('/');
+      if(pts.length===3) dataEl.value=`${pts[2]}-${pts[1]}-${pts[0]}`;
+    } else {
+      dataEl.value=e.data;
+    }
   }
   if(custoEl) custoEl.value=e.custo||0;
   if(descEl) descEl.value=e.desc||'';
