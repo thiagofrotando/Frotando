@@ -344,19 +344,19 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
   <div style="text-align:center;margin-bottom:24px">
     <div style="font-size:48px;margin-bottom:8px">🚗</div>
     <div style="font-size:36px;font-weight:900;color:#fff;letter-spacing:-1px">Frota<span style="color:var(--a)">ndo</span></div>
-    <div style="font-size:12px;color:rgba(255,255,255,.42);margin-top:4px">Gest&#227;o de frota para motoristas de app</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.42);margin-top:4px">Gestão de frota para motoristas de app</div>
   </div>
   <div class="lc">
     <div class="lf"><label>E-MAIL</label><input type="email" id="ie" placeholder="seu@email.com"></div>
-    <div class="lf"><label>SENHA</label><input type="password" id="is" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"></div>
-    <button class="bt btp btf" id="btn-login" style="font-size:15px;padding:13px;margin-top:4px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent" onclick="login()">Entrar &#8594;</button>
+    <div class="lf"><label>SENHA</label><input type="password" id="is" placeholder="••••••••"></div>
+    <button class="bt btp btf" id="btn-login" style="font-size:15px;padding:13px;margin-top:4px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent" onclick="login()">Entrar →</button>
     <button class="bt btf" id="btn-cadastro" style="margin-top:8px;background:rgba(255,255,255,.07);color:rgba(255,255,255,.7);border:1.5px solid rgba(255,255,255,.2);font-size:12px;padding:10px" onclick="cadastrar()">Criar conta gratuita</button>
     <div style="text-align:center;margin-top:10px">
       <button onclick="esqueceuSenha()" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline">Esqueci minha senha</button>
     </div>
     <div id="login-msg" style="margin-top:6px;font-size:12px;text-align:center;color:rgba(255,255,255,.55);min-height:18px"></div>
     <div style="text-align:center;margin-top:12px">
-      <button onclick="voltarLanding()" style="background:none;border:none;color:rgba(255,255,255,.3);font-size:11px;cursor:pointer;font-family:inherit">&#8592; Voltar</button>
+      <button onclick="voltarLanding()" style="background:none;border:none;color:rgba(255,255,255,.3);font-size:11px;cursor:pointer;font-family:inherit">← Voltar</button>
     </div>
   </div>
   <div style="margin-top:16px;font-size:10px;color:rgba(255,255,255,.18)">Frotando v2.0 · Dados salvos na nuvem</div>
@@ -465,7 +465,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       <!-- Lista de pagamentos -->
       <div id="hist-pag"></div>
       <button class="bt btp btf" style="margin-top:4px" onclick="abrirModal('mp',{})">+ Registrar pagamento</button>
-      <button class="bt btf bts" style="margin-top:6px;background:rgba(37,211,102,.15);color:#25D366;border:1px solid rgba(37,211,102,.3)" onclick="cobrarTodosAtrasados()">&#128172; Cobrar todos em atraso</button>
+      <button class="bt btf bts" style="margin-top:6px;background:rgba(37,211,102,.15);color:#25D366;border:1px solid rgba(37,211,102,.3)" onclick="cobrarTodosAtrasados()">💬 Cobrar todos em atraso</button>
       <button class="bt btf" style="margin-top:6px;background:var(--a);color:#fff" onclick="abrirModalCaucAntecip()">💰 Pagar caução antecipado</button>
       <button class="bt btg btf bts" style="margin-top:6px" onclick="abrirExtratoInline()">Importar extrato bancario (OFX/CSV)</button>
       <!-- Extrato inline -->
@@ -537,7 +537,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
           <input id="fev-de" type="date" style="flex:1;border:1px solid var(--sll);border-radius:7px;padding:6px 8px;font-size:12px;background:var(--bg);color:var(--tx);font-family:inherit">
           <span style="font-size:11px;color:var(--txm)">até</span>
           <input id="fev-ate" type="date" style="flex:1;border:1px solid var(--sll);border-radius:7px;padding:6px 8px;font-size:12px;background:var(--bg);color:var(--tx);font-family:inherit">
-          <button onclick="renderEvs()" style="background:var(--p);color:#fff;border:none;border-radius:7px;padding:6px 10px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:700">&#8635;</button>
+          <button onclick="renderEvs()" style="background:var(--p);color:#fff;border:none;border-radius:7px;padding:6px 10px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:700">↻</button>
         </div>
       </div>
       <!-- Filtro de status -->
@@ -603,8 +603,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
         <div id="rel-comp-list"></div>
       </div>
       <div style="display:flex;gap:8px">
-        <button class="bt bto btf" onclick="exportarCSV()">&#11015; Exportar CSV</button>
-        <button class="bt btp btf" onclick="exportarRelHTML()">&#128196; Exportar para Contador</button>
+        <button class="bt bto btf" onclick="exportarCSV()">⬇ Exportar CSV</button>
+        <button class="bt btp btf" onclick="exportarRelHTML()">📄 Exportar para Contador</button>
       </div>
     </div>
 
@@ -685,8 +685,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 <div id="m-admin" style="display:none;position:fixed;inset:0;z-index:400;background:#0d2b3e;overflow-y:auto">
   <div style="padding:16px;max-width:600px;margin:0 auto">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <div style="font-size:18px;font-weight:900;color:#fff">&#9881; Painel Admin</div>
-      <button onclick="fecharAdmin()" style="background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:8px;padding:7px 12px;font-size:14px;cursor:pointer;font-family:inherit">&#10005; Fechar</button>
+      <div style="font-size:18px;font-weight:900;color:#fff">⚙ Painel Admin</div>
+      <button onclick="fecharAdmin()" style="background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:8px;padding:7px 12px;font-size:14px;cursor:pointer;font-family:inherit">✕ Fechar</button>
     </div>
     <!-- KPIs admin -->
     <div id="admin-kpis" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px"></div>
@@ -735,7 +735,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
           <span style="font-size:20px">📋</span><div><div style="font-weight:700;font-size:13px">Primeiro contrato</div><div style="font-size:11px;color:var(--txm)">Valor semanal e caução</div></div>
         </div>
       </div>
-      <button class="bt btp btf" onclick="_obProximo(2)">Come&#231;ar &#8594;</button>
+      <button class="bt btp btf" onclick="_obProximo(2)">Comecar →</button>
       <button class="bt btg btf" style="margin-top:8px" onclick="_obPular()">Pular e explorar sozinho</button>
     </div>
     <!-- Etapa 2: Dados do locador -->
@@ -747,7 +747,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       <div class="fi"><label>Chave PIX</label><input id="ob-pix" type="text" placeholder="E-mail, CPF ou telefone"></div>
       <div style="display:flex;gap:8px;margin-top:4px">
         <button class="bt btg" onclick="_obProximo(1)">← Voltar</button>
-        <button class="bt btp" style="flex:1" onclick="_obSalvarConfig()">Pr&#243;ximo &#8594;</button>
+        <button class="bt btp" style="flex:1" onclick="_obSalvarConfig()">Proximo →</button>
       </div>
     </div>
     <!-- Etapa 3: Primeiro carro -->
@@ -759,7 +759,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       <div class="fi"><label>KM atual</label><input id="ob-km" type="number" placeholder="Ex: 48000"></div>
       <div style="display:flex;gap:8px;margin-top:4px">
         <button class="bt btg" onclick="_obProximo(2)">← Voltar</button>
-        <button class="bt btp" style="flex:1" onclick="_obSalvarCarro()">Pr&#243;ximo &#8594;</button>
+        <button class="bt btp" style="flex:1" onclick="_obSalvarCarro()">Proximo →</button>
       </div>
       <button class="bt btg btf" style="margin-top:8px;font-size:11px" onclick="_obProximo(4)">Pular este passo</button>
     </div>
@@ -838,7 +838,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
         </label>
       </div>
       <div style="display:flex;gap:8px;margin-top:4px">
-        <button class="bt btp" style="flex:1" onclick="_encProximo(2)">Pr&#243;ximo &#8594;</button>
+        <button class="bt btp" style="flex:1" onclick="_encProximo(2)">Proximo →</button>
         <button class="bt btg" onclick="_encCancelar()">Cancelar</button>
       </div>
     </div>
@@ -856,7 +856,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       </div>
       <div style="display:flex;gap:8px">
         <button class="bt btg" onclick="_encProximo(1)">← Voltar</button>
-        <button class="bt btp" style="flex:1" onclick="_encProximo(3)">Pr&#243;ximo &#8594;</button>
+        <button class="bt btp" style="flex:1" onclick="_encProximo(3)">Proximo →</button>
       </div>
     </div>
 
@@ -1085,7 +1085,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div class="fi"><label>Data de assinatura</label><input id="mc-data" type="date"></div>
     <div class="fi"><label>Franquia do seguro (R$)</label><input id="mc-fran" type="number" placeholder="4800"></div>
     <div style="display:flex;gap:8px;margin-top:4px">
-      <button class="bt btp" style="flex:1" onclick="gerarPDF()">&#128438; Imprimir / Salvar PDF</button>
+      <button class="bt btp" style="flex:1" onclick="gerarPDF()">🖶 Imprimir / Salvar PDF</button>
       <button class="bt btg" onclick="fecharModal('mcontrato')">Cancelar</button>
     </div>
   </div>
@@ -2582,7 +2582,7 @@ function _gerarPDFEncerramento(loc){
     </div>
   </div>
   <div class="footer">
-    <span>Frotando — Gest&#227;o de frota para motoristas de app</span>
+    <span>Frotando — Gestão de frota para motoristas de app</span>
     <span>Gerado em ${dataGer}</span>
   </div>
 </div>
@@ -3369,7 +3369,7 @@ function renderKm(){
         <div><div stylee="font-weight:700;font-size:14px">${Number(k.km).toLocaleString('pt-BR')} km</div><div style="font-size:11px;color:var(--txm)">${k.obs} · ${fD(k.data)}</div></div>
         <div style="display:flex;align-items:center;gap:6px">
           ${diff>0?`<span class="bx" style="background:${diff>7000?'rgba(245,158,11,.15)':'rgba(16,185,129,.15)'};color:${diff>7000?'var(--y)':'var(--g)'};border:1px solid ${diff>7000?'rgba(245,158,11,.3)':'rgba(16,185,129,.3)'};font-size:10px">+${diff.toLocaleString('pt-BR')}</span>`:''}
-          <button onclick="excluirKm('${k.id}')" style="background:rgba(239,68,68,.1);color:var(--r);border:none;border-radius:7px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:inherit">&#128465;</button>
+          <button onclick="excluirKm('${k.id}')" style="background:rgba(239,68,68,.1);color:var(--r);border:none;border-radius:7px;padding:4px 8px;font-size:11px;cursor:pointer;font-family:inherit">🗑</button>
         </div>
       </div>
     </div>`;
@@ -3744,13 +3744,13 @@ function exportarRelHTML(){
 
   <!-- Botões de ação (só na tela) -->
   <div style="display:flex;gap:10px;margin-bottom:16px">
-    <button onclick="window.print()" style="background:#0d2b3e;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer">&#128438; Imprimir / Salvar PDF</button>
-    <button onclick="navigator.clipboard.writeText(document.getElementById('txt-raw').value).then(()=>alert('Texto copiado!'))" style="background:#f1f5f9;color:#0d2b3e;border:1px solid #e2e8f0;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer">&#128203; Copiar texto</button>
+    <button onclick="window.print()" style="background:#0d2b3e;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer">🖶 Imprimir / Salvar PDF</button>
+    <button onclick="navigator.clipboard.writeText(document.getElementById('txt-raw').value).then(()=>alert('Texto copiado!'))" style="background:#f1f5f9;color:#0d2b3e;border:1px solid #e2e8f0;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer">📋 Copiar texto</button>
   </div>
 
   <!-- Cabeçalho -->
   <div class="header">
-    <h1>&#128196; Relatorio Mensal — ${NM[mes]} ${ano}</h1>
+    <h1>📄 Relatorio Mensal — ${NM[mes]} ${ano}</h1>
     <div class="sub">Gerado em ${dataGer} pelo Frotando</div>
     <div class="meta">
       <div class="mbox"><div class="lbl">Empresa / Titular</div><div class="val">${nomeEmpresa}</div></div>
@@ -3770,7 +3770,7 @@ function exportarRelHTML(){
   <!-- Fluxo + Indicadores -->
   <div class="grid2">
     <div class="section">
-      <h2>&#128200; Fluxo de Caixa</h2>
+      <h2>📈 Fluxo de Caixa</h2>
       <div class="fluxo-row"><span class="label">Receita recebida</span><span style="font-weight:700;color:#16a34a">${R(recMes)}</span></div>
       <div class="fluxo-row"><span class="label">Receita pendente</span><span style="font-weight:700;color:#d97706">${R(pendMes)}</span></div>
       <div class="fluxo-row"><span class="label">(-) Manutencoes / Eventos</span><span style="font-weight:700;color:#dc2626">- ${R(custosMes)}</span></div>
@@ -3781,7 +3781,7 @@ function exportarRelHTML(){
       <div class="fluxo-total"><span style="color:#0d2b3e">Lucro liquido</span><span style="color:${lucroColor}">${R(Math.round(lucro))}</span></div>
     </div>
     <div class="section">
-      <h2>&#128269; Indicadores</h2>
+      <h2>🔍 Indicadores</h2>
       <div class="ind-row"><span class="label">Taxa de inadimplencia</span><span class="badge ${Number(txInad)>10?'badge-r':Number(txInad)>5?'badge-y':'badge-g'}">${txInad}%</span></div>
       <div class="ind-row"><span class="label">Taxa de atraso</span><span class="badge ${Number(txAtr)>20?'badge-r':Number(txAtr)>10?'badge-y':'badge-g'}">${txAtr}%</span></div>
       <div class="ind-row"><span class="label">Contratos ativos</span><span style="font-weight:700;color:#1e3a5f">${ativas.length}</span></div>
@@ -3793,26 +3793,26 @@ function exportarRelHTML(){
 
   <!-- Por carro -->
   <div class="section">
-    <h2>&#128663; Por Veiculo</h2>
+    <h2>🚗 Por Veiculo</h2>
     ${carrosHTML||'<div style="color:#94a3b8;font-size:12px">Nenhum veiculo cadastrado.</div>'}
   </div>
 
   <!-- Pagamentos detalhados -->
   <div class="section">
-    <h2>&#128176; Pagamentos Recebidos <span>${recebidos.length} registros</span></h2>
+    <h2>💰 Pagamentos Recebidos <span>${recebidos.length} registros</span></h2>
     ${pagsHTML}
   </div>
 
   <!-- Manutencoes e eventos -->
   <div class="section">
-    <h2>&#128295; Manutencoes e Eventos <span>${evsMes.length} ocorrencias</span></h2>
+    <h2>🔧 Manutencoes e Eventos <span>${evsMes.length} ocorrencias</span></h2>
     ${evHTML}
 
   </div>
 
   <!-- Financiamentos -->
   <div class="section">
-    <h2>&#127981; Financiamentos Ativos</h2>
+    <h2>🏭 Financiamentos Ativos</h2>
     ${finHTML}
     ${parcelasAtivas.length?'<div style="display:flex;justify-content:space-between;padding:8px 0;font-weight:800;font-size:13px;border-top:2px solid #e2e8f0;margin-top:4px"><span>Total parcelas / mes</span><span style="color:#dc2626">- '+R(Math.round(parcelas))+'</span></div>':''}
   </div>
@@ -5817,7 +5817,7 @@ function _loginMsg(msg,cor='rgba(255,255,255,.55)'){
 }
 function _setBtnLogin(loading){
   const btn=document.getElementById('btn-login');
-  if(btn){btn.textContent=loading?'Entrando...':'Entrar &#8594;';btn.disabled=loading;}
+  if(btn){btn.textContent=loading?'Entrando...':'Entrar →';btn.disabled=loading;}
 }
 
 async function login(){
