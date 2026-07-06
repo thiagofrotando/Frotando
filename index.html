@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0d2b3e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Frotando">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,interactive-widget=resizes-content">
 <meta name="theme-color" content="#0D2B3E">
@@ -139,7 +144,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="position:absolute;inset:0;background:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2280%22 cy=%2220%22 r=%2240%22 fill=%22rgba(245,158,11,.06)%22/><circle cx=%2220%22 cy=%2280%22 r=%2230%22 fill=%22rgba(245,158,11,.04)%22/></svg>');opacity:.5"></div>
     <div style="position:relative">
       <div style="display:inline-block;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);border-radius:99px;padding:5px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px">30 dias grátis · Sem cartão de crédito</div>
-      <h1 style="font-size:32px;font-weight:900;color:#fff;letter-spacing:-1px;line-height:1.15;margin-bottom:12px">Gerencie sua frota de<br><span style="color:#f59e0b">locação para Uber e 99</span><br>em um só lugar</h1>
+      <h1 style="font-size:32px;font-weight:900;color:#fff;letter-spacing:-1px;line-height:1.15;margin-bottom:12px">Gerencie sua frota de<br><span style="color:#f59e0b">locação para motoristas</span><br>de aplicativo</h1>
       <p style="font-size:15px;color:rgba(255,255,255,.65);line-height:1.6;max-width:380px;margin:0 auto 28px">Contratos, pagamentos, caução e relatórios — tudo no celular, sem planilha, sem WhatsApp, sem complicação.</p>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
         <button onclick="irParaCadastro()" style="background:#f59e0b;color:#0d2b3e;border:none;border-radius:11px;padding:15px 28px;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 4px 20px rgba(245,158,11,.4)">Criar conta gratuita →</button>
@@ -643,6 +648,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       <div class="cd">
         <div class="st">Dados e Backup</div>
         <button class="bt bto btf bts" onclick="exportarCSV()">⬇️ Exportar dados CSV</button>
+        <button id="btn-notif" class="bt btf bts" style="margin-top:7px;border:1.5px solid var(--sll);background:transparent;color:var(--txm)" onclick="ativarNotificacoes()">🔔 Ativar notificações de sábado</button>
         <button class="bt btd btf bts" style="margin-top:7px" onclick="resetarDados()">🗑 Resetar todos os dados</button>
         <button id="btn-admin" class="bt btf bts" style="margin-top:7px;display:none;background:rgba(13,43,62,.12);color:#0d2b3e;border:1px solid rgba(13,43,62,.25)" onclick="abrirAdmin()">⚙️ Painel Admin</button>
       </div>
@@ -1577,6 +1583,106 @@ function _gerarPagsIniciais(loc){
   saveDB('pags');
 }
 
+
+
+// ── SERVICE WORKER & NOTIFICAÇÕES ────────────────────────────────────────────
+let _swReg = null;
+
+async function _registrarSW() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    _swReg = await navigator.serviceWorker.register('/sw.js');
+    console.log('SW registrado:', _swReg.scope);
+    // Ouvir mensagens do SW
+    navigator.serviceWorker.addEventListener('message', e => {
+      if (e.data?.type === 'VERIFICAR_PENDENTES') _swVerificarPendentes();
+    });
+  } catch(err) {
+    console.log('SW erro:', err);
+  }
+}
+
+async function _pedirPermissaoNotificacao() {
+  if (!('Notification' in window)) return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
+  const perm = await Notification.requestPermission();
+  return perm === 'granted';
+}
+
+function _swVerificarPendentes() {
+  if (!_swReg || !_sbUser) return;
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const diaSemana = hoje.getDay();
+  if (diaSemana !== 6) return; // Só roda no sábado
+  const sabISO = hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0')+'-'+String(hoje.getDate()).padStart(2,'0');
+  const pendentes = DB.pags.filter(p => !p.pago && !p.cancelado && p.dataVenc === sabISO);
+  if (!pendentes.length) return;
+  const motoristas = [...new Set(pendentes.map(p => {
+    const m = cMot(p.motoId);
+    return m?.nome?.split(' ')[0] || '?';
+  }))];
+  // Enviar para o SW mostrar a notificação
+  if (_swReg.active) {
+    _swReg.active.postMessage({
+      type: 'CHECK_SABADO',
+      pendentes: pendentes.length,
+      motoristas
+    });
+  }
+}
+
+async function _agendarVerificacaoSabado() {
+  // Verificar imediatamente se for sábado
+  _swVerificarPendentes();
+  // Agendar para verificar todo sábado (via setInterval a cada hora)
+  setInterval(() => {
+    const agora = new Date();
+    if (agora.getDay() === 6 && agora.getHours() >= 8 && agora.getHours() <= 10) {
+      _swVerificarPendentes();
+    }
+  }, 3600000); // verifica a cada 1 hora
+  // Tentar registrar Periodic Background Sync (Chrome Android)
+  if (_swReg && 'periodicSync' in _swReg) {
+    try {
+      const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
+      if (status.state === 'granted') {
+        await _swReg.periodicSync.register('cobranca-semanal', { minInterval: 7 * 24 * 60 * 60 * 1000 });
+        console.log('Periodic sync registrado');
+      }
+    } catch(e) { console.log('Periodic sync não suportado'); }
+  }
+}
+
+// Botão para ativar notificações (chamado pelo usuário)
+async function ativarNotificacoes() {
+  const ok = await _pedirPermissaoNotificacao();
+  if (ok) {
+    await _agendarVerificacaoSabado();
+    toast('Notificações ativadas! Você será avisado todo sábado. ✓');
+    _atualizarBtnNotificacao();
+  } else {
+    toast('Permissão negada. Ative nas configurações do navegador.', 'er');
+  }
+}
+
+function _atualizarBtnNotificacao() {
+  const btn = document.getElementById('btn-notif');
+  if (!btn) return;
+  const perm = ('Notification' in window) ? Notification.permission : 'unsupported';
+  if (perm === 'granted') {
+    btn.textContent = '🔔 Notificações ativas';
+    btn.style.color = 'var(--g)';
+    btn.style.borderColor = 'var(--g)';
+  } else if (perm === 'denied') {
+    btn.textContent = '🔕 Notificações bloqueadas';
+    btn.style.color = 'var(--r)';
+  } else if (perm === 'unsupported') {
+    btn.style.display = 'none';
+  } else {
+    btn.textContent = '🔔 Ativar notificações de sábado';
+  }
+}
 
 // ── PAINEL ADMIN ──────────────────────────────────────────────────────────────
 let _adminData=[];
@@ -5963,6 +6069,11 @@ function _entrarNoApp(){
   document.getElementById('sc-dash').classList.add('on');
   // Mostrar botão admin se for o administrador
   setTimeout(()=>{const ab=document.getElementById('btn-admin');if(ab) ab.style.display=_isAdmin()?'block':'none';},500);
+  // Service Worker e notificações
+  _registrarSW().then(()=>{
+    _atualizarBtnNotificacao();
+    if(Notification.permission==='granted') _agendarVerificacaoSabado();
+  });
   const navDash=document.querySelector('[data-s=dash]');
   if(navDash) navDash.classList.add('on');
   document.getElementById('pt').textContent='';
