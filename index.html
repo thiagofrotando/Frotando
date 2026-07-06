@@ -1498,7 +1498,8 @@ function salvarMoto(){
   if(!nome||!cpf){toast('Nome e CPF obrigatórios','er');return;}
   const fotoAtual=_curId?DB.motos.find(m=>m.id===_curId)?.foto||'':'';
   const foto=_mmFotoBase64||fotoAtual;
-  const obj={nome,cpf,rg:document.getElementById('mm-rg').value,cnh:document.getElementById('mm-cnh').value,vCNH:document.getElementById('mm-vcnh').value,vcnh:document.getElementById('mm-vcnh').value,tel:document.getElementById('mm-tel').value,endereco:document.getElementById('mm-end').value,plat:document.getElementById('mm-plat').value,nota:document.getElementById('mm-nota').value,status:'Ativo',foto};
+  const notaVal=document.getElementById('mm-nota').value||'';
+const obj={nome,cpf,rg:document.getElementById('mm-rg').value,cnh:document.getElementById('mm-cnh').value,vCNH:document.getElementById('mm-vcnh').value,vcnh:document.getElementById('mm-vcnh').value,tel:document.getElementById('mm-tel').value,endereco:document.getElementById('mm-end').value,plat:document.getElementById('mm-plat').value,nota:notaVal,status:'Ativo',foto};
   if(_curId)DB.motos=DB.motos.map(m=>m.id===_curId?{...m,...obj}:m);
   else DB.motos.push({id:'m'+uid(),...obj});
   _mmFotoBase64='';
@@ -3381,13 +3382,13 @@ function renderMotos(){
   DB.motos.forEach(m=>{
     const loc=DB.locs.find(l=>l.motoId===m.id&&l.status==='Ativa');
     const car=loc?cCar(loc.carroId):null;
-    const cnhD=m.vcnh?Math.round((new Date(m.vcnh)-hoje)/86400000):999;
+    const cnhVal=m.vCNH||m.vcnh||'';const cnhD=cnhVal?Math.round((new Date(cnhVal)-hoje)/86400000):999;
     const rec=DB.pags.filter(p=>p.motoId===m.id&&p.pago).reduce((s,p)=>s+p.val,0);
     const d=document.createElement('div');d.className='cd';
-    d.innerHTML=`<div class="lr" style="padding-top:0;border-bottom:none;padding-bottom:0"><div class="av" style="overflow:hidden;padding:0">${m.foto?`<img src="${m.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`<span style="font-size:18px;line-height:40px">${m.nome.charAt(0)}</span>`}</div><div style="flex:1"><div style="font-weight:800;font-size:14px">${m.nome}</div><div style="font-size:11px;color:var(--txm)">${m.cpf} · CNH: ${m.cnh||'—'}</div></div><div style="text-align:center;flex-shrink:0"><div style="font-size:9px;color:var(--txm)">Nota</div><div style="font-size:15px;font-weight:900;color:var(--a)">⭐${m.nota||'—'}</div></div></div>
+    d.innerHTML=`<div class="lr" style="padding-top:0;border-bottom:none;padding-bottom:0"><div class="av" style="overflow:hidden;padding:0">${m.foto?`<img src="${m.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`<span style="font-size:18px;line-height:40px">${m.nome.charAt(0)}</span>`}</div><div style="flex:1"><div style="font-weight:800;font-size:14px">${m.nome}</div><div style="font-size:11px;color:var(--txm)">${m.cpf} · CNH: ${m.cnh||'—'}</div></div><div style="text-align:center;flex-shrink:0"><div style="font-size:9px;color:var(--txm)">Nota</div><div style="font-size:15px;font-weight:900;color:var(--a)">${m.nota&&Number(m.nota)>0?'⭐'+m.nota:'⭐—'}</div></div></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:9px 0">
       <div style="background:var(--bg);border-radius:7px;padding:7px 9px"><div style="font-size:9px;color:var(--txm);font-weight:700;text-transform:uppercase">Carro</div><div style="font-size:12px;font-weight:600;margin-top:1px">${car?.placa||'—'}</div></div>
-      <div style="background:var(--bg);border-radius:7px;padding:7px 9px"><div style="font-size:9px;color:var(--txm);font-weight:700;text-transform:uppercase">Val. CNH</div><div style="font-size:12px;font-weight:600;margin-top:1px;color:${cnhD<30?'var(--r)':cnhD<90?'var(--y)':'var(--tx)'}">${fD(m.vcnh)}</div></div>
+      <div style="background:var(--bg);border-radius:7px;padding:7px 9px"><div style="font-size:9px;color:var(--txm);font-weight:700;text-transform:uppercase">Val. CNH</div><div style="font-size:12px;font-weight:600;margin-top:1px;color:${cnhD<30?'var(--r)':cnhD<90?'var(--y)':'var(--tx)'}">${fD(m.vCNH||m.vcnh)}</div></div>
       <div style="background:rgba(16,185,129,.1);border-radius:7px;padding:7px 9px"><div style="font-size:9px;color:var(--g);font-weight:700;text-transform:uppercase">Recebido</div><div style="font-size:14px;font-weight:900;color:var(--g);margin-top:1px">${R(rec)}</div></div>
       <div style="background:var(--bg);border-radius:7px;padding:7px 9px"><div style="font-size:9px;color:var(--txm);font-weight:700;text-transform:uppercase">Plataformas</div><div style="font-size:12px;font-weight:600;margin-top:1px">${m.plat||'—'}</div></div>
       ${m.endereco?`<div style="background:var(--bg);border-radius:7px;padding:7px 9px;grid-column:span 2"><div style="font-size:9px;color:var(--txm);font-weight:700;text-transform:uppercase">Endereço</div><div style="font-size:12px;font-weight:600;margin-top:1px">${m.endereco}</div></div>`:''}
