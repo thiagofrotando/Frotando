@@ -81,7 +81,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 /* MODAL */
 .mo{position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:200;display:flex;align-items:flex-end;opacity:0;transition:opacity .18s;pointer-events:none}
 .mo.on{opacity:1;pointer-events:all}
-.ms{background:#fff;border-radius:20px 20px 0 0;width:100%;padding:18px 18px;padding-bottom:calc(18px + var(--sb));max-height:92dvh;overflow-y:auto;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1)}
+.ms{background:#fff;border-radius:20px 20px 0 0;width:100%;padding:18px 18px;padding-bottom:calc(18px + var(--sb) + env(safe-area-inset-bottom));max-height:85svh;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1)}
 .mo.on .ms{transform:translateY(0)}
 .mh{width:38px;height:4px;background:var(--sll);border-radius:99px;margin:0 auto 14px}
 .mt{font-size:16px;font-weight:800;color:var(--p);margin-bottom:14px}
@@ -772,7 +772,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 </div>
 <!-- MODAL ENCERRAMENTO DE CONTRATO -->
 <div id="menc" class="mo" onclick="if(event.target===this)_encCancelar()">
-  <div class="ms" onclick="event.stopPropagation()" style="max-height:92vh;overflow-y:auto">
+  <div class="ms" onclick="event.stopPropagation()">
     <div class="mh"></div>
     <!-- Header com steps -->
     <div style="margin-bottom:14px">
@@ -886,9 +886,9 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div id="ins-body" style="padding:14px 14px 0"></div>
   </div>
 </div>
-<div id="mc" class="mo" onclick="fecharModal('mc')"><div class="ms" onclick="event.stopPropagation()" style="max-height:85dvh;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch"><div class="mh"></div><div class="mt" id="mc-t">Carro</div><div class="fi"><label>Placa *</label><input id="mc-placa" type="text" placeholder="ABC-1234" style="text-transform:uppercase"></div><div class="fi"><label>Modelo *</label><input id="mc-modelo" type="text" placeholder="VW Gol 1.0 2023"></div><div class="fi"><label>Cor</label><input id="mc-cor" type="text" placeholder="Branco"></div><div class="fi"><label>RENAVAM</label><input id="mc-ren" type="text"></div><div class="fi"><label>KM atual</label><input id="mc-km" type="number" placeholder="0"></div><div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarCarro()">Salvar</button><button class="bt btg" onclick="fecharModal('mc')">Cancelar</button></div></div></div>
+<div id="mc" class="mo" onclick="fecharModal('mc')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt" id="mc-t">Carro</div><div class="fi"><label>Placa *</label><input id="mc-placa" type="text" placeholder="ABC-1234" style="text-transform:uppercase"></div><div class="fi"><label>Modelo *</label><input id="mc-modelo" type="text" placeholder="VW Gol 1.0 2023"></div><div class="fi"><label>Cor</label><input id="mc-cor" type="text" placeholder="Branco"></div><div class="fi"><label>RENAVAM</label><input id="mc-ren" type="text"></div><div class="fi"><label>KM atual</label><input id="mc-km" type="number" placeholder="0"></div><div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarCarro()">Salvar</button><button class="bt btg" onclick="fecharModal('mc')">Cancelar</button></div></div></div>
 
-<div id="mm" class="mo" onclick="fecharModal('mm')"><div class="ms" onclick="event.stopPropagation()" style="max-height:85dvh;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch"><div class="mh"></div><div class="mt" id="mm-t">Motorista</div><div class="fi"><label>Nome *</label><input id="mm-nome" type="text"></div><div class="fi"><label>CPF *</label><input id="mm-cpf" type="text" placeholder="000.000.000-00"></div><div class="fi"><label>RG</label><input id="mm-rg" type="text"></div><div class="fi"><label>CNH</label><input id="mm-cnh" type="text"></div><div class="fi"><label>Validade CNH</label><input id="mm-vcnh" type="date"></div><div class="fi"><label>Telefone</label><input id="mm-tel" type="tel"></div><div class="fi"><label>Endereço completo</label><input id="mm-end" type="text" placeholder="Rua, nº, Bairro, Cidade/UF, CEP"></div><div class="fi"><label>Plataformas</label><input id="mm-plat" type="text" placeholder="Uber, 99..."></div><div class="fi"><label>Avaliação</label><input id="mm-nota" type="text" placeholder="4.90"></div><div style="margin-bottom:12px">
+<div id="mm" class="mo" onclick="fecharModal('mm')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt" id="mm-t">Motorista</div><div class="fi"><label>Nome *</label><input id="mm-nome" type="text"></div><div class="fi"><label>CPF *</label><input id="mm-cpf" type="text" placeholder="000.000.000-00"></div><div class="fi"><label>RG</label><input id="mm-rg" type="text"></div><div class="fi"><label>CNH</label><input id="mm-cnh" type="text"></div><div class="fi"><label>Validade CNH</label><input id="mm-vcnh" type="date"></div><div class="fi"><label>Telefone</label><input id="mm-tel" type="tel"></div><div class="fi"><label>Endereço completo</label><input id="mm-end" type="text" placeholder="Rua, nº, Bairro, Cidade/UF, CEP"></div><div class="fi"><label>Plataformas</label><input id="mm-plat" type="text" placeholder="Uber, 99..."></div><div class="fi"><label>Avaliação</label><input id="mm-nota" type="text" placeholder="4.90"></div><div style="margin-bottom:12px">
   <label style="font-size:11px;font-weight:700;color:var(--txm);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px">Foto do motorista</label>
   <div style="display:flex;align-items:center;gap:12px">
     <div id="mm-foto-preview" style="width:72px;height:72px;border-radius:50%;background:var(--bg);border:2px dashed var(--sll);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;font-size:28px">👤</div>
@@ -5924,6 +5924,16 @@ function _entrarNoApp(){
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
+// iOS keyboard fix: adjust modal height when keyboard opens
+window.addEventListener('resize',()=>{
+  const vh=window.innerHeight;
+  document.querySelectorAll('.ms').forEach(el=>{
+    if(el.style.transform==='translateY(0px)'||el.style.transform==='translateY(0)'){
+      el.style.maxHeight=Math.min(vh*0.92,vh-40)+'px';
+    }
+  });
+});
+
 // iOS keyboard: scroll focused input into view
 document.addEventListener('focusin',e=>{
   if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT'){
@@ -5991,4 +6001,3 @@ document.addEventListener('DOMContentLoaded',async()=>{
 </html>
 </body>
 </html>
-
