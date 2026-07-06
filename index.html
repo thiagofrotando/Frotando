@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,interactive-widget=resizes-content">
 <meta name="theme-color" content="#0D2B3E">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -118,86 +118,218 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 <body>
 
 <!-- LANDING PAGE -->
-<div id="lp" style="display:flex;flex-direction:column;min-height:100vh;overflow-y:auto">
-  <!-- Hero -->
-  <div style="padding:32px 20px 28px;text-align:center">
-    <div style="font-size:52px;margin-bottom:10px">🚗</div>
-    <div style="font-size:38px;font-weight:900;color:#fff;letter-spacing:-1.5px;line-height:1">Frota<span style="color:var(--a)">ndo</span></div>
-    <div style="font-size:15px;color:rgba(255,255,255,.65);margin-top:8px;line-height:1.5">Gestão completa da sua frota<br>para motoristas de Uber e 99</div>
-    <div style="display:flex;gap:10px;margin-top:20px;justify-content:center">
-      <button onclick="irParaLogin()" style="background:var(--a);color:#0d2b3e;border:none;border-radius:11px;padding:13px 24px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;touch-action:manipulation">Entrar &#8594;</button>
-      <button onclick="irParaCadastro()" style="background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.25);border-radius:11px;padding:13px 24px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;touch-action:manipulation">Criar conta grátis</button>
-    </div>
-    <div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,.35)">30 dias grátis · Sem cartão de crédito</div>
-  </div>
+<div id="lp" style="display:flex;flex-direction:column;min-height:100vh;overflow-y:auto;background:#f0f4f8;color:#1e293b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
 
-  <!-- Problema -->
-  <div style="background:rgba(0,0,0,.25);padding:20px;margin:0 16px;border-radius:14px;margin-bottom:16px">
-    <div style="font-size:13px;font-weight:800;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Você ainda faz isso?</div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:16px">😰</span><span style="font-size:13px;color:rgba(255,255,255,.75)">Controla pagamentos pelo WhatsApp ou caderninho</span></div>
-      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:16px">😤</span><span style="font-size:13px;color:rgba(255,255,255,.75)">Esquece quem está devendo caução</span></div>
-      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:16px">😩</span><span style="font-size:13px;color:rgba(255,255,255,.75)">Perde horas montando relatório pro contador</span></div>
-      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:16px">😬</span><span style="font-size:13px;color:rgba(255,255,255,.75)">Não tem contrato escrito com o motorista</span></div>
+  <!-- NAV -->
+  <nav style="background:#fff;border-bottom:1px solid #e2e8f0;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:22px">🚗</span>
+      <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
     </div>
-  </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
+      <button onclick="irParaCadastro()" style="background:#f59e0b;color:#0d2b3e;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">Teste grátis</button>
+    </div>
+  </nav>
 
-  <!-- Funcionalidades -->
-  <div style="padding:0 16px;margin-bottom:16px">
-    <div style="font-size:15px;font-weight:900;color:#fff;margin-bottom:12px;text-align:center">O Frotando resolve tudo isso</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div style="background:rgba(255,255,255,.07);border-radius:12px;padding:13px">
-        <div style="font-size:22px;margin-bottom:6px">📅</div>
-        <div style="font-size:12px;font-weight:700;color:#fff">Pagamentos semanais</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Um toque confirma o PIX. Atrasos detectados automático.</div>
-      </div>
-      <div style="background:rgba(255,255,255,.07);border-radius:12px;padding:13px">
-        <div style="font-size:22px;margin-bottom:6px">📋</div>
-        <div style="font-size:12px;font-weight:700;color:#fff">Contrato em 1 minuto</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Documento jurídico completo gerado na hora.</div>
-      </div>
-      <div style="background:rgba(255,255,255,.07);border-radius:12px;padding:13px">
-        <div style="font-size:22px;margin-bottom:6px">💰</div>
-        <div style="font-size:12px;font-weight:700;color:#fff">Caução controlado</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Integral ou parcelado. Ajuste automático nas parcelas.</div>
-      </div>
-      <div style="background:rgba(255,255,255,.07);border-radius:12px;padding:13px">
-        <div style="font-size:22px;margin-bottom:6px">📊</div>
-        <div style="font-size:12px;font-weight:700;color:#fff">Relatório pro contador</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">DRE e fluxo de caixa exportados em PDF.</div>
-      </div>
-      <div style="background:rgba(255,255,255,.07);border-radius:12px;padding:13px">
-        <div style="font-size:22px;margin-bottom:6px">🔍</div>
-        <div style="font-size:12px;font-weight:700;color:#fff">Vistoria na devolução</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Checklist + desconto por avaria + termo de dívida.</div>
-      </div>
-      <div style="background:rgba(255,255,255,.07);border-radius:12px;padding:13px">
-        <div style="font-size:22px;margin-bottom:6px">💡</div>
-        <div style="font-size:12px;font-weight:700;color:#fff">Insights mensais</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Gráficos, ranking de motoristas e alertas automáticos.</div>
+  <!-- HERO -->
+  <section style="background:linear-gradient(160deg,#0d2b3e 0%,#1e4d6b 100%);padding:52px 20px 60px;text-align:center;position:relative;overflow:hidden">
+    <div style="position:absolute;inset:0;background:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2280%22 cy=%2220%22 r=%2240%22 fill=%22rgba(245,158,11,.06)%22/><circle cx=%2220%22 cy=%2280%22 r=%2230%22 fill=%22rgba(245,158,11,.04)%22/></svg>');opacity:.5"></div>
+    <div style="position:relative">
+      <div style="display:inline-block;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3);border-radius:99px;padding:5px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px">30 dias grátis · Sem cartão de crédito</div>
+      <h1 style="font-size:32px;font-weight:900;color:#fff;letter-spacing:-1px;line-height:1.15;margin-bottom:12px">Gerencie sua frota de<br><span style="color:#f59e0b">locação para Uber e 99</span><br>em um só lugar</h1>
+      <p style="font-size:15px;color:rgba(255,255,255,.65);line-height:1.6;max-width:380px;margin:0 auto 28px">Contratos, pagamentos, caução e relatórios — tudo no celular, sem planilha, sem WhatsApp, sem complicação.</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button onclick="irParaCadastro()" style="background:#f59e0b;color:#0d2b3e;border:none;border-radius:11px;padding:15px 28px;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 4px 20px rgba(245,158,11,.4)">Criar conta gratuita →</button>
+        <button onclick="irParaLogin()" style="background:rgba(255,255,255,.1);color:#fff;border:1.5px solid rgba(255,255,255,.25);border-radius:11px;padding:15px 20px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Já tenho conta</button>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- Preço -->
-  <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:14px;padding:20px;margin:0 16px;margin-bottom:16px;text-align:center">
-    <div style="font-size:13px;font-weight:800;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Investimento</div>
-    <div style="font-size:32px;font-weight:900;color:var(--a)">R$ 15<span style="font-size:16px;font-weight:600;color:rgba(255,255,255,.6)">/mês por veículo</span></div>
-    <div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:6px">Sem fidelidade · Cancele quando quiser</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:14px">
-      <div style="background:rgba(255,255,255,.06);border-radius:8px;padding:8px;font-size:12px;color:rgba(255,255,255,.7)">1 carro = <strong style="color:var(--a)">R$ 29/mês</strong></div>
-      <div style="background:rgba(255,255,255,.06);border-radius:8px;padding:8px;font-size:12px;color:rgba(255,255,255,.7)">3 carros = <strong style="color:var(--a)">R$ 45/mês</strong></div>
-      <div style="background:rgba(255,255,255,.06);border-radius:8px;padding:8px;font-size:12px;color:rgba(255,255,255,.7)">5 carros = <strong style="color:var(--a)">R$ 95/mês</strong></div>
-      <div style="background:rgba(255,255,255,.06);border-radius:8px;padding:8px;font-size:12px;color:rgba(255,255,255,.7)">10 carros = <strong style="color:var(--a)">R$ 150/mês</strong></div>
+  <!-- MOCKUP DASHBOARD -->
+  <section style="padding:40px 20px;background:#f0f4f8">
+    <div style="max-width:420px;margin:0 auto">
+      <!-- Phone frame -->
+      <div style="background:#1e293b;border-radius:24px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+        <!-- Status bar -->
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;margin-bottom:8px">
+          <span style="font-size:10px;color:rgba(255,255,255,.4)">9:41</span>
+          <span style="font-size:10px;color:rgba(255,255,255,.4)">●●●</span>
+        </div>
+        <!-- App header -->
+        <div style="background:#0d2b3e;border-radius:14px 14px 0 0;padding:12px 14px;display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:14px">🚗</span>
+            <span style="font-size:14px;font-weight:900;color:#fff">Frota<span style="color:#f59e0b">ndo</span></span>
+          </div>
+          <span style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44;border-radius:99px;padding:2px 8px;font-size:9px;font-weight:700">Pro</span>
+        </div>
+        <!-- Dashboard content -->
+        <div style="background:#0f172a;border-radius:0 0 14px 14px;padding:12px">
+          <!-- KPIs -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+            <div style="background:#1e293b;border-radius:10px;padding:10px">
+              <div style="font-size:8px;color:#64748b;font-weight:700;text-transform:uppercase">Receita mensal</div>
+              <div style="font-size:18px;font-weight:900;color:#34d399;margin-top:2px">R$ 2.400</div>
+              <div style="font-size:8px;color:#34d399;margin-top:1px">▲ 12% vs mês ant.</div>
+            </div>
+            <div style="background:#1e293b;border-radius:10px;padding:10px">
+              <div style="font-size:8px;color:#64748b;font-weight:700;text-transform:uppercase">Pendente</div>
+              <div style="font-size:18px;font-weight:900;color:#f87171;margin-top:2px">R$ 600</div>
+              <div style="font-size:8px;color:#f87171;margin-top:1px">1 pagamento em atraso</div>
+            </div>
+          </div>
+          <!-- Mini chart -->
+          <div style="background:#1e293b;border-radius:10px;padding:10px;margin-bottom:8px">
+            <div style="font-size:8px;color:#64748b;font-weight:700;margin-bottom:8px">RECEITA — ÚLTIMAS 6 SEMANAS</div>
+            <div style="display:flex;align-items:flex-end;gap:4px;height:36px">
+              ${['55%','65%','45%','80%','60%','100%'].map((h,i)=>`<div style="flex:1;height:${h};background:${i===5?'#f59e0b':'#1e4d6b'};border-radius:3px 3px 0 0;opacity:${i===5?1:.8}"></div>`).join('')}
+            </div>
+          </div>
+          <!-- Alerts -->
+          <div style="background:#1e293b;border-radius:10px;padding:9px 10px;display:flex;align-items:center;gap:8px">
+            <span style="font-size:14px">⚠️</span>
+            <div>
+              <div style="font-size:9px;font-weight:700;color:#fbbf24">Ricardo Souza — ABC-3456</div>
+              <div style="font-size:8px;color:#64748b">Pagamento em atraso · 2 dias</div>
+            </div>
+            <div style="margin-left:auto;background:#f59e0b;color:#0d2b3e;border-radius:6px;padding:4px 8px;font-size:8px;font-weight:800">Cobrar</div>
+          </div>
+          <!-- Bottom nav -->
+          <div style="display:flex;justify-content:space-around;margin-top:10px;padding-top:8px;border-top:1px solid #1e293b">
+            ${['🏠','🚗','👤','📋','💳'].map((e,i)=>`<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span style="font-size:14px;${i===0?'filter:drop-shadow(0 0 4px #f59e0b)':''}">${e}</span><div style="width:4px;height:4px;border-radius:99px;background:${i===0?'#f59e0b':'transparent'}"></div></div>`).join('')}
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <!-- CTA final -->
-  <div style="padding:20px 16px 40px;text-align:center">
-    <button onclick="irParaCadastro()" style="width:100%;background:var(--a);color:#0d2b3e;border:none;border-radius:13px;padding:16px;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit;touch-action:manipulation;margin-bottom:10px">Testar grátis por 30 dias &#8594;</button>
-    <button onclick="irParaLogin()" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline">Já tenho conta — entrar</button>
-    <div style="margin-top:16px;font-size:10px;color:rgba(255,255,255,.2)">frotando-app.netlify.app · Dúvidas? (31) 97572-7717</div>
-  </div>
+  <!-- PROBLEMA -->
+  <section style="padding:40px 20px;background:#fff">
+    <h2 style="font-size:22px;font-weight:900;color:#0d2b3e;text-align:center;margin-bottom:6px">Você ainda faz isso?</h2>
+    <p style="text-align:center;color:#64748b;font-size:14px;margin-bottom:24px">A maioria dos locadores perde dinheiro por falta de controle</p>
+    <div style="display:flex;flex-direction:column;gap:10px;max-width:420px;margin:0 auto">
+      ${[
+        ['😰','Controla pagamentos pelo WhatsApp ou caderninho','E sempre tem alguém que "já pagou" mas você não lembra'],
+        ['💸','Perde dinheiro com caução mal controlado','Motorista devolve o carro com dano e você não tem como provar'],
+        ['😩','Passa horas montando relatório pro contador','No final do mês é um caos juntar tudo'],
+        ['😬','Não tem contrato escrito com o motorista','Sem contrato, você fica sem proteção jurídica'],
+      ].map(([e,t,s])=>`
+      <div style="background:#fef9f0;border:1px solid #fde8c8;border-radius:12px;padding:13px 14px;display:flex;gap:12px;align-items:flex-start">
+        <span style="font-size:22px;flex-shrink:0">${e}</span>
+        <div><div style="font-weight:700;font-size:13px;color:#0d2b3e;margin-bottom:2px">${t}</div><div style="font-size:11px;color:#92400e">${s}</div></div>
+      </div>`).join('')}
+    </div>
+  </section>
+
+  <!-- SOLUÇÃO -->
+  <section style="padding:40px 20px;background:#0d2b3e">
+    <h2 style="font-size:22px;font-weight:900;color:#fff;text-align:center;margin-bottom:6px">O Frotando resolve tudo isso</h2>
+    <p style="text-align:center;color:rgba(255,255,255,.5);font-size:13px;margin-bottom:24px">Um app completo no seu celular</p>
+
+    <!-- Mockup pagamentos -->
+    <div style="background:#1e293b;border-radius:16px;padding:14px;margin-bottom:12px;max-width:420px;margin-left:auto;margin-right:auto">
+      <div style="font-size:11px;font-weight:800;color:#f59e0b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">💳 Pagamentos semanais</div>
+      <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px">
+        ${[['Ricardo S.','ABC-3456','R$ 600','Pago','#34d399'],['Marcos L.','XYZ-9876','R$ 750','Pago','#34d399'],['André M.','DEF-4567','R$ 600','Atrasado','#f87171']].map(([n,p,v,s,c])=>`
+        <div style="background:#0f172a;border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:28px;height:28px;border-radius:99px;background:#1e4d6b;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff">${n[0]}</div>
+            <div><div style="font-size:11px;font-weight:700;color:#fff">${n}</div><div style="font-size:9px;color:#64748b">${p}</div></div>
+          </div>
+          <div style="text-align:right"><div style="font-size:12px;font-weight:800;color:#fff">${v}</div><div style="font-size:9px;font-weight:700;color:${c}">${s}</div></div>
+        </div>`).join('')}
+      </div>
+      <div style="background:#f59e0b;color:#0d2b3e;border-radius:8px;padding:8px;text-align:center;font-size:11px;font-weight:800">✓ Um toque confirma o PIX recebido</div>
+    </div>
+
+    <!-- Funcionalidades grid -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:420px;margin:0 auto">
+      ${[
+        ['📋','Contrato jurídico','11 cláusulas gerado na hora, pronto para imprimir'],
+        ['💰','Caução inteligente','Integral ou parcelado com controle automático'],
+        ['🔍','Vistoria na devolução','Checklist + desconto por avaria + termo de dívida'],
+        ['📊','Relatório pro contador','DRE e fluxo de caixa em PDF com um clique'],
+        ['💡','Insights mensais','Gráficos e ranking automáticos dos seus motoristas'],
+        ['🔔','Alertas automáticos','CNH vencendo, atrasos e manutenções pendentes'],
+      ].map(([e,t,s])=>`
+      <div style="background:#1e293b;border-radius:12px;padding:13px">
+        <div style="font-size:22px;margin-bottom:6px">${e}</div>
+        <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:3px">${t}</div>
+        <div style="font-size:10px;color:#64748b;line-height:1.4">${s}</div>
+      </div>`).join('')}
+    </div>
+  </section>
+
+  <!-- MOCKUP CONTRATO -->
+  <section style="padding:40px 20px;background:#f0f4f8">
+    <div style="max-width:420px;margin:0 auto">
+      <div style="text-align:center;margin-bottom:20px">
+        <h2 style="font-size:22px;font-weight:900;color:#0d2b3e;margin-bottom:6px">Contrato em 1 minuto</h2>
+        <p style="font-size:13px;color:#64748b">Documento jurídico completo, gerado automaticamente</p>
+      </div>
+      <div style="background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.1);overflow:hidden">
+        <div style="background:#0d2b3e;padding:16px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:9px;color:rgba(255,255,255,.4);font-weight:700;text-transform:uppercase;letter-spacing:.5px">Contrato de locação</div>
+            <div style="font-size:14px;font-weight:900;color:#fff;margin-top:2px">ABC-3456 · Ricardo Souza</div>
+          </div>
+          <div style="background:#f59e0b;color:#0d2b3e;border-radius:7px;padding:5px 10px;font-size:10px;font-weight:800">Ativo</div>
+        </div>
+        <div style="padding:14px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+            ${[['Início','22/06/2026'],['Semanal','R$ 600'],['Caução','R$ 1.400']].map(([l,v])=>`
+            <div style="background:#f8fafc;border-radius:8px;padding:8px">
+              <div style="font-size:9px;color:#94a3b8;font-weight:700">${l}</div>
+              <div style="font-size:12px;font-weight:700;color:#1e293b;margin-top:2px">${v}</div>
+            </div>`).join('')}
+          </div>
+          <div style="display:flex;gap:6px">
+            <div style="flex:1;background:#0d2b3e;color:#fff;border-radius:8px;padding:9px;text-align:center;font-size:11px;font-weight:700">📄 Imprimir contrato</div>
+            <div style="background:#fee2e2;color:#dc2626;border-radius:8px;padding:9px;text-align:center;font-size:11px;font-weight:700">Encerrar</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PREÇO -->
+  <section style="padding:40px 20px;background:#fff">
+    <h2 style="font-size:22px;font-weight:900;color:#0d2b3e;text-align:center;margin-bottom:6px">Investimento</h2>
+    <p style="text-align:center;color:#64748b;font-size:13px;margin-bottom:24px">Sem fidelidade · Cancele quando quiser</p>
+    <div style="max-width:420px;margin:0 auto;display:flex;flex-direction:column;gap:10px">
+      ${[
+        ['Starter','Até 2 veículos','R$ 29','mês','#3b82f6',false],
+        ['Pro','Até 5 veículos','R$ 95','mês','#8b5cf6',true],
+        ['Frota','Até 20 veículos','R$ 15','veículo/mês','#16a34a',false],
+      ].map(([n,d,p,u,c,dest])=>`
+      <div style="border:${dest?`2px solid ${c}`:'1px solid #e2e8f0'};border-radius:14px;padding:16px;background:${dest?c+'0d':'#fff'};position:relative">
+        ${dest?`<div style="position:absolute;top:-10px;right:16px;background:${c};color:#fff;border-radius:99px;padding:3px 12px;font-size:10px;font-weight:800">Mais popular</div>`:''}
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:15px;font-weight:900;color:${c}">${n}</div>
+            <div style="font-size:12px;color:#64748b;margin-top:2px">${d}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:22px;font-weight:900;color:#1e293b">${p}<span style="font-size:12px;font-weight:500;color:#64748b">/${u}</span></div>
+          </div>
+        </div>
+      </div>`).join('')}
+    </div>
+    <div style="text-align:center;margin-top:20px;padding:14px;background:#fef3c7;border-radius:12px;max-width:420px;margin-left:auto;margin-right:auto;margin-top:16px">
+      <div style="font-size:13px;font-weight:700;color:#92400e">💡 Com 3 carros o Frotando custa apenas R$ 45/mês</div>
+      <div style="font-size:12px;color:#b45309;margin-top:3px">Menos de 2,5% da sua receita mensal</div>
+    </div>
+  </section>
+
+  <!-- CTA FINAL -->
+  <section style="padding:44px 20px 32px;background:linear-gradient(160deg,#0d2b3e 0%,#1e4d6b 100%);text-align:center">
+    <h2 style="font-size:24px;font-weight:900;color:#fff;margin-bottom:8px">Comece agora, de graça</h2>
+    <p style="font-size:14px;color:rgba(255,255,255,.6);margin-bottom:24px">30 dias grátis. Sem cartão. Sem compromisso.</p>
+    <button onclick="irParaCadastro()" style="background:#f59e0b;color:#0d2b3e;border:none;border-radius:12px;padding:16px 32px;font-size:16px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 4px 20px rgba(245,158,11,.4);width:100%;max-width:320px">Criar conta gratuita →</button>
+    <div style="margin-top:16px;font-size:12px;color:rgba(255,255,255,.3)">Dúvidas? (31) 97572-7717 · frotando.com.br</div>
+  </section>
+
 </div>
 
 <!-- LOGIN (oculto inicialmente) -->
@@ -754,9 +886,9 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div id="ins-body" style="padding:14px 14px 0"></div>
   </div>
 </div>
-<div id="mc" class="mo" onclick="fecharModal('mc')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt" id="mc-t">Carro</div><div class="fi"><label>Placa *</label><input id="mc-placa" type="text" placeholder="ABC-1234" style="text-transform:uppercase"></div><div class="fi"><label>Modelo *</label><input id="mc-modelo" type="text" placeholder="VW Gol 1.0 2023"></div><div class="fi"><label>Cor</label><input id="mc-cor" type="text" placeholder="Branco"></div><div class="fi"><label>RENAVAM</label><input id="mc-ren" type="text"></div><div class="fi"><label>KM atual</label><input id="mc-km" type="number" placeholder="0"></div><div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarCarro()">Salvar</button><button class="bt btg" onclick="fecharModal('mc')">Cancelar</button></div></div></div>
+<div id="mc" class="mo" onclick="fecharModal('mc')"><div class="ms" onclick="event.stopPropagation()" style="max-height:85dvh;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch"><div class="mh"></div><div class="mt" id="mc-t">Carro</div><div class="fi"><label>Placa *</label><input id="mc-placa" type="text" placeholder="ABC-1234" style="text-transform:uppercase"></div><div class="fi"><label>Modelo *</label><input id="mc-modelo" type="text" placeholder="VW Gol 1.0 2023"></div><div class="fi"><label>Cor</label><input id="mc-cor" type="text" placeholder="Branco"></div><div class="fi"><label>RENAVAM</label><input id="mc-ren" type="text"></div><div class="fi"><label>KM atual</label><input id="mc-km" type="number" placeholder="0"></div><div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarCarro()">Salvar</button><button class="bt btg" onclick="fecharModal('mc')">Cancelar</button></div></div></div>
 
-<div id="mm" class="mo" onclick="fecharModal('mm')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt" id="mm-t">Motorista</div><div class="fi"><label>Nome *</label><input id="mm-nome" type="text"></div><div class="fi"><label>CPF *</label><input id="mm-cpf" type="text" placeholder="000.000.000-00"></div><div class="fi"><label>RG</label><input id="mm-rg" type="text"></div><div class="fi"><label>CNH</label><input id="mm-cnh" type="text"></div><div class="fi"><label>Validade CNH</label><input id="mm-vcnh" type="date"></div><div class="fi"><label>Telefone</label><input id="mm-tel" type="tel"></div><div class="fi"><label>Endereço completo</label><input id="mm-end" type="text" placeholder="Rua, nº, Bairro, Cidade/UF, CEP"></div><div class="fi"><label>Plataformas</label><input id="mm-plat" type="text" placeholder="Uber, 99..."></div><div class="fi"><label>Avaliação</label><input id="mm-nota" type="text" placeholder="4.90"></div><div style="margin-bottom:12px">
+<div id="mm" class="mo" onclick="fecharModal('mm')"><div class="ms" onclick="event.stopPropagation()" style="max-height:85dvh;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch"><div class="mh"></div><div class="mt" id="mm-t">Motorista</div><div class="fi"><label>Nome *</label><input id="mm-nome" type="text"></div><div class="fi"><label>CPF *</label><input id="mm-cpf" type="text" placeholder="000.000.000-00"></div><div class="fi"><label>RG</label><input id="mm-rg" type="text"></div><div class="fi"><label>CNH</label><input id="mm-cnh" type="text"></div><div class="fi"><label>Validade CNH</label><input id="mm-vcnh" type="date"></div><div class="fi"><label>Telefone</label><input id="mm-tel" type="tel"></div><div class="fi"><label>Endereço completo</label><input id="mm-end" type="text" placeholder="Rua, nº, Bairro, Cidade/UF, CEP"></div><div class="fi"><label>Plataformas</label><input id="mm-plat" type="text" placeholder="Uber, 99..."></div><div class="fi"><label>Avaliação</label><input id="mm-nota" type="text" placeholder="4.90"></div><div style="margin-bottom:12px">
   <label style="font-size:11px;font-weight:700;color:var(--txm);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px">Foto do motorista</label>
   <div style="display:flex;align-items:center;gap:12px">
     <div id="mm-foto-preview" style="width:72px;height:72px;border-radius:50%;background:var(--bg);border:2px dashed var(--sll);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;font-size:28px">👤</div>
@@ -1071,6 +1203,12 @@ const INIT_DATA={
 // Carregar dados (ou inicializar)
 let DB={};
 const SCHEMA_VER=4; // incrementar ao mudar estrutura de dados
+
+// Dados vazios para novos usuários (sem demo)
+const EMPTY_DATA={
+  config:{nome:'',cpf:'',pix:'',alug:600,cauc:1400,kmLim:7000,kmVal:0.80,segVal:0,rasVal:0},
+  carros:[],motos:[],locs:[],pags:[],evs:[],kms:[],fins:[],semAtual:[]
+};
 function loadDB(){
   const savedVer=LS.get('schema_ver')||0;
   if(savedVer<SCHEMA_VER){
@@ -5527,7 +5665,19 @@ async function login(){
     _sbUser=data.user;
     _loginMsg('Carregando dados...','#34d399');
     const temDados=await sbLoad();
-    if(!temDados) loadDB(); else _migrarDataVenc();
+    if(!temDados){
+      // Sem dados na nuvem: carregar vazio para clientes, demo para admin
+      if(_sbUser?.email===ADMIN_EMAIL){
+        loadDB(); // admin vê dados demo
+      } else {
+        const chaves=['config','carros','motos','locs','pags','evs','kms','fins','semAtual'];
+        chaves.forEach(k=>{
+          DB[k]=Array.isArray(EMPTY_DATA[k])?[...EMPTY_DATA[k]]:{...EMPTY_DATA[k]};
+          LS.set(k,DB[k]);
+        });
+        LS.set('schema_ver',SCHEMA_VER);
+      }
+    } else _migrarDataVenc();
     gerarParcelasPendentes();
     _entrarNoApp();
     _carregarPlano();
@@ -5546,9 +5696,13 @@ async function cadastrar(){
   const{data,error}=await _sb.auth.signUp({email,password:senha});
   if(error){_loginMsg(error.message,'#f87171');_setBtnLogin(false);return;}
   _sbUser=data.user;
-  loadDB();
-  // Salvar dados iniciais no Supabase
+  // Novo usuário: iniciar com dados VAZIOS (sem demo)
   const chaves=['config','carros','motos','locs','pags','evs','kms','fins','semAtual'];
+  chaves.forEach(k=>{
+    DB[k]=Array.isArray(EMPTY_DATA[k])?[...EMPTY_DATA[k]]:{...EMPTY_DATA[k]};
+    LS.set(k,DB[k]);
+  });
+  LS.set('schema_ver',SCHEMA_VER);
   await Promise.all(chaves.map(k=>sbSync(k)));
   _loginMsg('Conta criada! ✓','#34d399');
   setTimeout(()=>{_entrarNoApp();setTimeout(()=>_obAbrir(),800);},600);
@@ -5760,6 +5914,19 @@ function _entrarNoApp(){
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
+// iOS keyboard: scroll focused input into view
+document.addEventListener('focusin',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT'){
+    setTimeout(()=>{
+      e.target.scrollIntoView({behavior:'smooth',block:'center'});
+    },300);
+  }
+});
+// iOS keyboard dismiss: restore scroll
+document.addEventListener('focusout',()=>{
+  setTimeout(()=>window.scrollTo(0,0),100);
+});
+
 window.onerror=function(msg,src,line,col,err){
   // Captura erros globais — evita que o app quebre silenciosamente no iOS
   console.error('Frotando error:',msg,'@',line);
@@ -5779,7 +5946,19 @@ document.addEventListener('DOMContentLoaded',async()=>{
       _sbUser=session.user;
       _loginMsg('Carregando seus dados...','#34d399');
       const temDados=await sbLoad();
-      if(!temDados) loadDB(); else _migrarDataVenc();
+      if(!temDados){
+      // Sem dados na nuvem: carregar vazio para clientes, demo para admin
+      if(_sbUser?.email===ADMIN_EMAIL){
+        loadDB(); // admin vê dados demo
+      } else {
+        const chaves=['config','carros','motos','locs','pags','evs','kms','fins','semAtual'];
+        chaves.forEach(k=>{
+          DB[k]=Array.isArray(EMPTY_DATA[k])?[...EMPTY_DATA[k]]:{...EMPTY_DATA[k]};
+          LS.set(k,DB[k]);
+        });
+        LS.set('schema_ver',SCHEMA_VER);
+      }
+    } else _migrarDataVenc();
       gerarParcelasPendentes();
       _entrarNoApp();
       _carregarPlano();
