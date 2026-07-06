@@ -126,7 +126,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 <body>
 
 <!-- LANDING PAGE -->
-<div id="lp" style="display:flex;flex-direction:column;min-height:100vh;background:#f0f4f8;color:#1e293b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch">
+<div id="lp" style="display:none;flex-direction:column;background:#f0f4f8;color:#1e293b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;position:fixed;top:0;left:0;right:0;bottom:0;overflow-y:scroll;-webkit-overflow-scrolling:touch;z-index:200">
 
   <!-- NAV -->
   <nav style="background:#fff;border-bottom:1px solid #e2e8f0;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10">
@@ -6219,13 +6219,11 @@ function _mostrarLanding(){
   const ls=document.getElementById('ls');
   const nav=document.getElementById('nav');
   const app=document.getElementById('app');
-  if(lp){lp.style.display='flex';lp.style.overflowY='auto';lp.scrollTop=0;}
+  if(lp){lp.style.display='flex';lp.style.flexDirection='column';lp.scrollTop=0;}
   if(ls) ls.style.display='none';
   if(nav){nav.classList.remove('nav-visible');nav.style.cssText='display:none!important';}
   if(app) app.style.display='none';
-  // Landing gerencia o scroll internamente
-  document.body.style.overflow='hidden';
-  document.documentElement.style.overflow='hidden';
+  // Landing usa position:fixed com overflow:scroll próprio
 }
 
 function irParaLogin(){
@@ -6410,8 +6408,7 @@ function _entrarNoApp(){
   document.getElementById('sc-dash').classList.add('on');
   // Mostrar botão admin se for o administrador
   setTimeout(()=>{const ab=document.getElementById('btn-admin');if(ab) ab.style.display=_isAdmin()?'block':'none';},500);
-  document.body.style.overflow='hidden';
-  document.documentElement.style.overflow='hidden';
+
   // Service Worker e notificações
   _registrarSW().then(()=>{
     _atualizarBtnNotificacao();
