@@ -41,7 +41,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 #ct{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nh) + var(--sb) + 8px)}
 #ct>.sc{padding:14px;display:none;animation:fu .22s ease}
 #ct>.sc.on{display:block}
-#nav{position:fixed;bottom:0;left:0;right:0;background:var(--p);height:calc(var(--nh) + var(--sb));padding-bottom:var(--sb);display:flex;align-items:flex-start;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;z-index:100;box-shadow:0 -2px 10px #0004;border-top:1px solid rgba(255,255,255,.07);scrollbar-width:none}
+#nav{position:fixed;bottom:0;left:0;right:0;background:var(--p);height:calc(var(--nh) + var(--sb));padding-bottom:var(--sb);display:none!important;align-items:flex-start;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;z-index:100;box-shadow:0 -2px 10px #0004;border-top:1px solid rgba(255,255,255,.07);scrollbar-width:none}
+#nav.nav-visible{display:flex!important}
 #nav::-webkit-scrollbar{display:none}
 .fpag{flex-shrink:0;border:1.5px solid var(--sll);border-radius:20px;padding:4px 11px;font-size:11px;font-weight:700;background:transparent;color:var(--txm);cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
 .fpag.on{background:var(--p);color:#fff;border-color:var(--p)}
@@ -434,12 +435,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 
     <!-- PAGAMENTOS -->
     <div class="sc" id="sc-pag">
-      <!-- Semana atual -->
-      <div style="background:var(--p);border-radius:13px;padding:13px 15px;margin-bottom:10px">
-        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Semana atual</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:8px">Toque no circulo para confirmar o PIX recebido</div>
-        <div id="pay-list"></div>
-      </div>
+      <!-- pay-list mantido para compatibilidade mas oculto -->
+      <div id="pay-list" style="display:none"></div>
       <!-- KPIs compactos -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:10px">
         <div style="background:var(--card);border-radius:10px;padding:8px 6px;text-align:center"><div style="font-size:9px;color:var(--txm);font-weight:700;text-transform:uppercase">Recebido</div><div style="font-size:13px;font-weight:900;color:var(--g)" id="kpi-rec">R$ 0</div></div>
@@ -964,7 +961,10 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
   </div>
 </div>
 <div id="ml-cauc-resumo" style="background:rgba(42,106,154,.08);border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:12px;display:none"></div>
-<div class="fi"><label>KM inicial</label><input id="ml-km" type="number" placeholder="0"></div><div class="fi"><label>Dia de vencimento semanal</label><select id="ml-diavenc"><option value="0">Domingo</option><option value="1">Segunda-feira</option><option value="2">Terca-feira</option><option value="3">Quarta-feira</option><option value="4">Quinta-feira</option><option value="5">Sexta-feira</option><option value="6" selected>Sabado</option></select></div><div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarLoc()">Criar contrato</button><button class="bt btg" onclick="fecharModal('ml')">Cancelar</button></div></div></div>
+<div class="fi"><label>KM inicial</label><input id="ml-km" type="number" placeholder="0"></div><div class="fi"><label>Dia de vencimento semanal</label><select id="ml-diavenc"><option value="0">Domingo</option><option value="1">Segunda-feira</option><option value="2">Terca-feira</option><option value="3">Quarta-feira</option><option value="4">Quinta-fera</option><option value="5">Sexta-feira</option><option value="6" selected>Sabado</option></select></div>
+<div class="fi"><label>Comarca (foro do contrato)</label><input id="ml-comarca" type="text" placeholder="Ex: Belo Horizonte"></div>
+<div class="fi"><label>Uso do veículo</label><select id="ml-uso"><option value="exclusivo">Exclusivo para transporte de passageiros por aplicativo</option><option value="misto">Transporte de passageiros por aplicativo e uso particular</option></select></div>
+<div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarLoc()">Criar contrato</button><button class="bt btg" onclick="fecharModal('ml')">Cancelar</button></div></div></div>
 
 <div id="mp" class="mo" onclick="fecharModal('mp')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt">Registrar Pagamento</div><div class="fi"><label>Contrato *</label><select id="mp-loc" onchange="_mpOnLocChange()"></select></div><div class="fi"><label>Semana *</label><select id="mp-sem-sel" onchange="mpAtualizarSemana()"><option value="">Selecione...</option></select></div><div class="fi"><label>Valor (R$) *</label><input id="mp-val" type="number" placeholder="600"></div><div class="fi"><label>Data pagamento</label><input id="mp-data" type="date"></div><div class="fi"><label>Dias de atraso</label><input id="mp-atr" type="number" placeholder="0"></div><div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarPag()">Registrar</button><button class="bt btg" onclick="fecharModal('mp')">Cancelar</button></div></div></div>
 
@@ -1375,6 +1375,13 @@ function abrirModal(id,dados){
     sm.innerHTML='<option value="">Selecionar...</option>';
     DB.motos.filter(m=>m.status==='Ativo').forEach(m=>{const o=document.createElement('option');o.value=m.id;o.textContent=m.nome;sm.appendChild(o);});
     if(!dados.id) document.getElementById('ml-inicio').value=today();
+    // Comarca: default da cidade do endereço do locador
+    const comarcaEl=document.getElementById('ml-comarca');
+    if(comarcaEl&&!dados.comarca){
+      const end=DB.config?.endereco||'';
+      const cidadeMatch=end.match(/,([^,/]+)\/[A-Z]{2}/);
+      comarcaEl.value=cidadeMatch?cidadeMatch[1].trim():'';
+    }
     document.getElementById('ml-val').value=DB.config.alug||600;
     document.getElementById('ml-cauc').value=DB.config.cauc||1400;
   }
@@ -1543,6 +1550,8 @@ function salvarLoc(){
     cauc:caucValTotal,caucModo,caucParcSem,caucSemanas,caucPago:caucModo==='integral'?caucValTotal:0,
     kmIni:Number(document.getElementById('ml-km').value)||0,
     kmLim:Number(document.getElementById('ml-kmlim')?.value)||DB.config.kmLim||7000,
+    comarca:document.getElementById('ml-comarca')?.value?.trim()||'',
+    uso:document.getElementById('ml-uso')?.value||'exclusivo',
     diaVenc,status:'Ativa'
   };
   DB.locs.push(loc);
@@ -3227,24 +3236,62 @@ function salvarCfg(){
   };
   saveDB('config');markDirty('dash','rel','contrato');toast('Configurações salvas! ✓');
 }
-async function resetarDados(){
-  if(!confirm('Resetar TODOS os dados? Esta ação não pode ser desfeita.')) return;
-  // Limpar localStorage
+function resetarDados(){
+  // Modal de confirmação seguro
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML=`<div style="background:var(--card);border-radius:16px;padding:24px;width:100%;max-width:380px">
+    <div style="font-size:22px;text-align:center;margin-bottom:8px">⚠️</div>
+    <div style="font-size:16px;font-weight:900;color:var(--r);text-align:center;margin-bottom:6px">Resetar todos os dados?</div>
+    <div style="font-size:12px;color:var(--txm);text-align:center;margin-bottom:16px;line-height:1.5">Esta ação apagará <strong>permanentemente</strong> todos os seus dados do localStorage e do banco de dados na nuvem.<br><br>Apenas os seus dados serão apagados.</div>
+    <div style="font-size:11px;color:var(--txm);margin-bottom:6px">Digite <strong>RESETAR</strong> para confirmar:</div>
+    <input id="reset-confirm-inp" type="text" placeholder="RESETAR" style="width:100%;background:var(--bg);border:2px solid var(--sll);border-radius:9px;padding:10px 12px;font-size:14px;color:var(--tx);font-family:inherit;margin-bottom:12px">
+    <div style="display:flex;gap:8px">
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="flex:1;background:var(--bg);color:var(--txm);border:1px solid var(--sll);border-radius:9px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Cancelar</button>
+      <button id="reset-confirm-btn" onclick="_confirmarReset(this)" style="flex:1;background:var(--r);color:#fff;border:none;border-radius:9px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Apagar dados</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(()=>document.getElementById('reset-confirm-inp')?.focus(),100);
+}
+
+async function _confirmarReset(btn){
+  const inp=document.getElementById('reset-confirm-inp');
+  if(!inp||inp.value.trim().toUpperCase()!=='RESETAR'){
+    inp.style.border='2px solid var(--r)';
+    inp.placeholder='Digite RESETAR';
+    inp.focus();
+    return;
+  }
+  btn.textContent='Apagando...';btn.disabled=true;
+  // Remover overlay
+  btn.closest('div[style*="position:fixed"]').remove();
+  // Limpar localStorage — apenas chaves deste usuário
   ['config','carros','motos','locs','pags','evs','kms','fins','semAtual','schema_ver'].forEach(k=>LS.del(k));
   LS.set('schema_ver',SCHEMA_VER);
-  // Limpar dados na nuvem se estiver logado
+  // Limpar dados na nuvem — APENAS do usuário logado
   if(_sbUser&&_sb){
     try{
-      await _sb.from('frotando_data').delete().eq('user_id',_sbUser.id);
-      toast('Dados resetados (local e nuvem) ✓','info');
+      const{error}=await _sb.from('frotando_data').delete().eq('user_id',_sbUser.id);
+      if(error) throw error;
+      toast('Dados apagados com sucesso (local + nuvem) ✓','info');
     }catch(e){
       console.error('Erro ao limpar nuvem:',e);
-      toast('Dados locais resetados (erro ao limpar nuvem)','info');
+      toast('Dados locais apagados (erro na nuvem: '+e.message+')','er');
     }
   } else {
-    toast('Dados resetados com sucesso','info');
+    toast('Dados apagados localmente ✓','info');
   }
-  loadDB();
+  // Carregar estado vazio (não demo) para usuários não-admin
+  if(_sbUser?.email===ADMIN_EMAIL){
+    loadDB();
+  } else {
+    const chaves=['config','carros','motos','locs','pags','evs','kms','fins','semAtual'];
+    chaves.forEach(k=>{
+      DB[k]=Array.isArray(EMPTY_DATA[k])?[...EMPTY_DATA[k]]:{...EMPTY_DATA[k]};
+      LS.set(k,DB[k]);
+    });
+  }
   _rendered.clear();
   markDirty('dash','carros','motos','loc','pag','ev','km','financ','rel','cfg');
   renderDash();
@@ -4429,7 +4476,7 @@ A entrega e a devolução serão formalizadas pelos anexos próprios, com data, 
 
 Cabe ao LOCADOR entregar o veículo em condições regulares de uso e com documentação de circulação disponível; arcar com IPVA, licenciamento e tributos ordinários; autorizar manutenção preventiva e corretiva por desgaste natural não causado pelo LOCATÁRIO; e orientar sobre revisão, seguro/proteção, rastreador e comunicação de sinistros.
 
-O LOCADOR não é obrigado a fornecer veículo reserva. Se o veículo ficar parado por manutenção causada exclusivamente por desgaste natural por mais de 24 (vinte e quatro) horas, o aluguel poderá ser abatido proporcionalmente apenas pelo período excedente.
+O LOCADOR não é obrigado a fornecer veículo reserva. Se o veículo ficar parado por manutenção causada exclusivamente por desgaste natural ou vício anterior não imputável ao LOCATÁRIO por mais de 24 (vinte e quatro) horas, o aluguel será abatido proporcionalmente apenas pelo período excedente, sem indenização por lucros cessantes, corridas perdidas ou faturamento esperado.
 
 
 9. OBRIGAÇÕES DO LOCATÁRIO
@@ -4476,10 +4523,10 @@ Este contrato é exclusivamente de locação de bem móvel. Não gera vínculo t
 
 Ao final da locação ou após rescisão, o LOCATÁRIO devolverá imediatamente o veículo ao LOCADOR, em Belo Horizonte/MG ou local indicado, com chaves, documentos, acessórios e itens recebidos. A não devolução autoriza cobrança de aluguel até a restituição e multa não compensatória de 2 (duas) semanas de aluguel (${multa2sem}).
 
-Comunicações por WhatsApp, e-mail ou meio eletrônico informado serão válidas se comprovado o envio. A tolerância não gera novação nem renúncia. Alterações só valerão por escrito. Assinado por 2 (duas) testemunhas, este contrato constitui título executivo extrajudicial. Fica eleito o foro da Comarca de Belo Horizonte/MG.
+Comunicações por WhatsApp, e-mail ou meio eletrônico informado serão válidas se comprovado o envio. A tolerância não gera novação nem renúncia. Alterações só valerão por escrito. Assinado por 2 (duas) testemunhas, este contrato constitui título executivo extrajudicial. Fica eleito o foro da Comarca de ${loc.comarca||cfg.comarca||'Belo Horizonte/MG'}.
 
 
-Belo Horizonte/MG, ${dataExtenso}.
+${loc.comarca||cfg.comarca||'Belo Horizonte/MG'}, ${dataExtenso}.
 
 
 ________________________________________    ________________________________________
@@ -5182,12 +5229,13 @@ function gerarPDF(){
 <div class="clausula">
   <div class="cl-titulo">Cláusula 8ª — Das Disposições Gerais</div>
   <p>Este instrumento é exclusivamente um contrato de locação de bem móvel, não gerando qualquer vínculo empregatício, trabalhista ou societário entre as partes. O Locatário atua com plena autonomia perante as plataformas digitais, passageiros e órgãos públicos, sendo responsável por suas obrigações fiscais e previdenciárias.</p>
-  <p>Quaisquer alterações ao presente contrato somente serão válidas se realizadas por escrito e assinadas por ambas as partes. As partes elegem o foro da Comarca de <b>Belo Horizonte/MG</b> para dirimir eventuais controvérsias. Este instrumento constitui <b>título executivo extrajudicial</b>, nos termos do art. 784 do CPC.</p>
+  <p>O veículo objeto deste contrato destina-se a ${loc.uso==='misto'?'transporte de passageiros por aplicativo e uso particular':'uso exclusivo para transporte de passageiros por meio de plataformas digitais de aplicativo (Uber, 99 e similares)'}.</p>
+  <p>Quaisquer alterações ao presente contrato somente serão válidas se realizadas por escrito e assinadas por ambas as partes. As partes elegem o foro da Comarca de <b>${loc.comarca||cfg.comarca||'Belo Horizonte/MG'}</b> para dirimir eventuais controvérsias. Este instrumento constitui <b>título executivo extrajudicial</b>, nos termos do art. 784 do CPC.</p>
 </div>
 
 <p style="text-align:justify;margin-bottom:20pt">E, por estarem justas e contratadas, as partes assinam o presente instrumento em 2 (duas) vias de igual teor e forma, juntamente com as 2 (duas) testemunhas abaixo.</p>
 
-<div class="local-data">Belo Horizonte/MG, ${dataExt}.</div>
+<div class="local-data">${loc.comarca||cfg.comarca||'Belo Horizonte/MG'}, ${dataExt}.</div>
 
 <div class="assinaturas">
   <div class="assin-par">
@@ -5247,6 +5295,9 @@ function editarLoc(id){
     // Campos numéricos e texto
     const setV=(elId,v)=>{const el=document.getElementById(elId);if(el&&v!==undefined&&v!=='')el.value=v;};
     setV('ml-inicio', l.inicio);   // yyyy-mm-dd — sobrescreve o today()
+    setV('ml-comarca', l.comarca||'');
+    const usoEl=document.getElementById('ml-uso');
+    if(usoEl) usoEl.value=l.uso||'exclusivo';
     setV('ml-val',    l.val);
     setV('ml-cauc',   l.cauc);
     setV('ml-km',     l.kmIni||'');
@@ -5288,6 +5339,8 @@ function salvarEditLoc(id){
     caucModo,caucParcSem,caucSemanas,
     kmLim:Number(document.getElementById('ml-kmlim')?.value)||DB.config.kmLim||7000,
     diaVenc:Number(document.getElementById('ml-diavenc')?.value??6),
+    comarca:document.getElementById('ml-comarca')?.value?.trim()||'',
+    uso:document.getElementById('ml-uso')?.value||'exclusivo',
   };
   DB.locs=DB.locs.map(l=>l.id===id?{...l,...updates}:l);
   saveDB('locs');markDirty('loc','dash','rel');
@@ -5712,7 +5765,7 @@ async function logout(){
   await _sb.auth.signOut();
   _sbUser=null;
   document.getElementById('app').style.display='none';
-  document.getElementById('nav').style.display='none';
+  document.getElementById('nav').classList.remove('nav-visible');
   const l=document.getElementById('ls');l.style.display='flex';l.style.opacity='0';
   setTimeout(()=>{l.style.opacity='1';l.style.transition='opacity .25s';},10);
   _loginMsg('');
@@ -6168,7 +6221,7 @@ function _mostrarLanding(){
   const app=document.getElementById('app');
   if(lp) lp.style.display='flex';
   if(ls) ls.style.display='none';
-  if(nav) nav.style.display='none';
+  if(nav) nav.classList.remove('nav-visible');
   if(app) app.style.display='none';
 }
 
@@ -6348,7 +6401,7 @@ function _entrarNoApp(){
   if(!appEl) return;
   appEl.style.display='flex';
   const navEl=document.getElementById('nav');
-  if(navEl) navEl.style.display='flex';
+  if(navEl) navEl.classList.add('nav-visible');
   document.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   document.getElementById('sc-dash').classList.add('on');
