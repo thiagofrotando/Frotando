@@ -117,8 +117,91 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="ls">
+<!-- LANDING PAGE -->
+<div id="lp" style="display:flex;flex-direction:column;min-height:100vh;overflow-y:auto">
+  <!-- Hero -->
+  <div style="padding:32px 20px 28px;text-align:center">
+    <div style="font-size:52px;margin-bottom:10px">🚗</div>
+    <div style="font-size:38px;font-weight:900;color:#fff;letter-spacing:-1.5px;line-height:1">Frota<span style="color:var(--a)">ndo</span></div>
+    <div style="font-size:15px;color:rgba(255,255,255,.65);margin-top:8px;line-height:1.5">Gestão completa da sua frota<br>para motoristas de Uber e 99</div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:center">
+      <button onclick="irParaLogin()" style="background:var(--a);color:#0d2b3e;border:none;border-radius:11px;padding:13px 24px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;touch-action:manipulation">Entrar &#8594;</button>
+      <button onclick="irParaCadastro()" style="background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.25);border-radius:11px;padding:13px 24px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;touch-action:manipulation">Criar conta grátis</button>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,.35)">30 dias grátis · Sem cartão de crédito</div>
+  </div>
+
+  <!-- Problema -->
+  <div style="background:rgba(0,0,0,.25);padding:20px;margin:0 16px;border-radius:14px;margin-bottom:16px">
+    <div style="font-size:13px;font-weight:800;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Você ainda faz isso?</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:16px">😰</span><span style="font-size:13px;color:rgba(255,255,255,.75)">Controla pagamentos pelo WhatsApp ou caderninho</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:16px">😤</span><span style="font-size:13px;color:rgba(255,255,255,.75)">Esquece quem está devendo caução</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:16px">😩</span><span style="font-size:13px;color:rgba(255,255,255,.75)">Perde horas montando relatório pro contador</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="font-size:16px">😬</span><span style="font-size:13px;color:rgba(255,255,255,.75)">Não tem contrato escrito com o motorista</span></div>
+    </div>
+  </div>
+
+  <!-- Funcionalidades -->
+  <div style="padding:0 16px;margin-bottom:16px">
+    <div style="font-size:15px;font-weight:900;color:#fff;margin-bottom:12px;text-align:center">O Frotando resolve tudo isso</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="background:rgba(255,255,255,.07);border-radius:12px;padding:13px">
+        <div style="font-size:22px;margin-bottom:6px">📅</div>
+        <div style="font-size:12px;font-weight:700;color:#fff">Pagamentos semanais</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Um toque confirma o PIX. Atrasos detectados automático.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.07);border-radius:12px;padding:13px">
+        <div style="font-size:22px;margin-bottom:6px">📋</div>
+        <div style="font-size:12px;font-weight:700;color:#fff">Contrato em 1 minuto</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Documento jurídico completo gerado na hora.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.07);border-radius:12px;padding:13px">
+        <div style="font-size:22px;margin-bottom:6px">💰</div>
+        <div style="font-size:12px;font-weight:700;color:#fff">Caução controlado</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Integral ou parcelado. Ajuste automático nas parcelas.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.07);border-radius:12px;padding:13px">
+        <div style="font-size:22px;margin-bottom:6px">📊</div>
+        <div style="font-size:12px;font-weight:700;color:#fff">Relatório pro contador</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">DRE e fluxo de caixa exportados em PDF.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.07);border-radius:12px;padding:13px">
+        <div style="font-size:22px;margin-bottom:6px">🔍</div>
+        <div style="font-size:12px;font-weight:700;color:#fff">Vistoria na devolução</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Checklist + desconto por avaria + termo de dívida.</div>
+      </div>
+      <div style="background:rgba(255,255,255,.07);border-radius:12px;padding:13px">
+        <div style="font-size:22px;margin-bottom:6px">💡</div>
+        <div style="font-size:12px;font-weight:700;color:#fff">Insights mensais</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Gráficos, ranking de motoristas e alertas automáticos.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preço -->
+  <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:14px;padding:20px;margin:0 16px;margin-bottom:16px;text-align:center">
+    <div style="font-size:13px;font-weight:800;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Investimento</div>
+    <div style="font-size:32px;font-weight:900;color:var(--a)">R$ 15<span style="font-size:16px;font-weight:600;color:rgba(255,255,255,.6)">/mês por veículo</span></div>
+    <div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:6px">Sem fidelidade · Cancele quando quiser</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:14px">
+      <div style="background:rgba(255,255,255,.06);border-radius:8px;padding:8px;font-size:12px;color:rgba(255,255,255,.7)">1 carro = <strong style="color:var(--a)">R$ 29/mês</strong></div>
+      <div style="background:rgba(255,255,255,.06);border-radius:8px;padding:8px;font-size:12px;color:rgba(255,255,255,.7)">3 carros = <strong style="color:var(--a)">R$ 45/mês</strong></div>
+      <div style="background:rgba(255,255,255,.06);border-radius:8px;padding:8px;font-size:12px;color:rgba(255,255,255,.7)">5 carros = <strong style="color:var(--a)">R$ 95/mês</strong></div>
+      <div style="background:rgba(255,255,255,.06);border-radius:8px;padding:8px;font-size:12px;color:rgba(255,255,255,.7)">10 carros = <strong style="color:var(--a)">R$ 150/mês</strong></div>
+    </div>
+  </div>
+
+  <!-- CTA final -->
+  <div style="padding:20px 16px 40px;text-align:center">
+    <button onclick="irParaCadastro()" style="width:100%;background:var(--a);color:#0d2b3e;border:none;border-radius:13px;padding:16px;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit;touch-action:manipulation;margin-bottom:10px">Testar grátis por 30 dias &#8594;</button>
+    <button onclick="irParaLogin()" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline">Já tenho conta — entrar</button>
+    <div style="margin-top:16px;font-size:10px;color:rgba(255,255,255,.2)">frotando-app.netlify.app · Dúvidas? (31) 97572-7717</div>
+  </div>
+</div>
+
+<!-- LOGIN (oculto inicialmente) -->
+<div id="ls" style="display:none">
   <div style="text-align:center;margin-bottom:24px">
     <div style="font-size:48px;margin-bottom:8px">🚗</div>
     <div style="font-size:36px;font-weight:900;color:#fff;letter-spacing:-1px">Frota<span style="color:var(--a)">ndo</span></div>
@@ -126,15 +209,18 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
   </div>
   <div class="lc">
     <div class="lf"><label>E-MAIL</label><input type="email" id="ie" placeholder="seu@email.com"></div>
-    <div class="lf"><label>SENHA</label><input type="password" id="is" placeholder="••••••••"></div>
+    <div class="lf"><label>SENHA</label><input type="password" id="is" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"></div>
     <button class="bt btp btf" id="btn-login" style="font-size:15px;padding:13px;margin-top:4px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent" onclick="login()">Entrar &#8594;</button>
-    <button class="bt btf" style="margin-top:8px;background:rgba(255,255,255,.07);color:rgba(255,255,255,.7);border:1.5px solid rgba(255,255,255,.2);font-size:12px;padding:10px" onclick="cadastrar()">Criar conta gratuita</button>
+    <button class="bt btf" id="btn-cadastro" style="margin-top:8px;background:rgba(255,255,255,.07);color:rgba(255,255,255,.7);border:1.5px solid rgba(255,255,255,.2);font-size:12px;padding:10px" onclick="cadastrar()">Criar conta gratuita</button>
     <div style="text-align:center;margin-top:10px">
       <button onclick="esqueceuSenha()" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline">Esqueci minha senha</button>
     </div>
     <div id="login-msg" style="margin-top:6px;font-size:12px;text-align:center;color:rgba(255,255,255,.55);min-height:18px"></div>
+    <div style="text-align:center;margin-top:12px">
+      <button onclick="voltarLanding()" style="background:none;border:none;color:rgba(255,255,255,.3);font-size:11px;cursor:pointer;font-family:inherit">&#8592; Voltar</button>
+    </div>
   </div>
-  <div style="margin-top:16px;font-size:10px;color:rgba(255,255,255,.18)">Frotando v2.0 · Dados salvos localmente no dispositivo</div>
+  <div style="margin-top:16px;font-size:10px;color:rgba(255,255,255,.18)">Frotando v2.0 · Dados salvos na nuvem</div>
 </div>
 
 <!-- APP -->
@@ -171,6 +257,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       </div>
       <!-- Financiamentos -->
       <div class="cd" style="margin-top:10px" id="cd-financ-dash"></div>
+      <!-- Badge de uso do plano -->
+      <div id="cd-plano-uso" style="margin-top:10px;display:none"></div>
       <!-- Insights -->
       <button onclick="abrirInsights()" style="width:100%;margin-top:12px;background:linear-gradient(135deg,#0d2b3e 0%,#1e4d6b 100%);color:#fff;border:none;border-radius:13px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;font-family:inherit;text-align:left">
         <span style="font-size:26px;line-height:1">💡</span>
@@ -238,6 +326,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       <!-- Lista de pagamentos -->
       <div id="hist-pag"></div>
       <button class="bt btp btf" style="margin-top:4px" onclick="abrirModal('mp',{})">+ Registrar pagamento</button>
+      <button class="bt btf bts" style="margin-top:6px;background:rgba(37,211,102,.15);color:#25D366;border:1px solid rgba(37,211,102,.3)" onclick="cobrarTodosAtrasados()">&#128172; Cobrar todos em atraso</button>
       <button class="bt btf" style="margin-top:6px;background:var(--a);color:#fff" onclick="abrirModalCaucAntecip()">💰 Pagar caução antecipado</button>
       <button class="bt btg btf bts" style="margin-top:6px" onclick="abrirExtratoInline()">Importar extrato bancario (OFX/CSV)</button>
       <!-- Extrato inline -->
@@ -435,6 +524,23 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       <div id="lista-financ"></div>
 
     </div><!-- MODAIS -->
+<!-- MODAL UPGRADE -->
+<div id="m-upgrade" class="mo" onclick="fecharModal('m-upgrade')">
+  <div class="ms" onclick="event.stopPropagation()">
+    <div class="mh"></div>
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-size:36px;margin-bottom:8px">🚀</div>
+      <div style="font-size:18px;font-weight:900;color:var(--p)">Limite do plano atingido</div>
+      <div style="font-size:12px;color:var(--txm);margin-top:4px" id="upg-limite-msg"></div>
+    </div>
+    <div id="upg-planos" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+    <div style="background:var(--bg);border-radius:10px;padding:12px 14px;margin-bottom:14px;text-align:center">
+      <div style="font-size:12px;color:var(--txm);margin-bottom:6px">Para fazer upgrade, entre em contato:</div>
+      <button onclick="_upgWhatsApp()" style="background:#25D366;color:#fff;border:none;border-radius:10px;padding:11px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;width:100%">💬 Falar no WhatsApp</button>
+    </div>
+    <button class="bt btg btf" onclick="fecharModal('m-upgrade')">Fechar</button>
+  </div>
+</div>
 <!-- MODAL ADMIN -->
 <div id="m-admin" style="display:none;position:fixed;inset:0;z-index:400;background:#0d2b3e;overflow-y:auto">
   <div style="padding:16px;max-width:600px;margin:0 auto">
@@ -453,6 +559,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
         <option value="starter">Starter</option>
         <option value="pro">Pro</option>
         <option value="frota">Frota</option>
+        <option value="cortesia">Cortesia</option>
       </select>
     </div>
     <div id="admin-lista"></div>
@@ -859,13 +966,14 @@ async function _carregarPlano(){
     if(data&&!error){
       _plano=data;
       _atualizarBadgePlano();
+      _renderPlanoBadge();
     }
   }catch(e){console.log('Plano nao encontrado, usando trial');}
 }
 
 function _atualizarBadgePlano(){
-  const labels={trial:'Trial',starter:'Starter',pro:'Pro',frota:'Frota'};
-  const cores={trial:'#f59e0b',starter:'#3b82f6',pro:'#8b5cf6',frota:'#16a34a'};
+  const labels={trial:'Trial',starter:'Starter',pro:'Pro',frota:'Frota',cortesia:'Cortesia'};
+  const cores={trial:'#f59e0b',starter:'#3b82f6',pro:'#8b5cf6',frota:'#16a34a',cortesia:'#ec4899'};
   const el=document.getElementById('badge-plano');
   if(!el) return;
   const label=labels[_plano.plano]||'Trial';
@@ -890,11 +998,10 @@ function _podeAdicionarCarro(){
   if(!_plano.ativo){toast('Plano inativo. Entre em contato para reativar.','er');return false;}
   if(_plano.plano==='trial'){
     const dias=_plano.trial_ate?Math.max(0,Math.round((new Date(_plano.trial_ate)-new Date())/86400000)):30;
-    if(dias<=0){toast('Trial expirado. Entre em contato para assinar o Frotando.','er');return false;}
+    if(dias<=0){toast('Trial expirado. Acesse Configurações para fazer upgrade.','er');return false;}
   }
   if(carrosAtivos>=_plano.limite_carros){
-    const nomes={starter:'Starter (2 veículos)',pro:'Pro (5 veículos)',frota:'Frota (20 veículos)',trial:'Trial (2 veículos)'};
-    toast(`Limite do plano ${nomes[_plano.plano]||''} atingido. Fale com o suporte para fazer upgrade.`,'er');
+    abrirUpgrade();
     return false;
   }
   return true;
@@ -1366,7 +1473,8 @@ function renderAdmin(){
         ${u.obs?`<span style="font-size:11px;color:#64748b">· ${u.obs}</span>`:''}
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        ${['trial','starter','pro','frota'].map(p=>`<button onclick="_adminSetPlano('${u.user_id}','${p}')" style="background:${u.plano===p?cor+'33':'rgba(255,255,255,.06)'};color:${u.plano===p?cor:'#94a3b8'};border:1px solid ${u.plano===p?cor+'55':'rgba(255,255,255,.1)'};border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">${p}</button>`).join('')}
+        ${['trial','starter','pro','frota','cortesia'].map(p=>`<button onclick="_adminSetPlano('${u.user_id}','${p}')" style="background:${u.plano===p?cor+'33':'rgba(255,255,255,.06)'};color:${u.plano===p?cor:'#94a3b8'};border:1px solid ${u.plano===p?cor+'55':'rgba(255,255,255,.1)'};border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">${p}</button>`).join('')}
+        ${_isAdmin()&&u.plano==='cortesia'?`<button onclick="_adminEditarLimite('${u.user_id}',${u.limite_carros})" style="background:rgba(236,72,153,.15);color:#ec4899;border:1px solid rgba(236,72,153,.3);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Limite: ${u.limite_carros}</button>`:''}
         <button onclick="_adminToggleAtivo('${u.user_id}',${!u.ativo})" style="background:${u.ativo?'rgba(239,68,68,.15)':'rgba(16,185,129,.15)'};color:${u.ativo?'#f87171':'#34d399'};border:1px solid ${u.ativo?'rgba(239,68,68,.3)':'rgba(16,185,129,.3)'};border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">${u.ativo?'Desativar':'Ativar'}</button>
         <button onclick="_adminEditarObs('${u.user_id}')" style="background:rgba(255,255,255,.06);color:#94a3b8;border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:inherit">Obs</button>
       </div>`;
@@ -1374,15 +1482,30 @@ function renderAdmin(){
   });
 }
 
-const _limites={trial:2,starter:2,pro:5,frota:20};
+const _limites={trial:2,starter:2,pro:5,frota:20,cortesia:5}; // cortesia: admin define manualmente
 
 async function _adminSetPlano(userId,plano){
-  const limite=_limites[plano]||2;
+  let limite=_limites[plano]||2;
+  if(plano==='cortesia'){
+    const inp=prompt('Quantos carros para o plano Cortesia? (5 ou 10)',5);
+    if(inp===null) return;
+    limite=Math.min(10,Math.max(1,parseInt(inp)||5));
+  }
   const trialAte=plano==='trial'?new Date(Date.now()+30*86400000).toISOString().slice(0,10):null;
   const{error}=await _sb.from('frotando_planos').update({plano,limite_carros:limite,trial_ate:trialAte}).eq('user_id',userId);
   if(error){toast('Erro ao atualizar','er');return;}
   _adminData=_adminData.map(u=>u.user_id===userId?{...u,plano,limite_carros:limite}:u);
   renderAdmin();toast('Plano atualizado ✓');
+}
+
+async function _adminEditarLimite(userId,limiteAtual){
+  const inp=prompt('Novo limite de carros para Cortesia:',limiteAtual);
+  if(inp===null) return;
+  const novoLimite=Math.min(10,Math.max(1,parseInt(inp)||5));
+  const{error}=await _sb.from('frotando_planos').update({limite_carros:novoLimite}).eq('user_id',userId);
+  if(error){toast('Erro','er');return;}
+  _adminData=_adminData.map(u=>u.user_id===userId?{...u,limite_carros:novoLimite}:u);
+  renderAdmin();toast('Limite atualizado ✓');
 }
 
 async function _adminToggleAtivo(userId,novoAtivo){
@@ -1400,6 +1523,80 @@ async function _adminEditarObs(userId){
   if(error){toast('Erro','er');return;}
   _adminData=_adminData.map(u=>u.user_id===userId?{...u,obs}:u);
   renderAdmin();toast('Obs salva ✓');
+}
+
+
+// ── PLANO / UPGRADE ───────────────────────────────────────────────────────────
+function _renderPlanoBadge(){
+  const el=document.getElementById('cd-plano-uso');
+  if(!el||_sbUser?.email===ADMIN_EMAIL){if(el)el.style.display='none';return;}
+  const total=_plano.limite_carros;
+  const usado=DB.carros.length;
+  const livre=Math.max(0,total-usado);
+  const pct=Math.min(100,Math.round(usado/total*100));
+  const cores={trial:'#f59e0b',starter:'#3b82f6',pro:'#8b5cf6',frota:'#16a34a',cortesia:'#ec4899'};
+  const labels={trial:'Trial',starter:'Starter',pro:'Pro',frota:'Frota',cortesia:'Cortesia'};
+  const cor=cores[_plano.plano]||'#f59e0b';
+  const label=labels[_plano.plano]||'Trial';
+  const corBarra=pct>=100?'var(--r)':pct>=80?'var(--a)':cor;
+  el.style.display='block';
+  el.innerHTML=`<div style="background:var(--card);border-radius:12px;padding:12px 14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:13px;font-weight:800;color:var(--p)">Plano ${label}</span>
+        ${_plano.plano==='trial'&&_plano.trial_ate?`<span style="font-size:10px;color:var(--a)">(${Math.max(0,Math.round((new Date(_plano.trial_ate)-new Date())/86400000))}d restantes)</span>`:''}
+      </div>
+      <div style="font-size:12px;font-weight:700;color:${corBarra}">${usado} de ${total} carros</div>
+    </div>
+    <div style="background:var(--bg);border-radius:99px;height:7px;overflow:hidden">
+      <div style="background:${corBarra};width:${pct}%;height:7px;border-radius:99px;transition:width .3s"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+      <div style="font-size:11px;color:var(--txm)">${livre>0?livre+' vaga(s) disponível(is)':'<span style=\"color:var(--r);font-weight:700\">Limite atingido</span>'}</div>
+      ${pct>=100?`<button onclick="abrirUpgrade()" style="background:var(--a);color:#fff;border:none;border-radius:7px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Fazer upgrade →</button>`:''}
+    </div>
+  </div>`;
+}
+
+function abrirUpgrade(){
+  const usado=DB.carros.length;
+  const total=_plano.limite_carros;
+  const msgEl=document.getElementById('upg-limite-msg');
+  if(msgEl) msgEl.textContent=`Você usa ${usado} de ${total} carros no plano atual.`;
+
+  const planosEl=document.getElementById('upg-planos');
+  if(planosEl){
+    const opcoes=[
+      {plano:'starter',label:'Starter',carros:2,preco:29,desc:'Fixo por mês'},
+      {plano:'pro',    label:'Pro',    carros:5,preco:95,desc:'R$ 19/carro · até 5 carros'},
+      {plano:'frota',  label:'Frota',  carros:20,preco:null,desc:'R$ 15/carro · até 20 carros'},
+    ];
+    const cores={starter:'#3b82f6',pro:'#8b5cf6',frota:'#16a34a'};
+    planosEl.innerHTML=opcoes.map(op=>{
+      const cor=cores[op.plano];
+      const atual=_plano.plano===op.plano;
+      const precoStr=op.preco?`R$ ${op.preco}/mês`:'A partir de R$ 90/mês';
+      return `<div style="border:2px solid ${atual?cor:'var(--sll)'};border-radius:11px;padding:11px 13px;background:${atual?cor+'11':'var(--bg)'}">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:800;font-size:14px;color:${cor}">${op.label} ${atual?'(atual)':''}</div>
+            <div style="font-size:11px;color:var(--txm);margin-top:2px">Até ${op.carros} carros · ${op.desc}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:15px;font-weight:900;color:${cor}">${precoStr}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  const el=document.getElementById('m-upgrade');
+  if(el){el.style.pointerEvents='all';el.style.display='flex';requestAnimationFrame(()=>el.classList.add('on'));}
+}
+
+function _upgWhatsApp(){
+  const msg=encodeURIComponent(`Olá! Estou usando o Frotando e gostaria de fazer upgrade do meu plano. Plano atual: ${_plano.plano} (${DB.carros.length}/${_plano.limite_carros} carros). Usuário: ${_sbUser?.email||''}`);
+  window.open(`https://wa.me/5531975727717?text=${msg}`,'_blank');
 }
 
 // ── ONBOARDING ────────────────────────────────────────────────────────────────
@@ -2557,6 +2754,7 @@ function _renderDashExtras(){
     </div>`;
   // Financiamentos
   const cfd=document.getElementById('cd-financ-dash');cfd.innerHTML=`<div class="st">Financiamentos</div>`;
+  _renderPlanoBadge();
   DB.fins.filter(f=>f.status==='Ativo').forEach(f=>{
     const c=cCar(f.carroId);const pct=Math.round(f.npg/f.nparcelas*100);
     cfd.innerHTML+=`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="font-weight:600">${c?.placa||'?'} — ${f.npg}/${f.nparcelas}</span><span style="color:var(--r);font-weight:700">${R(calcSaldo(f))}</span></div><div class="pb"><div class="pf" style="width:${pct}%;background:var(--pl)"></div></div><div style="font-size:10px;color:var(--txm);margin-top:2px">${f.parcela.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}/mês · ${f.nparcelas-f.npg} restantes</div></div>`;
@@ -5356,11 +5554,53 @@ async function cadastrar(){
   setTimeout(()=>{_entrarNoApp();setTimeout(()=>_obAbrir(),800);},600);
 }
 
+
+// ── LANDING PAGE & NAVEGAÇÃO ──────────────────────────────────────────────────
+function _mostrarLanding(){
+  const lp=document.getElementById('lp');
+  const ls=document.getElementById('ls');
+  if(lp) lp.style.display='flex';
+  if(ls) ls.style.display='none';
+}
+
+function irParaLogin(){
+  document.getElementById('lp').style.display='none';
+  const ls=document.getElementById('ls');
+  ls.style.display='flex';
+  // Focar no email
+  setTimeout(()=>document.getElementById('ie')?.focus(),200);
+  // Garantir botão como login
+  const btn=document.getElementById('btn-cadastro');
+  if(btn){btn.textContent='Criar conta gratuita';btn.onclick=cadastrar;}
+}
+
+function irParaCadastro(){
+  document.getElementById('lp').style.display='none';
+  const ls=document.getElementById('ls');
+  ls.style.display='flex';
+  setTimeout(()=>document.getElementById('ie')?.focus(),200);
+  // Destacar botão de cadastro
+  const btn=document.getElementById('btn-cadastro');
+  if(btn){
+    btn.style.background='rgba(245,158,11,.2)';
+    btn.style.border='1.5px solid var(--a)';
+    btn.style.color='var(--a)';
+  }
+}
+
+function voltarLanding(){
+  document.getElementById('ls').style.display='none';
+  document.getElementById('lp').style.display='flex';
+  _loginMsg('');
+  _setBtnLogin(false);
+}
+
+// ── RECUPERAÇÃO DE SENHA ──────────────────────────────────────────────────────
 async function esqueceuSenha(){
   const email=document.getElementById('ie')?.value?.trim();
   if(!email){_loginMsg('Digite seu e-mail acima primeiro','#fbbf24');return;}
   if(!_sb&&!_initSB()){_loginMsg('Erro de conexão','#f87171');return;}
-  _loginMsg('Enviando link de recuperação...','#fbbf24');
+  _loginMsg('Enviando link...','#fbbf24');
   const{error}=await _sb.auth.resetPasswordForEmail(email,{
     redirectTo:'https://frotando-app.netlify.app'
   });
@@ -5370,6 +5610,125 @@ async function esqueceuSenha(){
     _loginMsg('✓ Link enviado para '+email+'. Verifique seu e-mail.','#34d399');
   }
 }
+
+function _verificarTokenRecuperacao(){
+  // Supabase coloca o token de recuperação na URL como hash
+  const hash=window.location.hash;
+  if(hash&&hash.includes('type=recovery')){
+    // Mostrar modal para nova senha
+    setTimeout(()=>_abrirModalNovaSenha(),500);
+  }
+}
+
+function _abrirModalNovaSenha(){
+  const overlay=document.createElement('div');
+  overlay.id='modal-nova-senha';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML=`<div style="background:var(--card);border-radius:16px;padding:24px;width:100%;max-width:380px">
+    <div style="font-size:18px;font-weight:900;color:var(--p);margin-bottom:4px">Nova senha</div>
+    <div style="font-size:12px;color:var(--txm);margin-bottom:16px">Digite sua nova senha abaixo.</div>
+    <div class="lf" style="margin-bottom:12px"><label>NOVA SENHA</label><input type="password" id="nova-senha-inp" placeholder="mínimo 6 caracteres" style="background:var(--bg);border:1.5px solid var(--sll);border-radius:10px;padding:12px;font-size:14px;color:var(--tx);font-family:inherit;width:100%"></div>
+    <div class="lf" style="margin-bottom:16px"><label>CONFIRMAR SENHA</label><input type="password" id="nova-senha-conf" placeholder="repita a senha" style="background:var(--bg);border:1.5px solid var(--sll);border-radius:10px;padding:12px;font-size:14px;color:var(--tx);font-family:inherit;width:100%"></div>
+    <div id="nova-senha-msg" style="font-size:12px;color:var(--r);margin-bottom:12px;min-height:16px"></div>
+    <button onclick="_salvarNovaSenha()" style="width:100%;background:var(--a);color:#0d2b3e;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Salvar nova senha</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  // Mostrar tela de login por baixo
+  document.getElementById('lp').style.display='none';
+  document.getElementById('ls').style.display='flex';
+}
+
+async function _salvarNovaSenha(){
+  const senha=document.getElementById('nova-senha-inp')?.value;
+  const conf=document.getElementById('nova-senha-conf')?.value;
+  const msg=document.getElementById('nova-senha-msg');
+  if(!senha||senha.length<6){if(msg)msg.textContent='Senha deve ter ao menos 6 caracteres';return;}
+  if(senha!==conf){if(msg)msg.textContent='As senhas não coincidem';return;}
+  if(msg)msg.textContent='Salvando...';
+  const{error}=await _sb.auth.updateUser({password:senha});
+  if(error){if(msg)msg.textContent=error.message;return;}
+  document.getElementById('modal-nova-senha')?.remove();
+  // Limpar hash da URL
+  history.replaceState(null,'',window.location.pathname);
+  toast('Senha alterada com sucesso! Faça login.','info');
+}
+
+// ── COBRANÇA VIA WHATSAPP (sábado) ───────────────────────────────────────────
+function _gerarMsgCobranca(p){
+  const mot=cMot(p.motoId);
+  const car=cCar(p.carroId);
+  const loc=DB.locs.find(l=>l.id===p.locId);
+  const cfg=DB.config;
+  const atraso=p.atr||Math.max(0,Math.floor((new Date()-new Date(p.dataVenc+'T12:00:00'))/86400000));
+  const multa=atraso>0?Math.round(p.val*0.02*100)/100:0;
+  const juros=atraso>0?Math.round(p.val*0.01*(atraso/30)*100)/100:0;
+  const total=Math.round((p.val+multa+juros)*100)/100;
+  let msg=`Olá, ${mot?.nome?.split(' ')[0]||'motorista'}! 👋
+
+`;
+  msg+=`Passando para lembrar do pagamento do aluguel do veículo *${car?.placa||'?'}*.
+
+`;
+  msg+=`📅 Semana: *${p.sem||'---'}*
+`;
+  msg+=`💰 Valor: *R$ ${p.val.toFixed(2).replace('.',',')}*`;
+  if(atraso>0){
+    msg+=`
+⚠️ *Pagamento em atraso (${atraso} dia(s))*`;
+    msg+=`
+  Multa (2%): R$ ${multa.toFixed(2).replace('.',',')}`;
+    msg+=`
+  Juros: R$ ${juros.toFixed(2).replace('.',',')}`;
+    msg+=`
+  *Total: R$ ${total.toFixed(2).replace('.',',')}*`;
+  }
+  if(cfg.pix) msg+=`
+
+🔑 PIX: *${cfg.pix}*`;
+  msg+=`
+
+Qualquer dúvida, é só falar. Obrigado! 🙏`;
+  return{msg,tel:mot?.tel||''};
+}
+
+function cobrarWhatsApp(pagId){
+  const p=DB.pags.find(x=>x.id===pagId);
+  if(!p){toast('Pagamento não encontrado','er');return;}
+  const{msg,tel}=_gerarMsgCobranca(p);
+  const telNum=tel.replace(/\D/g,'');
+  const url=telNum?
+    `https://wa.me/55${telNum}?text=${encodeURIComponent(msg)}`:
+    `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  window.open(url,'_blank');
+}
+
+// Botão de cobrança em massa (todos os atrasados)
+function cobrarTodosAtrasados(){
+  const atrasados=DB.pags.filter(p=>!p.pago&&!p.cancelado&&p.dataVenc&&new Date(p.dataVenc+'T12:00:00')<new Date());
+  if(!atrasados.length){toast('Nenhum pagamento atrasado','info');return;}
+  if(!confirm(`Abrir WhatsApp para cobrar ${atrasados.length} motorista(s) em atraso?`)) return;
+  atrasados.forEach((p,i)=>{
+    setTimeout(()=>{
+      const{msg,tel}=_gerarMsgCobranca(p);
+      const telNum=tel.replace(/\D/g,'');
+      const url=telNum?`https://wa.me/55${telNum}?text=${encodeURIComponent(msg)}`:`https://wa.me/?text=${encodeURIComponent(msg)}`;
+      window.open(url,'_blank');
+    },i*800);
+  });
+}
+
+// ── STRIPE (estrutura para automação futura) ──────────────────────────────────
+// Payment Links por plano (substituir pelos links reais do Stripe quando criar)
+const STRIPE_LINKS={
+  starter:'https://buy.stripe.com/XXXXX_starter', // R$ 29/mês - até 2 carros
+  pro:    'https://buy.stripe.com/XXXXX_pro',     // R$ 19/carro - até 5 carros
+  frota:  'https://buy.stripe.com/XXXXX_frota',   // R$ 15/carro - até 20 carros
+};
+// Para usar: window.open(STRIPE_LINKS.pro,'_blank');
+// Webhook Supabase (implementar quando tiver backend):
+// POST /functions/v1/stripe-webhook → atualiza frotando_planos via service_role key
+
+
 
 function _entrarNoApp(){
   _setBtnLogin(false);
@@ -5412,9 +5771,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   [ieEl,isEl].forEach(el=>{
     if(el) el.addEventListener('keydown',e=>{if(e.key==='Enter')login();});
   });
-  // Init Supabase
   _initSB();
-  // Verificar sessão existente
   try{
     if(!_sb) throw new Error('Supabase não inicializado');
     const{data:{session}}=await _sb.auth.getSession();
@@ -5426,16 +5783,22 @@ document.addEventListener('DOMContentLoaded',async()=>{
       gerarParcelasPendentes();
       _entrarNoApp();
       _carregarPlano();
+      const obFeito=LS.get('ob_done');
+      if(!temDados&&!obFeito) setTimeout(()=>_obAbrir(),800);
     } else {
-      // Sem sessão — mostrar tela de login limpa
-      loadDB(); // carrega dados demo locais
+      loadDB();
+      _mostrarLanding();
     }
   }catch(e){
     console.error('init error:',e);
     loadDB();
+    _mostrarLanding();
   }
   updateBadges();
+  _verificarTokenRecuperacao();
 });
 </script>
+</body>
+</html>
 </body>
 </html>
