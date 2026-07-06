@@ -142,6 +142,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
   <div id="tb">
     <div style="width:26px;height:26px;background:var(--a);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">🚗</div>
     <div class="logo">Frota<span>ndo</span></div>
+    <span id="badge-plano" style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44">Trial</span>
     <div class="pt" id="pt"></div>
     <div id="nb" class="nb" style="display:none;margin-left:auto"></div>
   </div>
@@ -420,6 +421,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
         <div class="st">Dados e Backup</div>
         <button class="bt bto btf bts" onclick="exportarCSV()">⬇️ Exportar dados CSV</button>
         <button class="bt btd btf bts" style="margin-top:7px" onclick="resetarDados()">🗑 Resetar todos os dados</button>
+        <button id="btn-admin" class="bt btf bts" style="margin-top:7px;display:none;background:rgba(13,43,62,.12);color:#0d2b3e;border:1px solid rgba(13,43,62,.25)" onclick="abrirAdmin()">⚙️ Painel Admin</button>
       </div>
     </div>
 
@@ -433,6 +435,29 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       <div id="lista-financ"></div>
 
     </div><!-- MODAIS -->
+<!-- MODAL ADMIN -->
+<div id="m-admin" style="display:none;position:fixed;inset:0;z-index:400;background:#0d2b3e;overflow-y:auto">
+  <div style="padding:16px;max-width:600px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:18px;font-weight:900;color:#fff">&#9881; Painel Admin</div>
+      <button onclick="fecharAdmin()" style="background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:8px;padding:7px 12px;font-size:14px;cursor:pointer;font-family:inherit">&#10005; Fechar</button>
+    </div>
+    <!-- KPIs admin -->
+    <div id="admin-kpis" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px"></div>
+    <!-- Filtro -->
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input id="admin-busca" type="text" placeholder="Buscar por e-mail..." oninput="renderAdmin()" style="flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:8px 12px;color:#fff;font-family:inherit;font-size:13px">
+      <select id="admin-filtro-plano" onchange="renderAdmin()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:8px 10px;color:#fff;font-family:inherit;font-size:13px">
+        <option value="">Todos</option>
+        <option value="trial">Trial</option>
+        <option value="starter">Starter</option>
+        <option value="pro">Pro</option>
+        <option value="frota">Frota</option>
+      </select>
+    </div>
+    <div id="admin-lista"></div>
+  </div>
+</div>
 <!-- MODAL ONBOARDING -->
 <div id="m-onboard" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.7);align-items:flex-end;justify-content:center">
   <div style="background:var(--card);border-radius:18px 18px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;box-shadow:0 -4px 32px rgba(0,0,0,.25)">
@@ -624,7 +649,20 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 </div>
 <div id="mc" class="mo" onclick="fecharModal('mc')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt" id="mc-t">Carro</div><div class="fi"><label>Placa *</label><input id="mc-placa" type="text" placeholder="ABC-1234" style="text-transform:uppercase"></div><div class="fi"><label>Modelo *</label><input id="mc-modelo" type="text" placeholder="VW Gol 1.0 2023"></div><div class="fi"><label>Cor</label><input id="mc-cor" type="text" placeholder="Branco"></div><div class="fi"><label>RENAVAM</label><input id="mc-ren" type="text"></div><div class="fi"><label>KM atual</label><input id="mc-km" type="number" placeholder="0"></div><div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarCarro()">Salvar</button><button class="bt btg" onclick="fecharModal('mc')">Cancelar</button></div></div></div>
 
-<div id="mm" class="mo" onclick="fecharModal('mm')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt" id="mm-t">Motorista</div><div class="fi"><label>Nome *</label><input id="mm-nome" type="text"></div><div class="fi"><label>CPF *</label><input id="mm-cpf" type="text" placeholder="000.000.000-00"></div><div class="fi"><label>RG</label><input id="mm-rg" type="text"></div><div class="fi"><label>CNH</label><input id="mm-cnh" type="text"></div><div class="fi"><label>Validade CNH</label><input id="mm-vcnh" type="date"></div><div class="fi"><label>Telefone</label><input id="mm-tel" type="tel"></div><div class="fi"><label>Endereço completo</label><input id="mm-end" type="text" placeholder="Rua, nº, Bairro, Cidade/UF, CEP"></div><div class="fi"><label>Plataformas</label><input id="mm-plat" type="text" placeholder="Uber, 99..."></div><div class="fi"><label>Avaliação</label><input id="mm-nota" type="text" placeholder="4.90"></div><div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarMoto()">Salvar</button><button class="bt btg" onclick="fecharModal('mm')">Cancelar</button></div></div></div>
+<div id="mm" class="mo" onclick="fecharModal('mm')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt" id="mm-t">Motorista</div><div class="fi"><label>Nome *</label><input id="mm-nome" type="text"></div><div class="fi"><label>CPF *</label><input id="mm-cpf" type="text" placeholder="000.000.000-00"></div><div class="fi"><label>RG</label><input id="mm-rg" type="text"></div><div class="fi"><label>CNH</label><input id="mm-cnh" type="text"></div><div class="fi"><label>Validade CNH</label><input id="mm-vcnh" type="date"></div><div class="fi"><label>Telefone</label><input id="mm-tel" type="tel"></div><div class="fi"><label>Endereço completo</label><input id="mm-end" type="text" placeholder="Rua, nº, Bairro, Cidade/UF, CEP"></div><div class="fi"><label>Plataformas</label><input id="mm-plat" type="text" placeholder="Uber, 99..."></div><div class="fi"><label>Avaliação</label><input id="mm-nota" type="text" placeholder="4.90"></div><div style="margin-bottom:12px">
+  <label style="font-size:11px;font-weight:700;color:var(--txm);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px">Foto do motorista</label>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div id="mm-foto-preview" style="width:72px;height:72px;border-radius:50%;background:var(--bg);border:2px dashed var(--sll);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;font-size:28px">👤</div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+      <input type="file" id="mm-foto-inp" accept="image/*" style="display:none" onchange="mmPreviewFoto(this)">
+      <input type="file" id="mm-foto-cam" accept="image/*" capture="environment" style="display:none" onchange="mmPreviewFoto(this)">
+      <button class="bt btg bts" style="font-size:12px;padding:8px" onclick="document.getElementById('mm-foto-inp').click()">🖼 Escolher da galeria</button>
+      <button class="bt btg bts" style="font-size:12px;padding:8px" onclick="document.getElementById('mm-foto-cam').click()">📷 Tirar foto</button>
+      <button class="bt bts" style="font-size:11px;padding:6px;color:var(--txm);background:transparent;border:1px solid var(--sll)" onclick="mmRemoverFoto()">Remover foto</button>
+    </div>
+  </div>
+</div>
+<div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarMoto()">Salvar</button><button class="bt btg" onclick="fecharModal('mm')">Cancelar</button></div></div></div>
 
 <div id="ml" class="mo" onclick="fecharModal('ml')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt">Nova Locação</div><div class="fi"><label>Carro *</label><select id="ml-carro"></select></div><div class="fi"><label>Motorista *</label><select id="ml-moto"></select></div><div class="fi"><label>Início *</label><input id="ml-inicio" type="date"></div><div class="fi"><label>Aluguel semanal (R$) *</label><input id="ml-val" type="number" placeholder="600"></div><div class="fi"><label>Caução (R$)</label><input id="ml-cauc" type="number" placeholder="1400"></div><div class="fi"><label>Pagamento do caução</label>
   <select id="ml-cauc-modo" onchange="mlAtualizarCauc()">
@@ -811,6 +849,56 @@ function _initSB(){
   return false;
 }
 let _sbUser=null;
+let _plano={plano:'trial',limite_carros:2,ativo:true,trial_ate:null};
+const ADMIN_EMAIL='thiagooa@yahoo.com.br'; // e-mail do admin
+
+async function _carregarPlano(){
+  if(!_sbUser||!_sb) return;
+  try{
+    const{data,error}=await _sb.from('frotando_planos').select('*').eq('user_id',_sbUser.id).single();
+    if(data&&!error){
+      _plano=data;
+      _atualizarBadgePlano();
+    }
+  }catch(e){console.log('Plano nao encontrado, usando trial');}
+}
+
+function _atualizarBadgePlano(){
+  const labels={trial:'Trial',starter:'Starter',pro:'Pro',frota:'Frota'};
+  const cores={trial:'#f59e0b',starter:'#3b82f6',pro:'#8b5cf6',frota:'#16a34a'};
+  const el=document.getElementById('badge-plano');
+  if(!el) return;
+  const label=labels[_plano.plano]||'Trial';
+  const cor=cores[_plano.plano]||'#f59e0b';
+  const dias=_plano.trial_ate?Math.max(0,Math.round((new Date(_plano.trial_ate)-new Date())/86400000)):null;
+  el.textContent=label+(dias!==null&&_plano.plano==='trial'?` (${dias}d)`:'');
+  el.style.background=cor+'22';
+  el.style.color=cor;
+  el.style.border=`1px solid ${cor}44`;
+  // Avisar se trial expirando
+  if(_plano.plano==='trial'&&dias!==null&&dias<=5&&dias>0){
+    setTimeout(()=>toast(`Trial expira em ${dias} dia(s). Entre em contato para assinar.`,'info'),2000);
+  }
+  if(_plano.plano==='trial'&&dias===0){
+    setTimeout(()=>toast('Trial expirado! Entre em contato para continuar usando.','er'),2000);
+  }
+}
+
+function _podeAdicionarCarro(){
+  if(_sbUser?.email===ADMIN_EMAIL) return true;
+  const carrosAtivos=DB.carros.length;
+  if(!_plano.ativo){toast('Plano inativo. Entre em contato para reativar.','er');return false;}
+  if(_plano.plano==='trial'){
+    const dias=_plano.trial_ate?Math.max(0,Math.round((new Date(_plano.trial_ate)-new Date())/86400000)):30;
+    if(dias<=0){toast('Trial expirado. Entre em contato para assinar o Frotando.','er');return false;}
+  }
+  if(carrosAtivos>=_plano.limite_carros){
+    const nomes={starter:'Starter (2 veículos)',pro:'Pro (5 veículos)',frota:'Frota (20 veículos)',trial:'Trial (2 veículos)'};
+    toast(`Limite do plano ${nomes[_plano.plano]||''} atingido. Fale com o suporte para fazer upgrade.`,'er');
+    return false;
+  }
+  return true;
+}
 let _syncTimer=null;
 const _pendingSync=new Set();
 
@@ -1026,10 +1114,19 @@ function abrirModal(id,dados){
   // Preencher campos se edição
   if(dados.id){
     if(id==='mc'){document.getElementById('mc-t').textContent='Editar Carro';document.getElementById('mc-placa').value=dados.placa||'';document.getElementById('mc-modelo').value=dados.modelo||'';document.getElementById('mc-cor').value=dados.cor||'';document.getElementById('mc-ren').value=dados.renavam||dados.ren||'';document.getElementById('mc-km').value=dados.km||0;const mcAno=document.getElementById('mc-ano');if(mcAno)mcAno.value=dados.ano||'';const mcVal=document.getElementById('mc-valor');if(mcVal)mcVal.value=dados.valor||'';}
-    if(id==='mm'){document.getElementById('mm-t').textContent='Editar Motorista';document.getElementById('mm-nome').value=dados.nome||'';document.getElementById('mm-cpf').value=dados.cpf||'';document.getElementById('mm-rg').value=dados.rg||'';document.getElementById('mm-cnh').value=dados.cnh||'';document.getElementById('mm-vcnh').value=dados.vCNH||dados.vcnh||'';document.getElementById('mm-tel').value=dados.tel||'';document.getElementById('mm-end').value=dados.endereco||'';document.getElementById('mm-plat').value=dados.plat||'';document.getElementById('mm-nota').value=dados.nota||'';}
+    if(id==='mm'){document.getElementById('mm-t').textContent='Editar Motorista';document.getElementById('mm-nome').value=dados.nome||'';document.getElementById('mm-cpf').value=dados.cpf||'';document.getElementById('mm-rg').value=dados.rg||'';document.getElementById('mm-cnh').value=dados.cnh||'';document.getElementById('mm-vcnh').value=dados.vCNH||dados.vcnh||'';document.getElementById('mm-tel').value=dados.tel||'';document.getElementById('mm-end').value=dados.endereco||'';document.getElementById('mm-plat').value=dados.plat||'';document.getElementById('mm-nota').value=dados.nota||'';
+    _mmFotoBase64='';
+    const mmPrev=document.getElementById('mm-foto-preview');
+    if(mmPrev) mmPrev.innerHTML=dados.foto?`<img src="${dados.foto}" style="width:100%;height:100%;object-fit:cover">`:'👤';
+    const mmInp=document.getElementById('mm-foto-inp');if(mmInp) mmInp.value='';
+  }
   } else {
     if(id==='mc'){document.getElementById('mc-t').textContent='Novo Carro';['mc-placa','mc-modelo','mc-cor','mc-ren'].forEach(i=>document.getElementById(i).value='');document.getElementById('mc-km').value=0;}
-    if(id==='mm'){document.getElementById('mm-t').textContent='Novo Motorista';['mm-nome','mm-cpf','mm-rg','mm-cnh','mm-vcnh','mm-tel','mm-end','mm-plat','mm-nota'].forEach(i=>document.getElementById(i).value='');}
+    if(id==='mm'){document.getElementById('mm-t').textContent='Novo Motorista';['mm-nome','mm-cpf','mm-rg','mm-cnh','mm-vcnh','mm-tel','mm-end','mm-plat','mm-nota'].forEach(i=>document.getElementById(i).value='');
+    _mmFotoBase64='';
+    const mmPrevN=document.getElementById('mm-foto-preview');if(mmPrevN) mmPrevN.innerHTML='👤';
+    const mmInpN=document.getElementById('mm-foto-inp');if(mmInpN) mmInpN.value='';
+  }
   }
   const el=document.getElementById(id);el.style.pointerEvents='all';el.style.display='flex';requestAnimationFrame(()=>el.classList.add('on'));
 }
@@ -1040,6 +1137,8 @@ function salvarCarro(){
   const placa=document.getElementById('mc-placa').value.trim().toUpperCase();
   const modelo=document.getElementById('mc-modelo').value.trim();
   if(!placa||!modelo){toast('Placa e modelo obrigatórios','er');return;}
+  // Verificar limite do plano ao cadastrar novo carro
+  if(!_curId&&!_podeAdicionarCarro()) return;
   if(_curId){DB.carros=DB.carros.map(c=>c.id===_curId?{...c,placa,modelo,cor:document.getElementById('mc-cor').value,renavam:document.getElementById('mc-ren').value,ren:document.getElementById('mc-ren').value,km:Number(document.getElementById('mc-km').value)||0}:c);}
   else{DB.carros.push({id:'c'+uid(),placa,modelo,cor:document.getElementById('mc-cor').value,ren:document.getElementById('mc-ren').value,km:Number(document.getElementById('mc-km').value)||0,status:'Disponível'});}
   saveDB('carros');markDirty('carros','dash','loc','pag','km','financ','rel','contrato');fecharModal('mc');goTo('carros',document.querySelector('[data-s=carros]'));toast(_curId?'Carro atualizado! ✓':'Carro cadastrado! ✓');
@@ -1047,14 +1146,55 @@ function salvarCarro(){
 function excluirCarro(id){if(!confirm('Excluir este carro?'))return;DB.carros=DB.carros.filter(c=>c.id!==id);saveDB('carros');markDirty('dash','loc','rel');renderCarros();toast('Removido');}
 
 // ── CRUD MOTORISTAS ───────────────────────────────────────────────────────────
+let _mmFotoBase64='';
+
+function mmPreviewFoto(inp){
+  const file=inp.files[0];if(!file) return;
+  // Redimensionar para max 400x400 antes de salvar
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      const MAX=400;
+      const canvas=document.createElement('canvas');
+      let w=img.width,h=img.height;
+      if(w>h){if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}}
+      else{if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}}
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      _mmFotoBase64=canvas.toDataURL('image/jpeg',0.75);
+      const prev=document.getElementById('mm-foto-preview');
+      if(prev) prev.innerHTML=`<img src="${_mmFotoBase64}" style="width:100%;height:100%;object-fit:cover">`;
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function mmRemoverFoto(){
+  _mmFotoBase64='';
+  const prev=document.getElementById('mm-foto-preview');
+  if(prev) prev.innerHTML='👤';
+  ['mm-foto-inp','mm-foto-cam'].forEach(id=>{
+    const el=document.getElementById(id);if(el) el.value='';
+  });
+}
+
 function salvarMoto(){
   const nome=document.getElementById('mm-nome').value.trim();
   const cpf=document.getElementById('mm-cpf').value.trim();
   if(!nome||!cpf){toast('Nome e CPF obrigatórios','er');return;}
-  const obj={nome,cpf,rg:document.getElementById('mm-rg').value,cnh:document.getElementById('mm-cnh').value,vcnh:document.getElementById('mm-vcnh').value,tel:document.getElementById('mm-tel').value,endereco:document.getElementById('mm-end').value,plat:document.getElementById('mm-plat').value,nota:document.getElementById('mm-nota').value,status:'Ativo'};
+  const fotoAtual=_curId?DB.motos.find(m=>m.id===_curId)?.foto||'':'';
+  const foto=_mmFotoBase64||fotoAtual;
+  const obj={nome,cpf,rg:document.getElementById('mm-rg').value,cnh:document.getElementById('mm-cnh').value,vCNH:document.getElementById('mm-vcnh').value,vcnh:document.getElementById('mm-vcnh').value,tel:document.getElementById('mm-tel').value,endereco:document.getElementById('mm-end').value,plat:document.getElementById('mm-plat').value,nota:document.getElementById('mm-nota').value,status:'Ativo',foto};
   if(_curId)DB.motos=DB.motos.map(m=>m.id===_curId?{...m,...obj}:m);
   else DB.motos.push({id:'m'+uid(),...obj});
+  _mmFotoBase64='';
   saveDB('motos');markDirty('motos','dash','loc','pag','rel','contrato');fecharModal('mm');goTo('motos',document.querySelector('[data-s=motos]'));toast(_curId?'Motorista atualizado! ✓':'Motorista cadastrado! ✓');
+}
+function _editarMoto(id){
+  const m=DB.motos.find(x=>x.id===id);if(!m) return;
+  abrirModal('mm',m);
 }
 function excluirMoto(id){if(!confirm('Excluir?'))return;DB.motos=DB.motos.filter(m=>m.id!==id);saveDB('motos');markDirty('dash','loc','rel');renderMotos();toast('Removido');}
 
@@ -1071,6 +1211,13 @@ function salvarLoc(){
   const motoId=document.getElementById('ml-moto').value;
   const inicio=document.getElementById('ml-inicio').value;
   if(!carroId||!motoId||!inicio){toast('Preencha carro, motorista e data','er');return;}
+  // Verificar se carro já tem contrato ativo
+  const contratoAtivo=DB.locs.find(l=>l.carroId===carroId&&l.status==='Ativa');
+  if(contratoAtivo){
+    const mot=cMot(contratoAtivo.motoId);
+    toast(`Este carro já está em contrato ativo com ${mot?.nome?.split(' ')[0]||'outro motorista'}!`,'er');
+    return;
+  }
   const caucModo=document.getElementById('ml-cauc-modo')?.value||'integral';
   const caucParcSem=caucModo==='parcelado'?Number(document.getElementById('ml-cauc-parc')?.value)||0:0;
   if(caucModo==='parcelado'&&caucParcSem<=0){toast('Informe o valor semanal do caucao','er');return;}
@@ -1129,6 +1276,130 @@ function _gerarPagsIniciais(loc){
     temCauc:valCaucSem>0,pago:false,data:'',atr:0
   });
   saveDB('pags');
+}
+
+
+// ── PAINEL ADMIN ──────────────────────────────────────────────────────────────
+let _adminData=[];
+
+function _isAdmin(){ return _sbUser?.email===ADMIN_EMAIL; }
+
+async function abrirAdmin(){
+  if(!_isAdmin()){toast('Acesso negado','er');return;}
+  document.getElementById('m-admin').style.display='block';
+  document.body.style.overflow='hidden';
+  await _carregarAdmin();
+}
+
+function fecharAdmin(){
+  document.getElementById('m-admin').style.display='none';
+  document.body.style.overflow='';
+}
+
+async function _carregarAdmin(){
+  const lista=document.getElementById('admin-lista');
+  if(lista) lista.innerHTML='<div style="color:#94a3b8;text-align:center;padding:20px">Carregando...</div>';
+  try{
+    const{data,error}=await _sb.from('frotando_planos').select('*').order('criado_em',{ascending:false});
+    if(error) throw error;
+    _adminData=data||[];
+    renderAdmin();
+  }catch(e){
+    if(lista) lista.innerHTML=`<div style="color:#f87171;padding:16px">Erro: ${e.message}</div>`;
+  }
+}
+
+function renderAdmin(){
+  const busca=(document.getElementById('admin-busca')?.value||'').toLowerCase();
+  const filtPlano=document.getElementById('admin-filtro-plano')?.value||'';
+  const filtrado=_adminData.filter(u=>
+    (!busca||u.email?.toLowerCase().includes(busca))&&
+    (!filtPlano||u.plano===filtPlano)
+  );
+
+  // KPIs
+  const kpiEl=document.getElementById('admin-kpis');
+  if(kpiEl){
+    const total=_adminData.length;
+    const ativos=_adminData.filter(u=>u.ativo).length;
+    const pagantes=_adminData.filter(u=>u.plano!=='trial'&&u.ativo).length;
+    const mrr=_adminData.filter(u=>u.ativo&&u.plano!=='trial').reduce((s,u)=>{
+      const precos={starter:29,pro:u.limite_carros*19,frota:u.limite_carros*15};
+      return s+(precos[u.plano]||0);
+    },0);
+    kpiEl.innerHTML=[
+      ['Total clientes',total,'#94a3b8'],
+      ['Pagantes',pagantes,'#34d399'],
+      ['MRR estimado','R$'+mrr,'#f59e0b'],
+    ].map(([l,v,c])=>`<div style="background:rgba(255,255,255,.06);border-radius:10px;padding:10px 12px">
+      <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase">${l}</div>
+      <div style="font-size:20px;font-weight:900;color:${c};margin-top:2px">${v}</div>
+    </div>`).join('');
+  }
+
+  // Lista
+  const lista=document.getElementById('admin-lista');
+  if(!lista) return;
+  if(!filtrado.length){lista.innerHTML='<div style="color:#64748b;text-align:center;padding:20px">Nenhum resultado</div>';return;}
+
+  const cores={trial:'#f59e0b',starter:'#3b82f6',pro:'#8b5cf6',frota:'#16a34a'};
+  lista.innerHTML='';
+  filtrado.forEach(u=>{
+    const cor=cores[u.plano]||'#94a3b8';
+    const dias=u.trial_ate?Math.max(0,Math.round((new Date(u.trial_ate)-new Date())/86400000)):null;
+    const d=document.createElement('div');
+    d.style.cssText='background:rgba(255,255,255,.05);border-radius:12px;padding:12px 14px;margin-bottom:8px;border:1px solid rgba(255,255,255,.08)';
+    d.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div style="font-weight:700;font-size:13px;color:#fff">${u.email||'—'}</div>
+          <div style="font-size:10px;color:#64748b;margin-top:2px">Desde ${u.criado_em?new Date(u.criado_em).toLocaleDateString('pt-BR'):'—'}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span style="background:${cor}22;color:${cor};border:1px solid ${cor}44;border-radius:99px;padding:2px 9px;font-size:11px;font-weight:700">${u.plano}</span>
+          <span style="background:${u.ativo?'rgba(16,185,129,.2)':'rgba(239,68,68,.2)'};color:${u.ativo?'#34d399':'#f87171'};border-radius:99px;padding:2px 9px;font-size:11px;font-weight:700">${u.ativo?'Ativo':'Inativo'}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px">
+        <span style="font-size:11px;color:#64748b">Limite: ${u.limite_carros} carro(s)</span>
+        ${u.plano==='trial'&&dias!==null?`<span style="font-size:11px;color:${dias<=5?'#f87171':'#f59e0b'}">· Trial: ${dias} dias restantes</span>`:''}
+        ${u.obs?`<span style="font-size:11px;color:#64748b">· ${u.obs}</span>`:''}
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${['trial','starter','pro','frota'].map(p=>`<button onclick="_adminSetPlano('${u.user_id}','${p}')" style="background:${u.plano===p?cor+'33':'rgba(255,255,255,.06)'};color:${u.plano===p?cor:'#94a3b8'};border:1px solid ${u.plano===p?cor+'55':'rgba(255,255,255,.1)'};border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">${p}</button>`).join('')}
+        <button onclick="_adminToggleAtivo('${u.user_id}',${!u.ativo})" style="background:${u.ativo?'rgba(239,68,68,.15)':'rgba(16,185,129,.15)'};color:${u.ativo?'#f87171':'#34d399'};border:1px solid ${u.ativo?'rgba(239,68,68,.3)':'rgba(16,185,129,.3)'};border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">${u.ativo?'Desativar':'Ativar'}</button>
+        <button onclick="_adminEditarObs('${u.user_id}')" style="background:rgba(255,255,255,.06);color:#94a3b8;border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:inherit">Obs</button>
+      </div>`;
+    lista.appendChild(d);
+  });
+}
+
+const _limites={trial:2,starter:2,pro:5,frota:20};
+
+async function _adminSetPlano(userId,plano){
+  const limite=_limites[plano]||2;
+  const trialAte=plano==='trial'?new Date(Date.now()+30*86400000).toISOString().slice(0,10):null;
+  const{error}=await _sb.from('frotando_planos').update({plano,limite_carros:limite,trial_ate:trialAte}).eq('user_id',userId);
+  if(error){toast('Erro ao atualizar','er');return;}
+  _adminData=_adminData.map(u=>u.user_id===userId?{...u,plano,limite_carros:limite}:u);
+  renderAdmin();toast('Plano atualizado ✓');
+}
+
+async function _adminToggleAtivo(userId,novoAtivo){
+  const{error}=await _sb.from('frotando_planos').update({ativo:novoAtivo}).eq('user_id',userId);
+  if(error){toast('Erro','er');return;}
+  _adminData=_adminData.map(u=>u.user_id===userId?{...u,ativo:novoAtivo}:u);
+  renderAdmin();toast(novoAtivo?'Conta ativada ✓':'Conta desativada');
+}
+
+async function _adminEditarObs(userId){
+  const u=_adminData.find(x=>x.user_id===userId);
+  const obs=prompt('Observação sobre este cliente:',u?.obs||'');
+  if(obs===null) return;
+  const{error}=await _sb.from('frotando_planos').update({obs}).eq('user_id',userId);
+  if(error){toast('Erro','er');return;}
+  _adminData=_adminData.map(u=>u.user_id===userId?{...u,obs}:u);
+  renderAdmin();toast('Obs salva ✓');
 }
 
 // ── ONBOARDING ────────────────────────────────────────────────────────────────
@@ -2367,7 +2638,7 @@ function renderMotos(){
     const cnhD=m.vcnh?Math.round((new Date(m.vcnh)-hoje)/86400000):999;
     const rec=DB.pags.filter(p=>p.motoId===m.id&&p.pago).reduce((s,p)=>s+p.val,0);
     const d=document.createElement('div');d.className='cd';
-    d.innerHTML=`<div class="lr" style="padding-top:0;border-bottom:none;padding-bottom:0"><div class="av">${m.nome.charAt(0)}</div><div style="flex:1"><div style="font-weight:800;font-size:14px">${m.nome}</div><div style="font-size:11px;color:var(--txm)">${m.cpf} · CNH: ${m.cnh||'—'}</div></div><div style="text-align:center;flex-shrink:0"><div style="font-size:9px;color:var(--txm)">Nota</div><div style="font-size:15px;font-weight:900;color:var(--a)">⭐${m.nota||'—'}</div></div></div>
+    d.innerHTML=`<div class="lr" style="padding-top:0;border-bottom:none;padding-bottom:0"><div class="av" style="overflow:hidden;padding:0">${m.foto?`<img src="${m.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`<span style="font-size:18px;line-height:40px">${m.nome.charAt(0)}</span>`}</div><div style="flex:1"><div style="font-weight:800;font-size:14px">${m.nome}</div><div style="font-size:11px;color:var(--txm)">${m.cpf} · CNH: ${m.cnh||'—'}</div></div><div style="text-align:center;flex-shrink:0"><div style="font-size:9px;color:var(--txm)">Nota</div><div style="font-size:15px;font-weight:900;color:var(--a)">⭐${m.nota||'—'}</div></div></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:9px 0">
       <div style="background:var(--bg);border-radius:7px;padding:7px 9px"><div style="font-size:9px;color:var(--txm);font-weight:700;text-transform:uppercase">Carro</div><div style="font-size:12px;font-weight:600;margin-top:1px">${car?.placa||'—'}</div></div>
       <div style="background:var(--bg);border-radius:7px;padding:7px 9px"><div style="font-size:9px;color:var(--txm);font-weight:700;text-transform:uppercase">Val. CNH</div><div style="font-size:12px;font-weight:600;margin-top:1px;color:${cnhD<30?'var(--r)':cnhD<90?'var(--y)':'var(--tx)'}">${fD(m.vcnh)}</div></div>
@@ -2376,7 +2647,7 @@ function renderMotos(){
       ${m.endereco?`<div style="background:var(--bg);border-radius:7px;padding:7px 9px;grid-column:span 2"><div style="font-size:9px;color:var(--txm);font-weight:700;text-transform:uppercase">Endereço</div><div style="font-size:12px;font-weight:600;margin-top:1px">${m.endereco}</div></div>`:''}
     </div>
     ${cnhD<90?`<div style="background:${cnhD<30?'rgba(239,68,68,.12)':'rgba(245,158,11,.12)'};border-radius:8px;padding:8px 10px;margin-bottom:9px;font-size:12px;color:${cnhD<30?'var(--r)':'var(--y)'}">⚠️ CNH vence em ${cnhD} dias!</div>`:''}
-    <div style="display:flex;gap:7px"><button class="bt bto bts" style="flex:1" onclick="abrirModal('mm',${JSON.stringify(m).replace(/"/g,"'")})">Editar</button><button class="bt btd bts" onclick="excluirMoto('${m.id}')">🗑</button></div>`;
+    <div style="display:flex;gap:7px"><button class="bt bto bts" style="flex:1" onclick="_editarMoto('${m.id}')">Editar</button><button class="bt btd bts" onclick="excluirMoto('${m.id}')">🗑</button></div>`;
     el.appendChild(d);
   });
 }
@@ -5061,6 +5332,7 @@ async function login(){
     if(!temDados) loadDB(); else _migrarDataVenc();
     gerarParcelasPendentes();
     _entrarNoApp();
+    _carregarPlano();
     // Onboarding se for primeiro acesso (sem dados próprios e sem ob_done)
     const obFeito=LS.get('ob_done');
     if(!temDados&&!obFeito) setTimeout(()=>_obAbrir(),800);
@@ -5112,6 +5384,8 @@ function _entrarNoApp(){
   document.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   document.getElementById('sc-dash').classList.add('on');
+  // Mostrar botão admin se for o administrador
+  setTimeout(()=>{const ab=document.getElementById('btn-admin');if(ab) ab.style.display=_isAdmin()?'block':'none';},500);
   const navDash=document.querySelector('[data-s=dash]');
   if(navDash) navDash.classList.add('on');
   document.getElementById('pt').textContent='';
@@ -5151,6 +5425,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       if(!temDados) loadDB(); else _migrarDataVenc();
       gerarParcelasPendentes();
       _entrarNoApp();
+      _carregarPlano();
     } else {
       // Sem sessão — mostrar tela de login limpa
       loadDB(); // carrega dados demo locais
