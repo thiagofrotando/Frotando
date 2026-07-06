@@ -602,9 +602,15 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
         <div class="st">Comparativo mensal</div>
         <div id="rel-comp-list"></div>
       </div>
-      <div style="display:flex;gap:8px">
-        <button class="bt bto btf" onclick="exportarCSV()">⬇ Exportar CSV</button>
-        <button class="bt btp btf" onclick="exportarRelHTML()">📄 Exportar para Contador</button>
+      <!-- Relatórios especiais -->
+      <div class="cd" style="margin-top:10px">
+        <div class="st">Relatórios especiais</div>
+        <div style="display:flex;flex-direction:column;gap:7px;margin-top:8px">
+          <button class="bt btf" style="background:rgba(220,38,38,.1);color:var(--r);border:1px solid rgba(220,38,38,.2)" onclick="abrirRelInadimplencia()">⚠️ Relatório de inadimplência</button>
+          <button class="bt btf" style="background:rgba(16,163,74,.1);color:var(--g);border:1px solid rgba(16,163,74,.2)" onclick="abrirRelRentabilidade()">📈 Rentabilidade por veículo</button>
+          <button class="bt btf" style="background:rgba(37,99,235,.1);color:#2563eb;border:1px solid rgba(37,99,235,.2)" onclick="exportarCSVCompleto()">📊 Exportar dados completos (CSV)</button>
+          <button class="bt btp btf" onclick="exportarRelHTML()">📄 Exportar para Contador</button>
+        </div>
       </div>
     </div>
 
@@ -700,6 +706,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
         <option value="pro">Pro</option>
         <option value="frota">Frota</option>
         <option value="cortesia">Cortesia</option>
+        <option value="enterprise">Enterprise</option>
       </select>
     </div>
     <div id="admin-lista"></div>
@@ -1143,8 +1150,8 @@ async function _carregarPlano(){
 }
 
 function _atualizarBadgePlano(){
-  const labels={trial:'Trial',starter:'Starter',pro:'Pro',frota:'Frota',cortesia:'Cortesia'};
-  const cores={trial:'#f59e0b',starter:'#3b82f6',pro:'#8b5cf6',frota:'#16a34a',cortesia:'#ec4899'};
+  const labels={trial:'Trial',starter:'Starter',pro:'Pro',frota:'Frota',cortesia:'Cortesia',enterprise:'Enterprise'};
+  const cores={trial:'#f59e0b',starter:'#3b82f6',pro:'#8b5cf6',frota:'#16a34a',cortesia:'#ec4899',enterprise:'#0d2b3e'};
   const el=document.getElementById('badge-plano');
   if(!el) return;
   const label=labels[_plano.plano]||'Trial';
@@ -1684,6 +1691,238 @@ function _atualizarBtnNotificacao() {
   }
 }
 
+
+// ── RELATÓRIO DE INADIMPLÊNCIA ────────────────────────────────────────────────
+function abrirRelInadimplencia(){
+  const hoje=new Date();hoje.setHours(0,0,0,0);
+  const inadimplentes=DB.pags
+    .filter(p=>!p.pago&&!p.cancelado&&p.dataVenc&&new Date(p.dataVenc+'T12:00:00')<hoje)
+    .sort((a,b)=>_diasAtraso(b)-_diasAtraso(a));
+
+  if(!inadimplentes.length){toast('Nenhum pagamento em atraso! ✓','info');return;}
+
+  // Agrupar por contrato
+  const porLoc={};
+  inadimplentes.forEach(p=>{
+    if(!porLoc[p.locId]) porLoc[p.locId]={pags:[],total:0};
+    porLoc[p.locId].pags.push(p);
+    porLoc[p.locId].total+=p.val;
+  });
+
+  const totalGeral=inadimplentes.reduce((s,p)=>s+p.val,0);
+  const cfg=DB.config;
+
+  const html=`<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8">
+<title>Relatório de Inadimplência — Frotando</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;padding:20px;font-size:13px}
+  @media print{body{background:#fff;padding:0}.no-print{display:none}}
+  .page{max-width:700px;margin:0 auto}
+  .header{background:#dc2626;color:#fff;border-radius:12px;padding:20px 24px;margin-bottom:16px}
+  .title{font-size:20px;font-weight:900;margin-bottom:4px}
+  .sub{font-size:12px;opacity:.75}
+  .kpi-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+  .kpi{background:#fff;border-radius:10px;padding:12px 14px;border-left:4px solid #dc2626}
+  .kpi-label{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase}
+  .kpi-val{font-size:20px;font-weight:900;color:#dc2626;margin-top:2px}
+  .card{background:#fff;border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #dc2626}
+  .card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+  .mot{font-size:14px;font-weight:800;color:#1e293b}
+  .placa{font-size:12px;color:#64748b;margin-top:2px}
+  .total-dev{font-size:18px;font-weight:900;color:#dc2626}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{background:#fef2f2;padding:6px 8px;text-align:left;font-weight:700;color:#991b1b;font-size:10px;text-transform:uppercase}
+  td{padding:6px 8px;border-bottom:1px solid #fef2f2}
+  .dias{font-weight:700;color:#dc2626}
+  .btn{display:inline-block;background:#dc2626;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:14px}
+  .wa-btn{display:inline-block;background:#25D366;color:#fff;border:none;border-radius:7px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px}
+</style></head><body>
+<div class="page">
+  <div class="no-print" style="margin-bottom:12px">
+    <button class="btn" onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
+  </div>
+  <div class="header">
+    <div class="title">⚠️ Relatório de Inadimplência</div>
+    <div class="sub">${cfg.nome||cfg.razao||'Frotando'} · Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</div>
+  </div>
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-label">Total em atraso</div><div class="kpi-val">${R(totalGeral)}</div></div>
+    <div class="kpi"><div class="kpi-label">Contratos</div><div class="kpi-val">${Object.keys(porLoc).length}</div></div>
+    <div class="kpi"><div class="kpi-label">Parcelas</div><div class="kpi-val">${inadimplentes.length}</div></div>
+  </div>
+  ${Object.entries(porLoc).map(([locId,data])=>{
+    const loc=DB.locs.find(l=>l.id===locId);
+    const mot=cMot(loc?.motoId);const car=cCar(loc?.carroId);
+    const maiorAtraso=Math.max(...data.pags.map(p=>_diasAtraso(p)));
+    const tel=(mot?.tel||'').replace(/\D/g,'');
+    const msg=encodeURIComponent(`Olá ${mot?.nome?.split(' ')[0]||''}! Você possui ${data.pags.length} pagamento(s) em atraso no total de ${R(data.total)}. Por favor, entre em contato para regularizar. PIX: ${cfg.pix||''}`);
+    return `<div class="card">
+      <div class="card-header">
+        <div><div class="mot">${mot?.nome||'?'}</div><div class="placa">${car?.placa||'?'} · ${car?.modelo?.split(' ').slice(0,2).join(' ')||''}</div></div>
+        <div style="text-align:right"><div class="total-dev">${R(data.total)}</div><div style="font-size:10px;color:#64748b">${maiorAtraso}d de atraso (máx)</div></div>
+      </div>
+      <table><thead><tr><th>Semana</th><th>Vencimento</th><th>Valor</th><th>Atraso</th></tr></thead>
+      <tbody>${data.pags.map(p=>`<tr><td>${p.sem||'---'}</td><td>${fD(p.dataVenc)}</td><td>${R(p.val)}</td><td class="dias">${_diasAtraso(p)}d</td></tr>`).join('')}</tbody>
+      </table>
+      ${tel?`<button class="wa-btn no-print" onclick="window.open('https://wa.me/55${tel}?text=${msg}','_blank')">💬 Cobrar no WhatsApp</button>`:''}
+    </div>`;
+  }).join('')}
+</div></body></html>`;
+
+  const win=window.open('','_blank');
+  if(!win){toast('Permita pop-ups','er');return;}
+  win.document.write(html);
+  win.document.close();
+}
+
+// ── RELATÓRIO DE RENTABILIDADE POR VEÍCULO ────────────────────────────────────
+function abrirRelRentabilidade(){
+  const hoje=new Date();
+  const mes=hoje.getMonth(),ano=hoje.getFullYear();
+  const cfg=DB.config;
+
+  const carros=DB.carros.map(car=>{
+    const locs=DB.locs.filter(l=>l.carroId===car.id);
+    const pags=DB.pags.filter(p=>p.carroId===car.id&&p.pago);
+    const recTotal=pags.reduce((s,p)=>s+Number(p.valAlug||p.val||0),0);
+    const evs=DB.evs.filter(e=>e.carroId===car.id);
+    const custoTotal=evs.reduce((s,e)=>s+Number(e.custo||0),0);
+    const fin=DB.fins.find(f=>f.carroId===car.id&&f.status==='Ativo');
+    const parcelasMes=fin?fin.parcela*12:0;
+    const lucroAnual=recTotal-custoTotal-(fin?fin.parcela*pags.length:0);
+    const contratoAtivo=locs.find(l=>l.status==='Ativa');
+    const inadimplente=DB.pags.filter(p=>p.carroId===car.id&&!p.pago&&!p.cancelado&&p.dataVenc&&new Date(p.dataVenc+'T12:00:00')<hoje);
+    return{car,locs,recTotal,custoTotal,lucroAnual,fin,parcelasMes,contratoAtivo,inadimplente,evQtd:evs.length};
+  }).sort((a,b)=>b.lucroAnual-a.lucroAnual);
+
+  const totalRec=carros.reduce((s,c)=>s+c.recTotal,0);
+  const totalCusto=carros.reduce((s,c)=>s+c.custoTotal,0);
+  const totalLucro=carros.reduce((s,c)=>s+c.lucroAnual,0);
+
+  const html=`<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8">
+<title>Rentabilidade por Veículo — Frotando</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;padding:20px;font-size:13px}
+  @media print{body{background:#fff;padding:0}.no-print{display:none}}
+  .page{max-width:720px;margin:0 auto}
+  .header{background:linear-gradient(135deg,#0d2b3e,#1e4d6b);color:#fff;border-radius:12px;padding:20px 24px;margin-bottom:16px}
+  .kpi-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+  .kpi{background:#fff;border-radius:10px;padding:12px 14px}
+  .kpi-label{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase}
+  .kpi-val{font-size:18px;font-weight:900;margin-top:2px}
+  table{width:100%;border-collapse:collapse;font-size:12px;background:#fff;border-radius:10px;overflow:hidden}
+  thead tr{background:#0d2b3e;color:#fff}
+  th{padding:9px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase}
+  th:last-child,td:last-child{text-align:right}
+  td{padding:9px 10px;border-bottom:1px solid #f1f5f9}
+  tr:last-child td{border-bottom:none;font-weight:800;background:#f8fafc}
+  .pos{color:#16a34a;font-weight:700}
+  .neg{color:#dc2626;font-weight:700}
+  .btn{display:inline-block;background:#0d2b3e;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:14px}
+  .bar-wrap{background:#f1f5f9;border-radius:99px;height:6px;margin-top:4px}
+  .bar{height:6px;border-radius:99px;background:#16a34a}
+</style></head><body>
+<div class="page">
+  <div class="no-print" style="margin-bottom:12px">
+    <button class="btn" onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
+  </div>
+  <div class="header">
+    <div style="font-size:20px;font-weight:900;margin-bottom:4px">📈 Rentabilidade por Veículo</div>
+    <div style="font-size:12px;opacity:.75">${cfg.nome||cfg.razao||'Frotando'} · Gerado em ${new Date().toLocaleDateString('pt-BR')}</div>
+  </div>
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-label">Receita total</div><div class="kpi-val" style="color:#16a34a">${R(totalRec)}</div></div>
+    <div class="kpi"><div class="kpi-label">Custos totais</div><div class="kpi-val" style="color:#dc2626">${R(totalCusto)}</div></div>
+    <div class="kpi"><div class="kpi-label">Resultado líquido</div><div class="kpi-val" style="color:${totalLucro>=0?'#16a34a':'#dc2626'}">${R(totalLucro)}</div></div>
+  </div>
+  <table>
+    <thead><tr><th>Veículo</th><th>Status</th><th>Receita</th><th>Custos</th><th>Parcela fin.</th><th>Resultado</th></tr></thead>
+    <tbody>
+    ${carros.map((c,i)=>{
+      const finPag=c.fin?c.fin.parcela:0;
+      const resultado=c.recTotal-c.custoTotal-finPag*(DB.pags.filter(p=>p.carroId===c.car.id&&p.pago).length);
+      const maxRec=Math.max(...carros.map(x=>x.recTotal),1);
+      return`<tr>
+        <td><div style="font-weight:700">${c.car.placa}</div><div style="font-size:10px;color:#64748b">${c.car.modelo?.split(' ').slice(0,2).join(' ')||''}</div>
+          <div class="bar-wrap"><div class="bar" style="width:${Math.round(c.recTotal/maxRec*100)}%;background:${resultado>=0?'#16a34a':'#dc2626'}"></div></div>
+        </td>
+        <td><span style="background:${c.contratoAtivo?'#dcfce7':'#f1f5f9'};color:${c.contratoAtivo?'#16a34a':'#64748b'};border-radius:99px;padding:2px 8px;font-size:10px;font-weight:700">${c.contratoAtivo?'Alugado':'Disponível'}</span></td>
+        <td class="pos">${R(c.recTotal)}</td>
+        <td class="neg">${c.custoTotal>0?'-'+R(c.custoTotal):'—'}</td>
+        <td style="color:#64748b">${c.fin?'-'+R(c.fin.parcela)+'/mês':'—'}</td>
+        <td class="${resultado>=0?'pos':'neg'}">${R(resultado)}</td>
+      </tr>`;
+    }).join('')}
+    <tr>
+      <td colspan="2"><strong>Total</strong></td>
+      <td class="pos"><strong>${R(totalRec)}</strong></td>
+      <td class="neg"><strong>${totalCusto>0?'-'+R(totalCusto):'—'}</strong></td>
+      <td>—</td>
+      <td class="${totalLucro>=0?'pos':'neg'}"><strong>${R(totalLucro)}</strong></td>
+    </tr>
+    </tbody>
+  </table>
+</div></body></html>`;
+
+  const win=window.open('','_blank');
+  if(!win){toast('Permita pop-ups','er');return;}
+  win.document.write(html);
+  win.document.close();
+}
+
+// ── EXPORTAÇÃO CSV COMPLETA ───────────────────────────────────────────────────
+function exportarCSVCompleto(){
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  const csvs=[];
+
+  // 1. Pagamentos completo
+  const headerPags=['ID','Motorista','Placa','Semana','Vencimento','Valor','Valor Aluguel','Valor Caucao','Pago','Data Pagamento','Dias Atraso','Cancelado'];
+  const rowsPags=DB.pags.map(p=>{
+    const m=cMot(p.motoId);const c=cCar(p.carroId);
+    return[p.id,m?.nome||'',c?.placa||'',p.sem||'',p.dataVenc||'',p.val,p.valAlug||'',p.valCauc||'',p.pago?'Sim':'Não',p.data||'',_diasAtraso(p),p.cancelado?'Sim':'Não'].join(';');
+  });
+  csvs.push('PAGAMENTOS\n'+headerPags.join(';')+'\n'+rowsPags.join('\n'));
+
+  // 2. Contratos
+  const headerLocs=['ID','Carro','Motorista','Início','Fim','Valor Semanal','Caução','Status'];
+  const rowsLocs=DB.locs.map(l=>{
+    const m=cMot(l.motoId);const c=cCar(l.carroId);
+    return[l.id,c?.placa||'',m?.nome||'',l.inicio,l.fim||'',l.val,l.cauc,l.status].join(';');
+  });
+  csvs.push('\n\nCONTRATOS\n'+headerLocs.join(';')+'\n'+rowsLocs.join('\n'));
+
+  // 3. Eventos
+  const headerEvs=['ID','Tipo','Placa','Data','Custo','Descrição','Resolvido'];
+  const rowsEvs=DB.evs.map(e=>{
+    const c=cCar(e.carroId);
+    return[e.id,e.tipo,c?.placa||'',e.data,e.custo,`"${e.desc||''}"`,e.resolvido?'Sim':'Não'].join(';');
+  });
+  csvs.push('\n\nEVENTOS\n'+headerEvs.join(';')+'\n'+rowsEvs.join('\n'));
+
+  // 4. Veículos
+  const headerCarros=['ID','Placa','Modelo','Cor','KM Atual','Status'];
+  const rowsCarros=DB.carros.map(c=>[c.id,c.placa,c.modelo,c.cor||'',c.km,c.status].join(';'));
+  csvs.push('\n\nVEÍCULOS\n'+headerCarros.join(';')+'\n'+rowsCarros.join('\n'));
+
+  // 5. Motoristas
+  const headerMotos=['ID','Nome','CPF','CNH','Validade CNH','Telefone','Avaliação','Status'];
+  const rowsMotos=DB.motos.map(m=>[m.id,m.nome,m.cpf||'',m.cnh||'',m.vCNH||m.vcnh||'',m.tel||'',m.nota||'',m.status||''].join(';'));
+  csvs.push('\n\nMOTORISTAS\n'+headerMotos.join(';')+'\n'+rowsMotos.join('\n'));
+
+  const blob=new Blob(['﻿'+csvs.join('')],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`Frotando_Exportacao_${hoje.replace(/\//g,'-')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('CSV exportado com sucesso! ✓');
+}
+
 // ── PAINEL ADMIN ──────────────────────────────────────────────────────────────
 let _adminData=[];
 
@@ -1729,7 +1968,7 @@ function renderAdmin(){
     const ativos=_adminData.filter(u=>u.ativo).length;
     const pagantes=_adminData.filter(u=>u.plano!=='trial'&&u.ativo).length;
     const mrr=_adminData.filter(u=>u.ativo&&u.plano!=='trial').reduce((s,u)=>{
-      const precos={starter:29,pro:u.limite_carros*19,frota:u.limite_carros*15};
+      const precos={starter:29,pro:u.limite_carros*19,frota:u.limite_carros*15,enterprise:u.limite_carros*12,cortesia:0};
       return s+(precos[u.plano]||0);
     },0);
     kpiEl.innerHTML=[
@@ -1771,7 +2010,7 @@ function renderAdmin(){
         ${u.obs?`<span style="font-size:11px;color:#64748b">· ${u.obs}</span>`:''}
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        ${['trial','starter','pro','frota','cortesia'].map(p=>`<button onclick="_adminSetPlano('${u.user_id}','${p}')" style="background:${u.plano===p?cor+'33':'rgba(255,255,255,.06)'};color:${u.plano===p?cor:'#94a3b8'};border:1px solid ${u.plano===p?cor+'55':'rgba(255,255,255,.1)'};border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">${p}</button>`).join('')}
+        ${['trial','starter','pro','frota','cortesia','enterprise'].map(p=>`<button onclick="_adminSetPlano('${u.user_id}','${p}')" style="background:${u.plano===p?cor+'33':'rgba(255,255,255,.06)'};color:${u.plano===p?cor:'#94a3b8'};border:1px solid ${u.plano===p?cor+'55':'rgba(255,255,255,.1)'};border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">${p}</button>`).join('')}
         ${_isAdmin()&&u.plano==='cortesia'?`<button onclick="_adminEditarLimite('${u.user_id}',${u.limite_carros})" style="background:rgba(236,72,153,.15);color:#ec4899;border:1px solid rgba(236,72,153,.3);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Limite: ${u.limite_carros}</button>`:''}
         <button onclick="_adminToggleAtivo('${u.user_id}',${!u.ativo})" style="background:${u.ativo?'rgba(239,68,68,.15)':'rgba(16,185,129,.15)'};color:${u.ativo?'#f87171':'#34d399'};border:1px solid ${u.ativo?'rgba(239,68,68,.3)':'rgba(16,185,129,.3)'};border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">${u.ativo?'Desativar':'Ativar'}</button>
         <button onclick="_adminEditarObs('${u.user_id}')" style="background:rgba(255,255,255,.06);color:#94a3b8;border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:inherit">Obs</button>
@@ -1780,7 +2019,7 @@ function renderAdmin(){
   });
 }
 
-const _limites={trial:2,starter:2,pro:5,frota:20,cortesia:5}; // cortesia: admin define manualmente
+const _limites={trial:2,starter:2,pro:5,frota:20,cortesia:5,enterprise:999}; // cortesia: admin define manualmente
 
 async function _adminSetPlano(userId,plano){
   let limite=_limites[plano]||2;
@@ -1868,6 +2107,7 @@ function abrirUpgrade(){
       {plano:'starter',label:'Starter',carros:2,preco:29,desc:'Fixo por mês'},
       {plano:'pro',    label:'Pro',    carros:5,preco:95,desc:'R$ 19/carro · até 5 carros'},
       {plano:'frota',  label:'Frota',  carros:20,preco:null,desc:'R$ 15/carro · até 20 carros'},
+      {plano:'enterprise',label:'Enterprise',carros:999,preco:null,desc:'R$ 12/carro · acima de 20 · entre em contato'},
     ];
     const cores={starter:'#3b82f6',pro:'#8b5cf6',frota:'#16a34a'};
     planosEl.innerHTML=opcoes.map(op=>{
@@ -3225,6 +3465,10 @@ function renderPags(){
   renderHistPag();
 }
 
+let _pagPage=0;
+const _PAG_PER_PAGE=20;
+let _pagsFiltrados=[];
+
 function renderHistPag(){
   const h=document.getElementById('hist-pag');
   if(!h) return;
@@ -3238,8 +3482,26 @@ function renderHistPag(){
   if(_filtPag==='pago')   pags=pags.filter(p=>p.pago);
   if(_filtPag==='pend')   pags=pags.filter(p=>!p.pago&&_diasAtraso(p)===0);
   if(_filtPag==='atr')    pags=pags.filter(p=>!p.pago&&_diasAtraso(p)>0);
-  if(!pags.length){h.innerHTML='<div style="text-align:center;padding:20px;color:var(--txm);font-size:12px">Nenhum pagamento encontrado</div>';return;}
-  pags.forEach(p=>{
+  _pagsFiltrados=pags;
+  _pagPage=0;
+  _renderHistPagPage(h);
+}
+
+function _renderHistPagPage(h){
+  if(!h) h=document.getElementById('hist-pag');
+  if(!h) return;
+  const total=_pagsFiltrados.length;
+  if(!total){h.innerHTML='<div style="text-align:center;padding:20px;color:var(--txm);font-size:12px">Nenhum pagamento encontrado</div>';return;}
+  const inicio=_pagPage*_PAG_PER_PAGE;
+  const fim=Math.min(inicio+_PAG_PER_PAGE,total);
+  const pagina=_pagsFiltrados.slice(inicio,fim);
+  // Manter paginação existente se já renderizou alguma coisa
+  const existingPag=h.querySelector('.pag-nav');
+  if(!existingPag) h.innerHTML='';
+  // Remover itens antigos (não a nav)
+  h.querySelectorAll('.pag-item').forEach(el=>el.remove());
+  h.querySelector('.pag-nav')?.remove();
+  pagina.forEach(p=>{
     const m=cMot(p.motoId);const car=cCar(p.carroId);
     const dias=_diasAtraso(p);
     const atrasado=!p.pago&&dias>0;
@@ -3268,9 +3530,25 @@ function renderHistPag(){
         ${atrasado?`<button style="flex:1;background:rgba(239,68,68,.12);color:var(--r);border:none;border-radius:7px;padding:5px 0;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit" onclick="abrirCobranca('${p.id}')">Cobrar</button>`:''}
         <button style="background:rgba(239,68,68,.1);color:var(--r);border:none;border-radius:7px;padding:5px 8px;font-size:10px;cursor:pointer;font-family:inherit" onclick="excluirPag('${p.id}')">X</button>
       </div>`;
+    d.classList.add('pag-item');
     h.appendChild(d);
   });
+  // Paginação
+  if(total>_PAG_PER_PAGE){
+    const nav=document.createElement('div');
+    nav.className='pag-nav';
+    nav.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:12px 4px;margin-top:4px';
+    const totalPags=Math.ceil(total/_PAG_PER_PAGE);
+    nav.innerHTML=`
+      <button onclick="_pagAnterior()" ${_pagPage===0?'disabled':''} style="background:var(--bg);border:1px solid var(--sll);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:${_pagPage===0?'var(--sll)':'var(--p)'}">← Anterior</button>
+      <span style="font-size:11px;color:var(--txm)">${inicio+1}–${fim} de ${total}</span>
+      <button onclick="_pagProximo()" ${fim>=total?'disabled':''} style="background:var(--bg);border:1px solid var(--sll);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:${fim>=total?'var(--sll)':'var(--p)'}">Próximo →</button>`;
+    h.appendChild(nav);
+  }
 }
+
+function _pagAnterior(){if(_pagPage>0){_pagPage--;_renderHistPagPage();document.getElementById('sc-pag')?.scrollTo(0,0);}}
+function _pagProximo(){if((_pagPage+1)*_PAG_PER_PAGE<_pagsFiltrados.length){_pagPage++;_renderHistPagPage();document.getElementById('sc-pag')?.scrollTo(0,0);}}
 
 
 function renderEvs(){
