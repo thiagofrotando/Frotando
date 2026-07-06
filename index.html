@@ -6079,14 +6079,16 @@ function excluirPag(id){
 
 
 function updateBadges(){
+  // Só atualiza badges se o app estiver visível (não na landing/login)
+  const app=document.getElementById('app');
+  if(!app||app.style.display==='none') return;
   const pend=DB.semAtual.filter(s=>!s.pago).length;
-  document.getElementById('nd-pag').style.display=pend>0?'block':'none';
+  const ndPag=document.getElementById('nd-pag');if(ndPag) ndPag.style.display=pend>0?'block':'none';
   const evAb=DB.evs.filter(e=>!e.resolvido).length;
-  document.getElementById('nd-ev').style.display=evAb>0?'block':'none';
+  const ndEv=document.getElementById('nd-ev');if(ndEv) ndEv.style.display=evAb>0?'block':'none';
   const total=pend+evAb;
   const nb=document.getElementById('nb');
-  nb.style.display=total>0?'block':'none';
-  nb.textContent=total;
+  if(nb){nb.style.display=total>0?'block':'none';nb.textContent=total;}
 }
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────────
@@ -6162,8 +6164,12 @@ async function cadastrar(){
 function _mostrarLanding(){
   const lp=document.getElementById('lp');
   const ls=document.getElementById('ls');
+  const nav=document.getElementById('nav');
+  const app=document.getElementById('app');
   if(lp) lp.style.display='flex';
   if(ls) ls.style.display='none';
+  if(nav) nav.style.display='none';
+  if(app) app.style.display='none';
 }
 
 function irParaLogin(){
