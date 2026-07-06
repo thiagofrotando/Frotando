@@ -41,8 +41,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 #ct{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nh) + var(--sb) + 8px)}
 #ct>.sc{padding:14px;display:none;animation:fu .22s ease}
 #ct>.sc.on{display:block}
-#nav{position:fixed;bottom:0;left:0;right:0;background:var(--p);height:calc(var(--nh) + var(--sb));padding-bottom:var(--sb);display:none!important;align-items:flex-start;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;z-index:100;box-shadow:0 -2px 10px #0004;border-top:1px solid rgba(255,255,255,.07);scrollbar-width:none}
-#nav.nav-visible{display:flex!important}
+#nav{position:fixed;bottom:0;left:0;right:0;background:var(--p);height:calc(var(--nh) + var(--sb));padding-bottom:var(--sb);display:none;align-items:flex-start;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;z-index:100;box-shadow:0 -2px 10px #0004;border-top:1px solid rgba(255,255,255,.07);scrollbar-width:none}
+#nav.nav-visible{display:flex}
 #nav::-webkit-scrollbar{display:none}
 .fpag{flex-shrink:0;border:1.5px solid var(--sll);border-radius:20px;padding:4px 11px;font-size:11px;font-weight:700;background:transparent;color:var(--txm);cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
 .fpag.on{background:var(--p);color:#fff;border-color:var(--p)}
@@ -1105,7 +1105,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 </div>
 </div>
 </div>
-<nav id="nav" style="display:none">
+<nav id="nav" style="display:none!important">
     <button class="ni on" data-s="dash" onclick="goTo('dash',this)"><span class="ic">📊</span>Início</button>
     <button class="ni" data-s="carros" onclick="goTo('carros',this)"><span class="ic">🚗</span>Carros</button>
     <button class="ni" data-s="motos" onclick="goTo('motos',this)"><span class="ic">👤</span>Motoristas</button>
@@ -5765,7 +5765,7 @@ async function logout(){
   await _sb.auth.signOut();
   _sbUser=null;
   document.getElementById('app').style.display='none';
-  document.getElementById('nav').classList.remove('nav-visible');
+  const _navEl=document.getElementById('nav');if(_navEl){_navEl.classList.remove('nav-visible');_navEl.style.cssText='display:none!important';}
   const l=document.getElementById('ls');l.style.display='flex';l.style.opacity='0';
   setTimeout(()=>{l.style.opacity='1';l.style.transition='opacity .25s';},10);
   _loginMsg('');
@@ -6221,7 +6221,7 @@ function _mostrarLanding(){
   const app=document.getElementById('app');
   if(lp) lp.style.display='flex';
   if(ls) ls.style.display='none';
-  if(nav) nav.classList.remove('nav-visible');
+  if(nav){nav.classList.remove('nav-visible');nav.style.cssText='display:none!important';}
   if(app) app.style.display='none';
 }
 
@@ -6401,7 +6401,7 @@ function _entrarNoApp(){
   if(!appEl) return;
   appEl.style.display='flex';
   const navEl=document.getElementById('nav');
-  if(navEl) navEl.classList.add('nav-visible');
+  if(navEl){navEl.classList.add('nav-visible');navEl.style.removeProperty('display');navEl.style.display='flex';}
   document.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   document.getElementById('sc-dash').classList.add('on');
