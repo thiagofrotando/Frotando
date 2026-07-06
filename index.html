@@ -698,8 +698,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
   </div>
 </div>
 <!-- MODAL ONBOARDING -->
-<div id="m-onboard" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.7);align-items:flex-end;justify-content:center">
-  <div style="background:var(--card);border-radius:18px 18px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;box-shadow:0 -4px 32px rgba(0,0,0,.25)">
+<div id="m-onboard" style="display:none;position:fixed;inset:0;z-index:300;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch">
+  <div style="background:var(--card);padding:24px 20px 48px;width:100%;max-width:480px;margin:0 auto;min-height:100vh">
     <div style="width:36px;height:4px;background:var(--sll);border-radius:99px;margin:0 auto 20px"></div>
     <!-- Steps indicator -->
     <div style="display:flex;gap:4px;margin-bottom:20px" id="ob-steps">
@@ -1742,12 +1742,17 @@ let _obCarroId=null;
 
 function _obAbrir(){
   const el=document.getElementById('m-onboard');
-  if(el){el.style.display='flex';}
+  if(el){
+    el.style.display='block';
+    el.scrollTop=0;
+    document.body.style.overflow='hidden';
+  }
   _obIrEtapa(1);
 }
 function _obFechar(){
   const el=document.getElementById('m-onboard');
   if(el) el.style.display='none';
+  document.body.style.overflow='';
 }
 function _obPular(){
   LS.set('ob_done','1');
@@ -1765,6 +1770,11 @@ function _obIrEtapa(n){
     const s=document.getElementById('ob-s'+i);
     if(s) s.style.background=i<=n?'var(--a)':'var(--sll)';
   });
+  // Scroll to top so button is always visible
+  const el=document.getElementById('m-onboard');
+  if(el) el.scrollTop=0;
+  // Blur any active input to dismiss keyboard
+  if(document.activeElement) document.activeElement.blur();
 }
 function _obProximo(n){_obIrEtapa(n);}
 
@@ -5981,3 +5991,4 @@ document.addEventListener('DOMContentLoaded',async()=>{
 </html>
 </body>
 </html>
+
