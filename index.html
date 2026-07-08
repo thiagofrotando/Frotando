@@ -1289,7 +1289,8 @@ const _rendered=new Set();
 function markDirty(...keys){keys.forEach(k=>_dirty.add(k));}
 function goTo(id,el){
   // Troca visual imediata — não espera render
-  // Esconder landing ao entrar no app
+  // Esconder landing ao entrar no app e restaurar scroll do app
+  _restaurarAppScroll();
   const _lp=document.getElementById('lp');
   if(_lp) _lp.setAttribute('style','display:none!important');
   document.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));
@@ -6200,15 +6201,25 @@ function _mostrarLanding(){
   ['ls','app'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   const nav=document.getElementById('nav');
   if(nav){nav.classList.remove('nav-visible');nav.setAttribute('style','display:none!important');}
-  // Mostrar landing
+  // Liberar scroll NATIVO do documento (mobile precisa disso)
+  document.documentElement.style.cssText='overflow:auto;height:auto';
+  document.body.style.cssText='overflow:auto;height:auto;background:#f0f4f8';
+  // Landing no fluxo normal do documento — scroll nativo do body
   const lp=document.getElementById('lp');
   if(lp){
-    lp.setAttribute('style','display:flex!important;flex-direction:column;position:fixed;top:0;left:0;right:0;bottom:0;overflow-y:scroll;-webkit-overflow-scrolling:touch;z-index:200;background:#f0f4f8');
-    lp.scrollTop=0;
+    lp.setAttribute('style','display:flex;flex-direction:column;position:relative;z-index:1;background:#f0f4f8;min-height:100vh;color:#1e293b;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',sans-serif');
+    window.scrollTo(0,0);
   }
 }
 
+function _restaurarAppScroll(){
+  // Restaurar CSS original do app (sem scroll no body)
+  document.documentElement.style.cssText='overflow:hidden;height:100%';
+  document.body.style.cssText='overflow:hidden;height:100%';
+}
+
 function irParaLogin(){
+  _restaurarAppScroll();
   const lp=document.getElementById('lp');
   if(lp) lp.setAttribute('style','display:none!important');
   const ls=document.getElementById('ls');
@@ -6221,6 +6232,7 @@ function irParaLogin(){
 }
 
 function irParaCadastro(){
+  _restaurarAppScroll();
   const lp=document.getElementById('lp');
   if(lp) lp.setAttribute('style','display:none!important');
   const ls=document.getElementById('ls');
