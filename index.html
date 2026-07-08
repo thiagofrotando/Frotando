@@ -1588,6 +1588,8 @@ async function _registrarSW() {
   if (!('serviceWorker' in navigator)) return;
   try {
     _swReg = await navigator.serviceWorker.register('/sw.js');
+    // Forçar verificação de atualização do SW a cada carga
+    _swReg.update();
     console.log('SW registrado:', _swReg.scope);
     // Ouvir mensagens do SW
     navigator.serviceWorker.addEventListener('message', e => {
