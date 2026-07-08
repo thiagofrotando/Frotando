@@ -1289,6 +1289,9 @@ const _rendered=new Set();
 function markDirty(...keys){keys.forEach(k=>_dirty.add(k));}
 function goTo(id,el){
   // Troca visual imediata — não espera render
+  // Esconder landing ao entrar no app
+  const _lp=document.getElementById('lp');
+  if(_lp) _lp.setAttribute('style','display:none!important');
   document.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   document.getElementById('sc-'+id).classList.add('on');
@@ -6191,27 +6194,21 @@ async function cadastrar(){
 
 // ── LANDING PAGE & NAVEGAÇÃO ──────────────────────────────────────────────────
 function _mostrarLanding(){
-  const lp=document.getElementById('lp');
-  const ls=document.getElementById('ls');
+  // Esconder tudo exceto landing
+  ['ls','app'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   const nav=document.getElementById('nav');
-  const app=document.getElementById('app');
+  if(nav){nav.classList.remove('nav-visible');nav.setAttribute('style','display:none!important');}
+  // Mostrar landing
+  const lp=document.getElementById('lp');
   if(lp){
-    lp.style.display='block';
-    lp.style.overflowY='scroll';
-    lp.style.webkitOverflowScrolling='touch';
+    lp.setAttribute('style','display:flex!important;flex-direction:column;position:fixed;top:0;left:0;right:0;bottom:0;overflow-y:scroll;-webkit-overflow-scrolling:touch;z-index:200;background:#f0f4f8');
     lp.scrollTop=0;
   }
-  if(ls) ls.style.display='none';
-  if(nav){nav.classList.remove('nav-visible');nav.style.cssText='display:none!important';}
-  if(app) app.style.display='none';
-  // Garantir que nav não aparece
-  const navEl2=document.getElementById('nav');
-  if(navEl2){navEl2.style.cssText='display:none!important';navEl2.classList.remove('nav-visible');}
-  // Landing usa position:fixed com overflow:scroll próprio
 }
 
 function irParaLogin(){
-  document.getElementById('lp').style.display='none';
+  const lp=document.getElementById('lp');
+  if(lp) lp.setAttribute('style','display:none!important');
   const ls=document.getElementById('ls');
   ls.style.display='flex';
   // Focar no email
@@ -6222,7 +6219,8 @@ function irParaLogin(){
 }
 
 function irParaCadastro(){
-  document.getElementById('lp').style.display='none';
+  const lp=document.getElementById('lp');
+  if(lp) lp.setAttribute('style','display:none!important');
   const ls=document.getElementById('ls');
   ls.style.display='flex';
   setTimeout(()=>document.getElementById('ie')?.focus(),200);
@@ -6237,7 +6235,7 @@ function irParaCadastro(){
 
 function voltarLanding(){
   document.getElementById('ls').style.display='none';
-  document.getElementById('lp').style.display='flex';
+  _mostrarLanding();
   _loginMsg('');
   _setBtnLogin(false);
 }
