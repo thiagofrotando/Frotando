@@ -133,6 +133,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.4.0</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -312,6 +313,11 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <p style="font-size:14px;color:rgba(255,255,255,.6);margin-bottom:24px">30 dias gratis. Sem cartao. Sem compromisso.</p>
     <button onclick="irParaCadastro()" style="background:#f59e0b;color:#0d2b3e;border:none;border-radius:12px;padding:16px 32px;font-size:16px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 4px 20px rgba(245,158,11,.4);width:100%;max-width:320px">Criar conta gratuita</button>
     <div style="margin-top:16px;font-size:12px;color:rgba(255,255,255,.3)">Duvidas? (31) 97572-7717 · frotando.com.br</div>
+    <div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,.25)">
+      <a href="#" onclick="event.preventDefault();abrirTermos()" style="color:rgba(255,255,255,.4);text-decoration:underline">Termos de Uso</a>
+      <span style="margin:0 6px">·</span>
+      <a href="#" onclick="event.preventDefault();abrirPrivacidade()" style="color:rgba(255,255,255,.4);text-decoration:underline">Política de Privacidade</a>
+    </div>
   </section>
 
 </div>
@@ -331,7 +337,11 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="text-align:center;margin-top:10px">
       <button onclick="esqueceuSenha()" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline">Esqueci minha senha</button>
     </div>
-    <div id="login-msg" style="margin-top:6px;font-size:12px;text-align:center;color:rgba(255,255,255,.55);min-height:18px"></div>
+    <label style="display:flex;align-items:flex-start;gap:8px;margin-top:12px;cursor:pointer">
+      <input type="checkbox" id="chk-termos" style="margin-top:2px;width:16px;height:16px;flex-shrink:0;accent-color:#f59e0b">
+      <span style="font-size:11px;color:rgba(255,255,255,.55);line-height:1.5">Li e aceito os <a href="#" onclick="event.preventDefault();abrirTermos()" style="color:#f59e0b;text-decoration:underline">Termos de Uso</a> e a <a href="#" onclick="event.preventDefault();abrirPrivacidade()" style="color:#f59e0b;text-decoration:underline">Política de Privacidade</a></span>
+    </label>
+    <div id="login-msg" style="margin-top:8px;font-size:12px;text-align:center;color:rgba(255,255,255,.55);min-height:18px"></div>
     <div style="text-align:center;margin-top:12px">
       <button onclick="voltarLanding()" style="background:none;border:none;color:rgba(255,255,255,.3);font-size:11px;cursor:pointer;font-family:inherit">← Voltar</button>
     </div>
@@ -373,6 +383,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       </div>
       <!-- Financiamentos -->
       <div class="cd" style="margin-top:10px" id="cd-financ-dash"></div>
+      <!-- Semáforo geral de rentabilidade -->
+      <div id="cd-semaforo" style="margin-top:10px;display:none"></div>
       <!-- Badge de uso do plano -->
       <div id="cd-plano-uso" style="margin-top:10px;display:none"></div>
       <!-- Insights -->
@@ -575,6 +587,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
         <div class="st">Comparativo mensal</div>
         <div id="rel-comp-list"></div>
       </div>
+      <!-- Caução (passivo) -->
+      <div class="cd" id="cd-cauc-rel" style="margin-top:10px"></div>
       <!-- Relatórios especiais -->
       <div class="cd" style="margin-top:10px">
         <div class="st">Relatórios especiais</div>
@@ -627,6 +641,10 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       <div class="cd">
         <div class="st">Dados e Backup</div>
         <button class="bt bto btf bts" onclick="exportarCSV()">⬇️ Exportar dados CSV</button>
+        <div style="display:flex;gap:6px;margin-top:7px">
+          <button class="bt btf bts" style="flex:1;background:transparent;border:1px solid var(--sll);color:var(--txm);font-size:11px" onclick="abrirTermos()">Termos de Uso</button>
+          <button class="bt btf bts" style="flex:1;background:transparent;border:1px solid var(--sll);color:var(--txm);font-size:11px" onclick="abrirPrivacidade()">Privacidade</button>
+        </div>
         <button id="btn-notif" class="bt btf bts" style="margin-top:7px;border:1.5px solid var(--sll);background:transparent;color:var(--txm)" onclick="ativarNotificacoes()">🔔 Ativar notificações de sábado</button>
         <button class="bt btd btf bts" style="margin-top:7px" onclick="resetarDados()">🗑 Resetar todos os dados</button>
         <button id="btn-admin" class="bt btf bts" style="margin-top:7px;display:none;background:rgba(13,43,62,.12);color:#0d2b3e;border:1px solid rgba(13,43,62,.25)" onclick="abrirAdmin()">⚙️ Painel Admin</button>
@@ -1111,7 +1129,9 @@ function _initSB(){
 }
 let _sbUser=null;
 let _plano={plano:'trial',limite_carros:2,ativo:true,trial_ate:null};
-const ADMIN_EMAIL='thiagooa@yahoo.com.br'; // e-mail do admin
+// Admin é determinado pela coluna is_admin no banco (frotando_planos),
+// NUNCA por comparação de e-mail no cliente — isso é falsificável no console.
+let _isAdminDB=false;
 
 async function _carregarPlano(){
   if(!_sbUser||!_sb) return;
@@ -1120,7 +1140,8 @@ async function _carregarPlano(){
     if(data&&!error){
       _plano=data;
       _atualizarBadgePlano();
-      _renderPlanoBadge();
+      _renderSemaforoDash();
+  _renderPlanoBadge();
     }
   }catch(e){console.log('Plano nao encontrado, usando trial');}
 }
@@ -1147,7 +1168,7 @@ function _atualizarBadgePlano(){
 }
 
 function _podeAdicionarCarro(){
-  if(_sbUser?.email===ADMIN_EMAIL) return true;
+  if(_isAdmin()) return true;
   const carrosAtivos=DB.carros.length;
   if(!_plano.ativo){toast('Plano inativo. Entre em contato para reativar.','er');return false;}
   if(_plano.plano==='trial'){
@@ -1915,10 +1936,196 @@ function exportarCSVCompleto(){
   toast('CSV exportado com sucesso! ✓');
 }
 
+
+// ── DOCUMENTOS LEGAIS (LGPD) ─────────────────────────────────────────────────
+const _CSS_LEGAL = `
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;padding:20px;font-size:14px;line-height:1.65}
+  @media print{body{background:#fff;padding:0}.no-print{display:none}}
+  .page{max-width:720px;margin:0 auto;background:#fff;border-radius:12px;padding:32px}
+  h1{font-size:22px;font-weight:900;color:#0d2b3e;margin-bottom:4px}
+  .sub{font-size:12px;color:#64748b;margin-bottom:24px;padding-bottom:14px;border-bottom:2px solid #f59e0b}
+  h2{font-size:15px;font-weight:800;color:#0d2b3e;margin:22px 0 8px}
+  p{margin-bottom:10px;color:#334155}
+  ul{margin:0 0 12px 20px;color:#334155}
+  li{margin-bottom:5px}
+  .box{background:#fef9f0;border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;padding:12px 14px;margin:14px 0;font-size:13px}
+  .btn{background:#0d2b3e;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:16px}
+  .footer{margin-top:28px;padding-top:14px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8;text-align:center}
+`;
+
+function _abrirDocLegal(titulo, corpo){
+  const dataAtual=new Date().toLocaleDateString('pt-BR');
+  const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${titulo} — Frotando</title><style>${_CSS_LEGAL}</style></head><body>
+<div class="page">
+  <div class="no-print"><button class="btn" onclick="window.print()">Imprimir / Salvar PDF</button></div>
+  <h1>${titulo}</h1>
+  <div class="sub">Frotando · Última atualização: ${dataAtual}</div>
+  ${corpo}
+  <div class="footer">Frotando — Gestão de frota para motoristas de aplicativo<br>Contato: (31) 97572-7717 · frotando.com.br</div>
+</div></body></html>`;
+  const win=window.open('','_blank');
+  if(!win){toast('Permita pop-ups para ver o documento','er');return;}
+  win.document.write(html);win.document.close();
+}
+
+function abrirTermos(){
+  _abrirDocLegal('Termos de Uso', `
+    <div class="box"><strong>Resumo:</strong> O Frotando é uma ferramenta de gestão. Você é responsável pelos dados que insere e pelos contratos que celebra com seus locatários. Não somos parte desses contratos.</div>
+
+    <h2>1. Aceitação</h2>
+    <p>Ao criar uma conta e utilizar o Frotando ("Serviço"), você declara ter lido, compreendido e aceito integralmente estes Termos de Uso e a Política de Privacidade. Caso não concorde, não utilize o Serviço.</p>
+
+    <h2>2. Descrição do Serviço</h2>
+    <p>O Frotando é um software de gestão destinado a locadores de veículos que alugam automóveis a motoristas de plataformas de transporte por aplicativo. O Serviço oferece funcionalidades de cadastro de veículos e locatários, controle de contratos e pagamentos, registro de eventos e geração de documentos e relatórios.</p>
+    <p>O Frotando é uma <strong>ferramenta de apoio à gestão</strong>. Não intermediamos, garantimos ou participamos de qualquer contrato de locação celebrado entre você e seus locatários.</p>
+
+    <h2>3. Cadastro e Conta</h2>
+    <ul>
+      <li>Você deve fornecer informações verdadeiras, completas e atualizadas.</li>
+      <li>Você é o único responsável pela guarda de sua senha e por toda atividade realizada em sua conta.</li>
+      <li>Contas podem ser suspensas em caso de violação destes Termos, inadimplência ou uso indevido.</li>
+    </ul>
+
+    <h2>4. Planos, Pagamento e Cancelamento</h2>
+    <ul>
+      <li>O Serviço é oferecido em planos gratuitos (período de teste) e pagos, conforme tabela vigente.</li>
+      <li>Os limites de cada plano, como número máximo de veículos, são aplicados automaticamente.</li>
+      <li>Não há fidelidade. Você pode cancelar a qualquer momento; o acesso permanece até o fim do período pago.</li>
+      <li>Valores podem ser reajustados mediante aviso prévio de 30 dias.</li>
+    </ul>
+
+    <h2>5. Responsabilidade sobre Dados de Terceiros</h2>
+    <p>Ao inserir dados pessoais de seus locatários (motoristas) no Frotando — tais como nome, CPF, CNH, endereço, telefone e fotografia — você atua como <strong>Controlador</strong> desses dados nos termos da Lei nº 13.709/2018 (LGPD), e o Frotando atua como <strong>Operador</strong>.</p>
+    <p>Cabe a você:</p>
+    <ul>
+      <li>Obter a base legal adequada (consentimento ou execução de contrato) para tratar esses dados;</li>
+      <li>Informar aos titulares sobre o tratamento realizado;</li>
+      <li>Atender às solicitações dos titulares quanto a acesso, correção e exclusão.</li>
+    </ul>
+
+    <h2>6. Documentos Gerados</h2>
+    <p>Os contratos, recibos, laudos e termos gerados pelo Serviço são <strong>modelos de referência</strong> fornecidos como conveniência. O Frotando não presta consultoria jurídica e não garante a adequação desses documentos à sua situação específica.</p>
+    <p>Recomendamos que você submeta os modelos à análise de um advogado antes de utilizá-los. A responsabilidade pelo uso dos documentos é integralmente sua.</p>
+
+    <h2>7. Disponibilidade e Limitação de Responsabilidade</h2>
+    <p>Envidamos esforços razoáveis para manter o Serviço disponível, mas não garantimos operação ininterrupta ou livre de erros. O Serviço é fornecido "no estado em que se encontra".</p>
+    <p>Na máxima extensão permitida pela legislação aplicável, o Frotando não responde por lucros cessantes, perda de dados ou danos indiretos decorrentes do uso ou da impossibilidade de uso do Serviço.</p>
+    <p>Nada nestes Termos exclui responsabilidades que não possam ser afastadas pela legislação brasileira, inclusive pelo Código de Defesa do Consumidor, quando aplicável.</p>
+
+    <h2>8. Backup e Perda de Dados</h2>
+    <p>Embora mantenhamos rotinas de backup, recomendamos que você exporte periodicamente seus dados por meio da função de exportação CSV disponível no Serviço.</p>
+
+    <h2>9. Uso Proibido</h2>
+    <ul>
+      <li>Utilizar o Serviço para fins ilícitos ou para inserir dados de terceiros sem base legal;</li>
+      <li>Tentar acessar dados de outros usuários, contornar limites de plano ou explorar vulnerabilidades;</li>
+      <li>Realizar engenharia reversa ou revender o Serviço sem autorização.</li>
+    </ul>
+
+    <h2>10. Alterações</h2>
+    <p>Podemos alterar estes Termos a qualquer momento. Alterações materiais serão comunicadas por e-mail ou dentro do aplicativo com antecedência razoável. O uso continuado após a vigência implica aceitação.</p>
+
+    <h2>11. Encerramento</h2>
+    <p>Você pode encerrar sua conta a qualquer momento. Ao encerrá-la, seus dados serão excluídos conforme descrito na Política de Privacidade.</p>
+
+    <h2>12. Legislação e Foro</h2>
+    <p>Estes Termos regem-se pelas leis da República Federativa do Brasil. Fica eleito o foro do domicílio do usuário para dirimir controvérsias, quando aplicável a legislação consumerista.</p>
+  `);
+}
+
+function abrirPrivacidade(){
+  _abrirDocLegal('Política de Privacidade', `
+    <div class="box"><strong>Resumo:</strong> Coletamos apenas o necessário para o Serviço funcionar. Não vendemos seus dados. Você pode exportá-los ou apagá-los a qualquer momento.</div>
+
+    <h2>1. Quem somos</h2>
+    <p>O Frotando é um software de gestão de frota para locação a motoristas de aplicativo. Esta Política descreve como tratamos dados pessoais, em conformidade com a Lei nº 13.709/2018 (LGPD).</p>
+    <p><strong>Contato do encarregado (DPO):</strong> (31) 97572-7717</p>
+
+    <h2>2. Papéis: quem controla o quê</h2>
+    <p>É importante distinguir dois conjuntos de dados:</p>
+    <ul>
+      <li><strong>Seus dados como usuário</strong> (e-mail, senha, dados da empresa): o Frotando é o <strong>Controlador</strong>.</li>
+      <li><strong>Dados dos seus locatários</strong> (motoristas): <strong>você</strong> é o Controlador e o Frotando atua como <strong>Operador</strong>, tratando os dados exclusivamente conforme suas instruções.</li>
+    </ul>
+
+    <h2>3. Dados que coletamos</h2>
+    <p><strong>Do usuário (locador):</strong></p>
+    <ul>
+      <li>E-mail e senha (armazenada de forma criptografada, jamais em texto simples);</li>
+      <li>Nome ou razão social, CPF ou CNPJ, endereço, chave PIX;</li>
+      <li>Dados de uso e registros técnicos necessários à operação e à segurança.</li>
+    </ul>
+    <p><strong>Dos locatários, inseridos por você:</strong></p>
+    <ul>
+      <li>Nome, CPF, RG, número e validade da CNH;</li>
+      <li>Endereço, telefone, plataformas em que atua;</li>
+      <li>Fotografia, quando fornecida.</li>
+    </ul>
+
+    <h2>4. Finalidades e base legal</h2>
+    <ul>
+      <li><strong>Execução de contrato</strong> (art. 7º, V): prestar o Serviço contratado, autenticar acesso, sincronizar dados entre dispositivos, gerar documentos e relatórios.</li>
+      <li><strong>Cumprimento de obrigação legal</strong> (art. 7º, II): guarda de registros e obrigações fiscais.</li>
+      <li><strong>Legítimo interesse</strong> (art. 7º, IX): segurança, prevenção a fraude e melhoria do Serviço.</li>
+    </ul>
+    <p>Quanto aos dados dos locatários, a base legal é definida por você, Controlador, no âmbito da relação contratual mantida com eles.</p>
+
+    <h2>5. Onde os dados ficam</h2>
+    <p>Os dados são armazenados em infraestrutura do Supabase, com servidores localizados na região de São Paulo, Brasil. A comunicação entre seu dispositivo e o servidor é criptografada por TLS (HTTPS).</p>
+    <p>Cada conta é isolada por políticas de segurança em nível de linha (Row Level Security) no banco de dados. Um usuário não consegue, tecnicamente, acessar os dados de outro.</p>
+
+    <h2>6. Compartilhamento</h2>
+    <p><strong>Não vendemos, alugamos ou comercializamos dados pessoais.</strong> Compartilhamos apenas com:</p>
+    <ul>
+      <li><strong>Supabase</strong> — hospedagem de banco de dados e autenticação;</li>
+      <li><strong>Cloudflare</strong> — entrega do aplicativo e segurança de rede;</li>
+      <li><strong>Autoridades</strong> — quando houver requisição legal válida.</li>
+    </ul>
+
+    <h2>7. Retenção e exclusão</h2>
+    <p>Mantemos os dados enquanto sua conta estiver ativa. Ao utilizar a função "Resetar todos os dados", os registros do seu ambiente são removidos do banco de forma permanente.</p>
+    <p>Para excluir integralmente a conta, entre em contato. Atendemos em até 15 dias. Alguns registros podem ser retidos pelo prazo exigido por obrigação legal.</p>
+
+    <h2>8. Seus direitos como titular</h2>
+    <p>Nos termos do art. 18 da LGPD, você pode solicitar a qualquer momento:</p>
+    <ul>
+      <li>Confirmação da existência de tratamento e acesso aos dados;</li>
+      <li>Correção de dados incompletos, inexatos ou desatualizados;</li>
+      <li>Anonimização, bloqueio ou eliminação de dados desnecessários ou tratados em desconformidade;</li>
+      <li>Portabilidade — o aplicativo oferece exportação em CSV a qualquer momento;</li>
+      <li>Informação sobre compartilhamento e sobre as consequências de não fornecer consentimento;</li>
+      <li>Revogação do consentimento, quando esta for a base legal aplicável.</li>
+    </ul>
+    <p>Solicitações pelo contato indicado no item 1.</p>
+
+    <h2>9. Segurança</h2>
+    <ul>
+      <li>Transmissão criptografada (TLS/HTTPS) em todas as comunicações;</li>
+      <li>Senhas armazenadas com hash criptográfico;</li>
+      <li>Isolamento de dados por conta (Row Level Security);</li>
+      <li>Confirmação de e-mail obrigatória no cadastro;</li>
+      <li>Backups periódicos da base de dados.</li>
+    </ul>
+    <p>Nenhum sistema é absolutamente seguro. Em caso de incidente de segurança relevante, comunicaremos os titulares afetados e a Autoridade Nacional de Proteção de Dados (ANPD), conforme o art. 48 da LGPD.</p>
+
+    <h2>10. Dados de menores</h2>
+    <p>O Serviço destina-se a maiores de 18 anos. Não coletamos intencionalmente dados de menores.</p>
+
+    <h2>11. Cookies e armazenamento local</h2>
+    <p>Utilizamos armazenamento local (localStorage) do navegador para manter sua sessão e permitir o uso offline. Não utilizamos cookies de rastreamento publicitário nem ferramentas de perfilhamento de terceiros.</p>
+
+    <h2>12. Alterações</h2>
+    <p>Esta Política pode ser atualizada. Mudanças materiais serão comunicadas por e-mail ou no próprio aplicativo, com antecedência razoável.</p>
+  `);
+}
+
 // ── PAINEL ADMIN ──────────────────────────────────────────────────────────────
 let _adminData=[];
 
-function _isAdmin(){ return _sbUser?.email===ADMIN_EMAIL; }
+function _isAdmin(){ return _isAdminDB===true; }
 
 async function abrirAdmin(){
   if(!_isAdmin()){toast('Acesso negado','er');return;}
@@ -2056,9 +2263,53 @@ async function _adminEditarObs(userId){
 
 
 // ── PLANO / UPGRADE ───────────────────────────────────────────────────────────
+
+function _renderSemaforoDash(){
+  const el=document.getElementById('cd-semaforo');
+  if(!el) return;
+  if(!DB.carros.length){el.style.display='none';return;}
+
+  const rents=DB.carros.map(c=>({c,r:_rentabilidadeCarro(c.id)}));
+  const verdes=rents.filter(x=>x.r.lucro>=0&&x.r.margem>=20).length;
+  const amarelos=rents.filter(x=>x.r.lucro>=0&&x.r.margem<20).length;
+  const vermelhos=rents.filter(x=>x.r.lucro<0).length;
+  const lucroTotal=rents.reduce((s,x)=>s+x.r.lucro,0);
+  const piores=rents.filter(x=>x.r.lucro<0).sort((a,b)=>a.r.lucro-b.r.lucro).slice(0,2);
+
+  el.style.display='block';
+  el.innerHTML=`<div class="cd" style="margin-bottom:0">
+    <div class="st">Rentabilidade da frota</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin:10px 0">
+      <div style="background:rgba(16,163,74,.1);border:1px solid rgba(16,163,74,.2);border-radius:9px;padding:9px;text-align:center">
+        <div style="font-size:19px">🟢</div>
+        <div style="font-size:17px;font-weight:900;color:var(--g)">${verdes}</div>
+        <div style="font-size:9px;color:var(--txm);font-weight:600">Lucrativos</div>
+      </div>
+      <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:9px;padding:9px;text-align:center">
+        <div style="font-size:19px">🟡</div>
+        <div style="font-size:17px;font-weight:900;color:var(--y)">${amarelos}</div>
+        <div style="font-size:9px;color:var(--txm);font-weight:600">No limite</div>
+      </div>
+      <div style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.2);border-radius:9px;padding:9px;text-align:center">
+        <div style="font-size:19px">🔴</div>
+        <div style="font-size:17px;font-weight:900;color:var(--r)">${vermelhos}</div>
+        <div style="font-size:9px;color:var(--txm);font-weight:600">Prejuízo</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 11px;background:var(--bg);border-radius:9px">
+      <span style="font-size:12px;color:var(--txm);font-weight:600">Resultado da frota este mês</span>
+      <span style="font-size:15px;font-weight:900;color:${lucroTotal>=0?'var(--g)':'var(--r)'}">${lucroTotal>=0?'+':'-'}${R(Math.round(Math.abs(lucroTotal)))}</span>
+    </div>
+    ${piores.length?`<div style="margin-top:9px;padding:9px 11px;background:rgba(220,38,38,.06);border-left:3px solid var(--r);border-radius:0 8px 8px 0">
+      <div style="font-size:10px;font-weight:800;color:var(--r);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Atenção</div>
+      ${piores.map(x=>`<div style="font-size:11px;color:var(--tx);margin-bottom:2px"><strong>${x.c.placa}</strong> — prejuízo de ${R(Math.round(Math.abs(x.r.lucro)))} este mês</div>`).join('')}
+    </div>`:''}
+  </div>`;
+}
+
 function _renderPlanoBadge(){
   const el=document.getElementById('cd-plano-uso');
-  if(!el||_sbUser?.email===ADMIN_EMAIL){if(el)el.style.display='none';return;}
+  if(!el||_isAdmin()){if(el)el.style.display='none';return;}
   const total=_plano.limite_carros;
   const usado=DB.carros.length;
   const livre=Math.max(0,total-usado);
@@ -2222,7 +2473,7 @@ function abrirEncerramento(locId){
   const inf=document.getElementById('enc-info-contrato');
   if(inf){
     const pagsLoc=DB.pags.filter(p=>p.locId===locId);
-    const rec=pagsLoc.filter(p=>p.pago).reduce((s,p)=>s+Number(p.val||0),0);
+    const rec=pagsLoc.filter(p=>p.pago).reduce((s,p)=>s+_recAluguel(p),0);
     const pend=pagsLoc.filter(p=>!p.pago).reduce((s,p)=>s+Number(p.val||0),0);
     inf.innerHTML=`
       <div style="font-weight:800;font-size:13px;color:var(--p);margin-bottom:8px">${mot?.nome?.split(' ').slice(0,2).join(' ')||'?'} — ${car?.placa||'?'}</div>
@@ -3265,7 +3516,7 @@ async function _confirmarReset(btn){
     toast('Dados apagados localmente ✓','info');
   }
   // Carregar estado vazio (não demo) para usuários não-admin
-  if(_sbUser?.email===ADMIN_EMAIL){
+  if(_isAdmin()){
     loadDB();
   } else {
     const chaves=['config','carros','motos','locs','pags','evs','kms','fins','semAtual'];
@@ -3381,12 +3632,64 @@ function renderGrafico(){
     labEl.appendChild(lab);
   });
 }
+
+// ── SEMÁFORO DE RENTABILIDADE POR CARRO ──────────────────────────────────────
+// Calcula o resultado líquido MENSAL de um veículo:
+// Receita do mês - parcela financiamento - seguro rateado - rastreador rateado - manutenções do mês
+
+// Receita de ALUGUEL de um pagamento (exclui caução, que é garantia/passivo)
+function _recAluguel(p){ return Number(p.valAlug ?? (p.caucAvulso ? 0 : p.val) ?? 0); }
+// Valor de CAUÇÃO de um pagamento
+function _recCaucao(p){ return Number(p.valCauc||0) + (p.caucAvulso ? Number(p.val||0) : 0); }
+
+function _rentabilidadeCarro(carroId){
+  const hoje=new Date();
+  const mes=hoje.getMonth(), ano=hoje.getFullYear();
+  const noMes=iso=>{
+    if(!iso) return false;
+    const d=new Date(iso.includes('/')?iso.split('/').reverse().join('-')+'T12:00:00':iso+'T12:00:00');
+    return d.getMonth()===mes&&d.getFullYear()===ano;
+  };
+
+  // Receita: aluguel recebido no mês (sem caução, que é garantia não receita)
+  const receita=DB.pags
+    .filter(p=>p.carroId===carroId&&p.pago&&noMes(p.data||p.dataVenc))
+    .reduce((s,p)=>s+_recAluguel(p),0);
+
+  // Custo: parcela do financiamento ativo
+  const fin=DB.fins.find(f=>f.carroId===carroId&&f.status!=='Quitado');
+  const custoFin=fin?Number(fin.parcela||0):0;
+
+  // Custo: seguro e rastreador rateados pelo total de carros
+  const nCarros=Math.max(1,DB.carros.length);
+  const custoSeg=Number(DB.config.segVal||0)/nCarros;
+  const custoRas=Number(DB.config.rasVal||0)/nCarros;
+
+  // Custo: manutenções/eventos do mês
+  const custoEv=DB.evs
+    .filter(e=>e.carroId===carroId&&noMes(e.data))
+    .reduce((s,e)=>s+Number(e.custo||0),0);
+
+  const custoTotal=custoFin+custoSeg+custoRas+custoEv;
+  const lucro=receita-custoTotal;
+  const margem=receita>0?Math.round(lucro/receita*100):(custoTotal>0?-100:0);
+
+  // Semáforo: verde >=20% margem | amarelo 0-19% | vermelho <0
+  let cor,label,emoji;
+  if(lucro<0){cor='var(--r)';label='Prejuízo';emoji='🔴';}
+  else if(margem<20){cor='var(--y)';label='No limite';emoji='🟡';}
+  else{cor='var(--g)';label='Lucrativo';emoji='🟢';}
+
+  return{receita,custoFin,custoSeg,custoRas,custoEv,custoTotal,lucro,margem,cor,label,emoji};
+}
+
 function renderCarros(){
   const el=document.getElementById('lista-carros');el.innerHTML='';
   if(!DB.carros.length){el.innerHTML='<div style="text-align:center;padding:32px;color:var(--txm)"><div style="font-size:32px;margin-bottom:8px">🚗</div><div style="font-weight:700">Nenhum carro cadastrado</div></div>';return;}
   DB.carros.forEach(c=>{
     const pct=Math.min(100,Math.round((c.km/120000)*100));
     const corKm=c.km>100000?'var(--r)':c.km>80000?'var(--y)':'var(--g)';
+    const r=_rentabilidadeCarro(c.id);
     const d=document.createElement('div');d.className='cd';
     d.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><div><div style="font-size:16px;font-weight:900;color:var(--p)">${c.placa}</div><div style="font-size:12px;color:var(--txm)">${c.modelo}</div></div><span class="bx" style="background:${stCor(c.status)}22;color:${stCor(c.status)};border:1px solid ${stCor(c.status)}44">${c.status}</span></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px">
@@ -3396,12 +3699,83 @@ function renderCarros(){
     </div>
     <div style="font-size:10px;color:var(--txm);margin-bottom:3px">${Number(c.km||0).toLocaleString('pt-BR')} km de 120.000 — ${pct}%</div>
     <div class="pb"><div class="pf" style="width:${pct}%;background:${corKm}"></div></div>
+    <!-- SEMÁFORO DE RENTABILIDADE -->
+    <div style="background:${r.cor}0f;border:1px solid ${r.cor}33;border-radius:9px;padding:9px 11px;margin-top:10px;cursor:pointer" onclick="_abrirDetalheRent('${c.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;align-items:center;gap:7px">
+          <span style="font-size:15px">${r.emoji}</span>
+          <div>
+            <div style="font-size:11px;font-weight:800;color:${r.cor}">${r.label} este mês</div>
+            <div style="font-size:9px;color:var(--txm)">Receita ${R(Math.round(r.receita))} · Custos ${R(Math.round(r.custoTotal))}</div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:15px;font-weight:900;color:${r.cor}">${r.lucro>=0?'+':''}${R(Math.round(r.lucro))}</div>
+          <div style="font-size:9px;color:var(--txm)">${r.receita>0?r.margem+'% margem':'sem receita'}</div>
+        </div>
+      </div>
+      <div style="font-size:9px;color:var(--txm);text-align:center;margin-top:6px;opacity:.7">Toque para ver o detalhamento</div>
+    </div>
     <div style="display:flex;gap:7px;margin-top:10px">
       <button class="bt bto bts" style="flex:1" onclick="abrirModal('mc',${JSON.stringify(c).replace(/"/g,"'")})">Editar</button>
       <button class="bt btd bts" onclick="excluirCarro('${c.id}')">🗑</button>
     </div>`;
     el.appendChild(d);
   });
+}
+
+
+function _abrirDetalheRent(carroId){
+  const c=cCar(carroId);
+  const r=_rentabilidadeCarro(carroId);
+  const mesNome=new Date().toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  const linha=(label,valor,cor,sinal)=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--sll);font-size:13px">
+    <span style="color:var(--txm)">${label}</span>
+    <span style="font-weight:700;color:${cor}">${sinal}${R(Math.round(Math.abs(valor)))}</span>
+  </div>`;
+
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:flex-end;justify-content:center';
+  overlay.onclick=e=>{if(e.target===overlay)overlay.remove();};
+  overlay.innerHTML=`<div style="background:var(--card);border-radius:18px 18px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));width:100%;max-width:480px;max-height:85svh;overflow-y:auto" onclick="event.stopPropagation()">
+    <div style="width:36px;height:4px;background:var(--sll);border-radius:99px;margin:0 auto 16px"></div>
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-size:32px;margin-bottom:4px">${r.emoji}</div>
+      <div style="font-size:17px;font-weight:900;color:var(--p)">${c?.placa||'?'} — ${r.label}</div>
+      <div style="font-size:11px;color:var(--txm);text-transform:capitalize">${mesNome}</div>
+    </div>
+
+    <div style="background:${r.cor}0f;border:1.5px solid ${r.cor}33;border-radius:12px;padding:14px;margin-bottom:14px;text-align:center">
+      <div style="font-size:10px;color:var(--txm);font-weight:700;text-transform:uppercase;letter-spacing:.5px">Resultado do mês</div>
+      <div style="font-size:28px;font-weight:900;color:${r.cor};margin-top:2px">${r.lucro>=0?'+':'-'}${R(Math.round(Math.abs(r.lucro)))}</div>
+      ${r.receita>0?`<div style="font-size:11px;color:${r.cor};margin-top:2px">Margem de ${r.margem}%</div>`:'<div style="font-size:11px;color:var(--txm);margin-top:2px">Nenhuma receita neste mês</div>'}
+    </div>
+
+    <div style="font-size:11px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Entradas</div>
+    ${linha('Aluguel recebido',r.receita,'var(--g)','+')}
+
+    <div style="font-size:11px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 4px">Saídas</div>
+    ${r.custoFin>0?linha('Parcela do financiamento',r.custoFin,'var(--r)','-'):''}
+    ${r.custoSeg>0?linha('Seguro (rateado)',r.custoSeg,'var(--r)','-'):''}
+    ${r.custoRas>0?linha('Rastreador (rateado)',r.custoRas,'var(--r)','-'):''}
+    ${r.custoEv>0?linha('Manutenções do mês',r.custoEv,'var(--r)','-'):''}
+    ${r.custoTotal===0?'<div style="font-size:12px;color:var(--txm);padding:8px 0">Nenhum custo registrado neste mês</div>':''}
+
+    <div style="display:flex;justify-content:space-between;padding:12px 14px;margin-top:12px;background:var(--p);border-radius:10px">
+      <span style="font-size:14px;font-weight:700;color:#fff">Resultado líquido</span>
+      <span style="font-size:18px;font-weight:900;color:${r.lucro>=0?'#34d399':'#f87171'}">${r.lucro>=0?'+':'-'}${R(Math.round(Math.abs(r.lucro)))}</span>
+    </div>
+
+    ${r.lucro<0?`<div style="background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.2);border-radius:10px;padding:11px;margin-top:12px;font-size:11px;color:var(--r);line-height:1.5">
+      <strong>⚠️ Este veículo está dando prejuízo.</strong> Considere revisar o valor do aluguel, reduzir custos de manutenção ou avaliar a venda do veículo.
+    </div>`:''}
+    ${r.lucro>=0&&r.margem<20&&r.receita>0?`<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:11px;margin-top:12px;font-size:11px;color:var(--a);line-height:1.5">
+      <strong>Margem apertada.</strong> Qualquer manutenção inesperada pode levar este veículo ao prejuízo.
+    </div>`:''}
+
+    <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;background:var(--bg);color:var(--txm);border:1px solid var(--sll);border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:14px">Fechar</button>
+  </div>`;
+  document.body.appendChild(overlay);
 }
 
 function renderMotos(){
@@ -3412,7 +3786,7 @@ function renderMotos(){
     const loc=DB.locs.find(l=>l.motoId===m.id&&l.status==='Ativa');
     const car=loc?cCar(loc.carroId):null;
     const cnhVal=m.vCNH||m.vcnh||'';const cnhD=cnhVal?Math.round((new Date(cnhVal)-hoje)/86400000):999;
-    const rec=DB.pags.filter(p=>p.motoId===m.id&&p.pago).reduce((s,p)=>s+p.val,0);
+    const rec=DB.pags.filter(p=>p.motoId===m.id&&p.pago).reduce((s,p)=>s+_recAluguel(p),0);
     const d=document.createElement('div');d.className='cd';
     d.innerHTML=`<div class="lr" style="padding-top:0;border-bottom:none;padding-bottom:0"><div class="av" style="overflow:hidden;padding:0">${m.foto?`<img src="${m.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`<span style="font-size:18px;line-height:40px">${m.nome.charAt(0)}</span>`}</div><div style="flex:1"><div style="font-weight:800;font-size:14px">${m.nome}</div><div style="font-size:11px;color:var(--txm)">${m.cpf} · CNH: ${m.cnh||'—'}</div></div><div style="text-align:center;flex-shrink:0"><div style="font-size:9px;color:var(--txm)">Nota</div><div style="font-size:15px;font-weight:900;color:var(--a)">${m.nota?'⭐'+m.nota:'⭐ N/A'}</div></div></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:9px 0">
@@ -3435,7 +3809,7 @@ function renderLocs(){
   fil.forEach(l=>{
     const c=cCar(l.carroId),m=cMot(l.motoId);
     const pagsL=DB.pags.filter(p=>p.locId===l.id);
-    const rec=pagsL.filter(p=>p.pago).reduce((s,p)=>s+p.val,0);
+    const rec=pagsL.filter(p=>p.pago).reduce((s,p)=>s+_recAluguel(p),0);
     const pend=pagsL.filter(p=>!p.pago).reduce((s,p)=>s+p.val,0);
     const col=stCor(l.status);
     const d=document.createElement('div');d.className='cd';d.style.borderLeft=`4px solid ${col}`;
@@ -3484,7 +3858,7 @@ function renderPags(){
   const deEl=document.getElementById('fpag-de');
   const ateEl=document.getElementById('fpag-ate');
   if(deEl&&!deEl.value){const{de,ate}=_defaultPeriod();deEl.value=de;ateEl.value=ate;}
-  const rec=DB.pags.filter(p=>p.pago).reduce((s,p)=>s+p.val,0);
+  const rec=DB.pags.filter(p=>p.pago).reduce((s,p)=>s+_recAluguel(p),0);
   const pend=DB.pags.filter(p=>!p.pago).reduce((s,p)=>s+p.val,0);
   const atr=DB.pags.filter(p=>!p.pago&&_diasAtraso(p)>0).length;
   document.getElementById('kpi-rec').textContent=R(rec);
@@ -3695,7 +4069,10 @@ function renderRel(){
     const d=new Date(p.data+'T12:00:00');
     return d.getMonth()===mes&&d.getFullYear()===ano;
   });
-  const recMes=pagsMes.filter(p=>p.pago).reduce((s,p)=>s+Number(p.val||0),0);
+  // RECEITA = apenas aluguel. CAUÇÃO = garantia (passivo), não entra no lucro.
+  const pagos=pagsMes.filter(p=>p.pago);
+  const recMes=pagos.reduce((s,p)=>s+Number(p.valAlug??(p.caucAvulso?0:p.val)??0),0);
+  const caucMes=pagos.reduce((s,p)=>s+Number(p.valCauc||0)+(p.caucAvulso?Number(p.val||0):0),0);
   const pendMes=pagsMes.filter(p=>!p.pago).reduce((s,p)=>s+Number(p.val||0),0);
   const custosMes=DB.evs.filter(e=>{
     if(!e.data) return false;
@@ -3706,12 +4083,32 @@ function renderRel(){
   const parcelas=DB.fins.filter(f=>f.status==='Ativo').reduce((s,f)=>s+f.parcela,0);
   const segRas=(DB.config.segVal||0)+(DB.config.rasVal||0);
   const lucro=recMes-custosMes-parcelas-segRas;
+  // Caução total em posse (passivo a devolver)
+  const caucEmPosse=DB.locs.filter(l=>l.status==='Ativa').reduce((s,l)=>s+Number(l.caucPago||0),0);
   // KPIs
   document.getElementById('kg-rel').innerHTML=`
-    <div class="ki"><div class="kl">Receita recebida</div><div class="kv" style="color:var(--g)">${R(recMes)}</div></div>
+    <div class="ki"><div class="kl">Receita (aluguel)</div><div class="kv" style="color:var(--g)">${R(recMes)}</div></div>
     <div class="ki"><div class="kl">Pendente</div><div class="kv" style="color:${pendMes>0?'var(--r)':'var(--g)'}">${R(pendMes)}</div></div>
     <div class="ki"><div class="kl">Custos/eventos</div><div class="kv" style="color:var(--a)">${R(custosMes)}</div></div>
     <div class="ki"><div class="kl">Lucro líquido</div><div class="kv" style="color:${lucro>0?'var(--g)':'var(--r)'}">${R(Math.round(lucro))}</div></div>`;
+  // Card de caução (passivo)
+  const caucCard=document.getElementById('cd-cauc-rel');
+  if(caucCard){
+    caucCard.innerHTML=`<div class="st">Caução — garantia recebida</div>
+      <div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.18);border-radius:10px;padding:11px 13px;margin-top:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+          <span style="font-size:12px;color:var(--txm)">Recebido neste mês</span>
+          <span style="font-size:14px;font-weight:800;color:#3b82f6">${R(Math.round(caucMes))}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:7px;border-top:1px solid rgba(59,130,246,.15)">
+          <span style="font-size:12px;color:var(--txm)">Total em posse (contratos ativos)</span>
+          <span style="font-size:15px;font-weight:900;color:#3b82f6">${R(Math.round(caucEmPosse))}</span>
+        </div>
+        <div style="font-size:10px;color:var(--txm);margin-top:8px;line-height:1.5;opacity:.85">
+          O caução é uma <strong>garantia</strong>, não receita. Este valor deve ser devolvido ao motorista no encerramento do contrato, descontadas eventuais avarias.
+        </div>
+      </div>`;
+  }
   // Gráfico semanal do mês
   const semsDoMes={};
   pagsMes.filter(p=>p.pago).forEach(p=>{
@@ -3836,7 +4233,10 @@ function exportarRelHTML(){
     return d.getMonth()===mes&&d.getFullYear()===ano;
   });
   const recebidos=pagsMes.filter(p=>p.pago);
-  const recMes=recebidos.reduce((s,p)=>s+Number(p.val||0),0);
+  // RECEITA = aluguel. CAUÇÃO = garantia (passivo), não é receita.
+  const recMes=recebidos.reduce((s,p)=>s+Number(p.valAlug??(p.caucAvulso?0:p.val)??0),0);
+  const caucMes=recebidos.reduce((s,p)=>s+Number(p.valCauc||0)+(p.caucAvulso?Number(p.val||0):0),0);
+  const caucEmPosse=DB.locs.filter(l=>l.status==='Ativa').reduce((s,l)=>s+Number(l.caucPago||0),0);
   const pendMes=pagsMes.filter(p=>!p.pago).reduce((s,p)=>s+Number(p.val||0),0);
   const evsMes=DB.evs.filter(e=>{
     if(!e.data)return false;
@@ -4642,7 +5042,10 @@ function gerarRelContabil(){
   const regime=isPJ?({mei:'MEI',simples:'Simples Nacional',presumido:'Lucro Presumido',real:'Lucro Real'}[cfg.regime||'mei']):'Pessoa Fisica';
   const pagsMes=DB.pags.filter(p=>{if(!p.data)return false;const d=new Date(p.data+'T12:00:00');return d.getMonth()===_relMes&&d.getFullYear()===_relAno;});
   const recebidos=pagsMes.filter(p=>p.pago);
-  const recTotal=recebidos.reduce((s,p)=>s+Number(p.val||0),0);
+  // RECEITA = aluguel. CAUÇÃO = garantia (passivo), não é receita.
+  const recTotal=recebidos.reduce((s,p)=>s+Number(p.valAlug??(p.caucAvulso?0:p.val)??0),0);
+  const caucRecMes=recebidos.reduce((s,p)=>s+Number(p.valCauc||0)+(p.caucAvulso?Number(p.val||0):0),0);
+  const caucPosse=DB.locs.filter(l=>l.status==='Ativa').reduce((s,l)=>s+Number(l.caucPago||0),0);
   const pendTotal=pagsMes.filter(p=>!p.pago).reduce((s,p)=>s+Number(p.val||0),0);
   const evsMes=DB.evs.filter(e=>{if(!e.data)return false;const pts=e.data.split('/');return pts.length>=3&&parseInt(pts[1])-1===_relMes&&parseInt(pts[2])===_relAno;});
   const custEvt=evsMes.reduce((s,e)=>s+Number(e.custo||0),0);
@@ -4663,15 +5066,22 @@ function gerarRelContabil(){
   txt+=L+ln('(-) Seguro','-'+R(custSeg));
   txt+=L+ln('(-) Rastreador','-'+R(custRas));
   txt+=L+S()+L+ln('(=) RESULTADO LIQUIDO',R(Math.round(lucro)));
+  txt+=L+L+'  Obs.: O caucao NAO integra a receita — e garantia (passivo).';
+  txt+=T('1.1 CAUCAO — GARANTIA (PASSIVO)');
+  txt+=L+ln('Caucao recebido no mes',R(Math.round(caucRecMes)));
+  txt+=L+ln('Caucao em posse (contratos ativos)',R(Math.round(caucPosse)));
+  txt+=L+L+'  Valor a devolver ao locatario no encerramento do contrato,';
+  txt+=L+'  descontadas eventuais avarias apuradas em vistoria.';
   txt+=T('2. RECEITAS — DETALHAMENTO');
-  txt+=L+ln('Total recebido no mes',R(recTotal));
+  txt+=L+ln('Receita de aluguel no mes',R(recTotal));
   txt+=L+ln('Total pendente (a receber)',R(pendTotal));
   txt+=L+ln('N. de recebimentos',recebidos.length+' pagamento(s)');
   if(recebidos.length){
     txt+=L+L+'  Locatario'.padEnd(24)+'Veiculo'.padEnd(12)+'Semana'.padEnd(18)+'Valor';
     txt+=L+'  '+'-'.repeat(58);
     recebidos.forEach(p=>{const m=cMot(p.motoId);const car=cCar(p.carroId);
-      txt+=L+'  '+(m?.nome?.split(' ').slice(0,2).join(' ')||'?').padEnd(24)+(car?.placa||'?').padEnd(12)+(p.sem||'--').padEnd(18)+R(p.val);
+      const vAlug=Number(p.valAlug??(p.caucAvulso?0:p.val)??0);const vCauc=Number(p.valCauc||0)+(p.caucAvulso?Number(p.val||0):0);
+      txt+=L+'  '+(m?.nome?.split(' ').slice(0,2).join(' ')||'?').padEnd(24)+(car?.placa||'?').padEnd(12)+(p.sem||'--').padEnd(18)+R(vAlug)+(vCauc>0?'  (+ cauc. '+R(vCauc)+')':'');
     });
   }
   // Abonos concedidos no mês
@@ -5746,6 +6156,7 @@ function _buildInsights(){
 async function logout(){
   await _sb.auth.signOut();
   _sbUser=null;
+  _isAdminDB=false;
   document.getElementById('app').style.display='none';
   const _navEl=document.getElementById('nav');if(_navEl){_navEl.classList.remove('nav-visible');_navEl.style.cssText='display:none!important';}
   const l=document.getElementById('ls');l.style.display='flex';l.style.opacity='0';
@@ -6153,7 +6564,7 @@ async function login(){
     const temDados=await sbLoad();
     if(!temDados){
       // Sem dados na nuvem: carregar vazio para clientes, demo para admin
-      if(_sbUser?.email===ADMIN_EMAIL){
+      if(_isAdmin()){
         loadDB(); // admin vê dados demo
       } else {
         const chaves=['config','carros','motos','locs','pags','evs','kms','fins','semAtual'];
@@ -6178,11 +6589,26 @@ async function cadastrar(){
   const senha=document.getElementById('is')?.value;
   if(!email||!senha){_loginMsg('Preencha e-mail e senha para criar a conta','#f87171');return;}
   if(senha.length<6){_loginMsg('A senha deve ter ao menos 6 caracteres','#f87171');return;}
+  // Aceite obrigatório dos termos (LGPD)
+  const aceite=document.getElementById('chk-termos');
+  if(aceite&&!aceite.checked){_loginMsg('Você precisa aceitar os Termos de Uso e a Política de Privacidade','#f87171');return;}
+  if(!_sb&&!_initSB()){_loginMsg('Erro de conexão','#f87171');return;}
   _setBtnLogin(true);_loginMsg('Criando conta...');
-  const{data,error}=await _sb.auth.signUp({email,password:senha});
+  const{data,error}=await _sb.auth.signUp({
+    email,password:senha,
+    options:{emailRedirectTo:window.location.origin}
+  });
   if(error){_loginMsg(error.message,'#f87171');_setBtnLogin(false);return;}
+
+  // Com "Confirm email" ativo, o Supabase retorna session=null até o usuário confirmar
+  if(!data.session){
+    _setBtnLogin(false);
+    _mostrarConfirmeEmail(email);
+    return;
+  }
+
+  // Fallback: se a confirmação estiver desativada, entra direto
   _sbUser=data.user;
-  // Novo usuário: iniciar com dados VAZIOS (sem demo)
   const chaves=['config','carros','motos','locs','pags','evs','kms','fins','semAtual'];
   chaves.forEach(k=>{
     DB[k]=Array.isArray(EMPTY_DATA[k])?[...EMPTY_DATA[k]]:{...EMPTY_DATA[k]};
@@ -6192,6 +6618,29 @@ async function cadastrar(){
   await Promise.all(chaves.map(k=>sbSync(k)));
   _loginMsg('Conta criada! ✓','#34d399');
   setTimeout(()=>{_entrarNoApp();setTimeout(()=>_obAbrir(),800);},600);
+}
+
+function _mostrarConfirmeEmail(email){
+  const overlay=document.createElement('div');
+  overlay.id='ov-confirme-email';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(13,43,62,.96);z-index:600;display:flex;align-items:center;justify-content:center;padding:24px';
+  overlay.innerHTML=`<div style="text-align:center;max-width:340px">
+    <div style="font-size:48px;margin-bottom:12px">📧</div>
+    <div style="font-size:20px;font-weight:900;color:#fff;margin-bottom:8px">Confirme seu e-mail</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.65);line-height:1.6;margin-bottom:6px">Enviamos um link de confirmação para:</div>
+    <div style="font-size:14px;font-weight:700;color:#f59e0b;margin-bottom:16px;word-break:break-all">${email}</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.6;margin-bottom:22px">Abra seu e-mail e clique no link para ativar a conta. Verifique também a caixa de spam.</div>
+    <button onclick="_reenviarConfirmacao('${email}',this)" style="width:100%;background:rgba(255,255,255,.1);color:#fff;border:1.5px solid rgba(255,255,255,.25);border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px">Reenviar e-mail</button>
+    <button onclick="document.getElementById('ov-confirme-email').remove();voltarLanding()" style="width:100%;background:#f59e0b;color:#0d2b3e;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">Voltar ao início</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function _reenviarConfirmacao(email,btn){
+  btn.textContent='Enviando...';btn.disabled=true;
+  const{error}=await _sb.auth.resend({type:'signup',email,options:{emailRedirectTo:window.location.origin}});
+  btn.textContent=error?'Erro ao reenviar':'✓ E-mail reenviado';
+  setTimeout(()=>{btn.textContent='Reenviar e-mail';btn.disabled=false;},4000);
 }
 
 
@@ -6404,7 +6853,7 @@ function _entrarNoApp(){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   document.getElementById('sc-dash').classList.add('on');
   // Mostrar botão admin se for o administrador
-  setTimeout(()=>{const ab=document.getElementById('btn-admin');if(ab) ab.style.display=_isAdmin()?'block':'none';},500);
+  // Botão admin é exibido por _carregarPlano() após confirmar is_admin no banco
 
   // Service Worker e notificações
   _registrarSW().then(()=>{
@@ -6470,7 +6919,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       const temDados=await sbLoad();
       if(!temDados){
       // Sem dados na nuvem: carregar vazio para clientes, demo para admin
-      if(_sbUser?.email===ADMIN_EMAIL){
+      if(_isAdmin()){
         loadDB(); // admin vê dados demo
       } else {
         const chaves=['config','carros','motos','locs','pags','evs','kms','fins','semAtual'];
