@@ -133,7 +133,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.4.0</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.4.1</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -1136,14 +1136,23 @@ let _isAdminDB=false;
 async function _carregarPlano(){
   if(!_sbUser||!_sb) return;
   try{
-    const{data,error}=await _sb.from('frotando_planos').select('*').eq('user_id',_sbUser.id).single();
-    if(data&&!error){
+    const{data,error}=await _sb.from('frotando_planos')
+      .select('*').eq('user_id',_sbUser.id).maybeSingle();
+    if(error){console.error('Erro ao carregar plano:',error.message);}
+    if(data){
       _plano=data;
+      _isAdminDB = data.is_admin === true;   // fonte da verdade: banco
       _atualizarBadgePlano();
       _renderSemaforoDash();
-  _renderPlanoBadge();
+      _renderPlanoBadge();
     }
-  }catch(e){console.log('Plano nao encontrado, usando trial');}
+  }catch(e){
+    console.error('Falha em _carregarPlano:',e);
+  } finally {
+    // Exibe/oculta o botão admin sempre, mesmo se a query falhar
+    const ab=document.getElementById('btn-admin');
+    if(ab) ab.style.display=_isAdminDB?'block':'none';
+  }
 }
 
 function _atualizarBadgePlano(){
@@ -3424,6 +3433,8 @@ function salvarKm(){
 
 // ── CONFIGURAÇÕES ─────────────────────────────────────────────────────────────
 function renderCfg(){
+  const _ab=document.getElementById('btn-admin');
+  if(_ab) _ab.style.display=_isAdmin()?'block':'none';
   const c=DB.config;
   document.getElementById('cfg-nome').value=c.nome||'';
   document.getElementById('cfg-cpf').value=c.cpf||'';
