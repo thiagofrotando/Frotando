@@ -133,7 +133,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.4.0</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.8.0</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -312,7 +312,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <h2 style="font-size:24px;font-weight:900;color:#fff;margin-bottom:8px">Comece agora, de graca</h2>
     <p style="font-size:14px;color:rgba(255,255,255,.6);margin-bottom:24px">30 dias gratis. Sem cartao. Sem compromisso.</p>
     <button onclick="irParaCadastro()" style="background:#f59e0b;color:#0d2b3e;border:none;border-radius:12px;padding:16px 32px;font-size:16px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 4px 20px rgba(245,158,11,.4);width:100%;max-width:320px">Criar conta gratuita</button>
-    <div style="margin-top:16px;font-size:12px;color:rgba(255,255,255,.3)">Duvidas? (31) 97572-7717 · frotando.com.br</div>
+    <div style="margin-top:16px;font-size:12px;color:rgba(255,255,255,.3)">Dúvidas? (31) 97572-7717 · frotando.com.br</div>
     <div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,.25)">
       <a href="#" onclick="event.preventDefault();abrirTermos()" style="color:rgba(255,255,255,.4);text-decoration:underline">Termos de Uso</a>
       <span style="margin:0 6px">·</span>
@@ -606,9 +606,9 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       <div class="cd">
         <div class="st">Perfil do Locador</div>
         <div class="fi"><label>Nome completo</label><input id="cfg-nome" type="text"></div>
-        <div class="fi"><label>CPF</label><input id="cfg-cpf" type="text"></div>
+        <div class="fi"><label>CPF / CNPJ</label><input id="cfg-cpf" type="text" inputmode="numeric" placeholder="000.000.000-00 ou 00.000.000/0000-00"></div>
         <div class="fi"><label>RG</label><input id="cfg-rg" type="text"></div>
-        <div class="fi"><label>Chave PIX</label><input id="cfg-pix" type="text"></div>
+        <div class="fi"><label>Chave PIX (para receber os aluguéis)</label><input id="cfg-pix" type="text" placeholder="e-mail, CPF, telefone ou chave aleatória"></div>
         <div class="fi"><label>Telefone</label><input id="cfg-tel" type="tel"></div>
         <div class="fi"><label>Endereço completo</label><input id="cfg-end" type="text"></div>
         <button class="bt btp btf" onclick="salvarCfg()">💾 Salvar perfil</button>
@@ -622,22 +622,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
         <div class="fi"><label>Custo excedente de KM (R$/km)</label><input id="cfg-kmval" type="number" step="0.01" placeholder="0.80"></div>
         <button class="bt btp btf" onclick="salvarCfg()">💾 Salvar valores</button>
       </div>
-      <div class="cd">
-        <div class="st">Seguro e Proteção</div>
-        <div class="fi"><label>Seguradora</label><input id="cfg-seg-nome" type="text" placeholder="Ex: Porto Seguro Uber"></div>
-        <div class="fi"><label>Nº da apólice</label><input id="cfg-seg-pol" type="text" placeholder="Ex: 123456789"></div>
-        <div class="fi"><label>Valor mensal do seguro (R$)</label><input id="cfg-seg-val" type="number" placeholder="209"></div>
-        <div class="fi"><label>Vencimento da apólice</label><input id="cfg-seg-venc" type="date"></div>
-        <div class="fi"><label>Telefone sinistro</label><input id="cfg-seg-tel" type="tel" placeholder="0800 xxx xxxx"></div>
-        <button class="bt btp btf" onclick="salvarCfg()">💾 Salvar seguro</button>
-      </div>
-      <div class="cd">
-        <div class="st">Rastreador e GPS</div>
-        <div class="fi"><label>Empresa do rastreador</label><input id="cfg-ras-nome" type="text" placeholder="Ex: Sascar, Onixsat..."></div>
-        <div class="fi"><label>Valor mensal (R$)</label><input id="cfg-ras-val" type="number" placeholder="60"></div>
-        <div class="fi"><label>Telefone suporte</label><input id="cfg-ras-tel" type="tel"></div>
-        <button class="bt btp btf" onclick="salvarCfg()">💾 Salvar rastreador</button>
-      </div>
+      
+      
       <div class="cd">
         <div class="st">Dados e Backup</div>
         <button class="bt bto btf bts" onclick="exportarCSV()">⬇️ Exportar dados CSV</button>
@@ -647,6 +633,9 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
         </div>
         <button id="btn-notif" class="bt btf bts" style="margin-top:7px;border:1.5px solid var(--sll);background:transparent;color:var(--txm)" onclick="ativarNotificacoes()">🔔 Ativar notificações de sábado</button>
         <button class="bt btd btf bts" style="margin-top:7px" onclick="resetarDados()">🗑 Resetar todos os dados</button>
+        <div style="font-size:10px;color:var(--txm);text-align:center;margin-top:4px;opacity:.75">Pede confirmação antes de apagar</div>
+        <button class="bt btf bts" style="margin-top:14px;background:transparent;border:1.5px solid var(--sll);color:var(--txm)" onclick="_confirmarLogout()">🚪 Sair da conta</button>
+        <div id="cfg-user-email" style="text-align:center;font-size:10px;color:var(--txm);margin-top:8px;opacity:.7"></div>
         <button id="btn-admin" class="bt btf bts" style="margin-top:7px;display:none;background:rgba(13,43,62,.12);color:#0d2b3e;border:1px solid rgba(13,43,62,.25)" onclick="abrirAdmin()">⚙️ Painel Admin</button>
       </div>
     </div>
@@ -686,7 +675,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       <button onclick="fecharAdmin()" style="background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:8px;padding:7px 12px;font-size:14px;cursor:pointer;font-family:inherit">✕ Fechar</button>
     </div>
     <!-- KPIs admin -->
-    <div id="admin-kpis" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px"></div>
+    <div id="admin-kpis" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px"></div>
+    <div id="admin-ctx"></div>
     <!-- Filtro -->
     <div style="display:flex;gap:8px;margin-bottom:12px">
       <input id="admin-busca" type="text" placeholder="Buscar por e-mail..." oninput="renderAdmin()" style="flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:8px 12px;color:#fff;font-family:inherit;font-size:13px">
@@ -741,8 +731,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       <div style="font-size:14px;font-weight:800;color:var(--p);margin-bottom:4px">⚙️ Seus dados</div>
       <div style="font-size:12px;color:var(--txm);margin-bottom:14px">Essas informações aparecem nos contratos e recibos.</div>
       <div class="fi"><label>Seu nome completo ou razão social *</label><input id="ob-nome" type="text" placeholder="Ex: João Silva"></div>
-      <div class="fi"><label>CPF ou CNPJ *</label><input id="ob-doc" type="text" placeholder="000.000.000-00"></div>
-      <div class="fi"><label>Chave PIX</label><input id="ob-pix" type="text" placeholder="E-mail, CPF ou telefone"></div>
+      <div class="fi"><label>CPF ou CNPJ *</label><input id="ob-doc" type="text" inputmode="numeric" placeholder="000.000.000-00 ou 00.000.000/0000-00"></div>
+      <div class="fi"><label>Chave PIX (para receber os aluguéis)</label><input id="ob-pix" type="text" placeholder="Digite a chave: e-mail, CPF, telefone ou aleatória"></div>
       <div style="display:flex;gap:8px;margin-top:4px">
         <button class="bt btg" onclick="_obProximo(1)">← Voltar</button>
         <button class="bt btp" style="flex:1" onclick="_obSalvarConfig()">Proximo →</button>
@@ -903,6 +893,22 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div class="fi"><label>RENAVAM</label><input id="mc-ren" type="text"></div>
     <div class="fi"><label>KM atual</label><input id="mc-km" type="number" placeholder="0"></div>
     <div class="fi"><label>Valor do veículo (R$)</label><input id="mc-valor" type="number" placeholder="0"></div>
+
+    <div style="border-top:1px solid var(--sll);margin:16px 0 12px;padding-top:14px">
+      <div style="font-size:11px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">🛡️ Seguro deste veículo</div>
+      <div style="font-size:11px;color:var(--txm);margin-bottom:10px;line-height:1.5">Entra no cálculo de rentabilidade deste veículo. Se ficar em branco, o custo do seguro não será considerado.</div>
+    </div>
+    <div class="fi"><label>Seguradora</label><input id="mc-seg-nome" type="text" placeholder="Ex: Porto Seguro"></div>
+    <div class="fi"><label>Número da apólice</label><input id="mc-seg-pol" type="text" placeholder="Ex: 0123456789"></div>
+    <div class="fi"><label>Valor mensal do seguro (R$)</label><input id="mc-seg-val" type="number" step="0.01" placeholder="0,00"></div>
+    <div class="fi"><label>Vencimento da apólice</label><input id="mc-seg-venc" type="date"></div>
+
+    <div style="border-top:1px solid var(--sll);margin:16px 0 12px;padding-top:14px">
+      <div style="font-size:11px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">📡 Rastreador deste veículo</div>
+      <div style="font-size:11px;color:var(--txm);margin-bottom:10px;line-height:1.5">Entra no cálculo de rentabilidade deste veículo.</div>
+    </div>
+    <div class="fi"><label>Empresa do rastreador</label><input id="mc-ras-nome" type="text" placeholder="Ex: Ituran"></div>
+    <div class="fi"><label>Valor mensal do rastreador (R$)</label><input id="mc-ras-val" type="number" step="0.01" placeholder="0,00"></div>
   </div>
   <div class="ms-footer">
     <div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarCarro()">Salvar</button><button class="bt btg" onclick="fecharModal('mc')">Cancelar</button></div>
@@ -940,7 +946,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarMoto()">Salvar</button><button class="bt btg" onclick="fecharModal('mm')">Cancelar</button></div>
   </div>
 </div></div>
-<div id="ml" class="mo" onclick="fecharModal('ml')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt">Nova Locação</div><div class="fi"><label>Carro *</label><select id="ml-carro"></select></div><div class="fi"><label>Motorista *</label><select id="ml-moto"></select></div><div class="fi"><label>Início *</label><input id="ml-inicio" type="date"></div><div class="fi"><label>Aluguel semanal (R$) *</label><input id="ml-val" type="number" placeholder="600"></div><div class="fi"><label>Caução (R$)</label><input id="ml-cauc" type="number" placeholder="1400"></div><div class="fi"><label>Pagamento do caução</label>
+<div id="ml" class="mo" onclick="fecharModal('ml')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt">Nova Locação</div><div class="fi"><label>Carro *</label><select id="ml-carro"></select></div><div class="fi"><label>Motorista *</label><select id="ml-moto"></select></div><div class="fi"><label>Início *</label><input id="ml-inicio" type="date"></div><div class="fi"><label>Aluguel semanal (R$) *</label><input id="ml-val" type="number" placeholder="600"></div><div class="fi"><label>Pagamento do caução</label>
   <select id="ml-cauc-modo" onchange="mlAtualizarCauc()">
     <option value="integral">Pago integralmente na entrega</option>
     <option value="parcelado">Parcelado semanalmente junto ao aluguel</option>
@@ -955,7 +961,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
   </div>
 </div>
 <div id="ml-cauc-resumo" style="background:rgba(42,106,154,.08);border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:12px;display:none"></div>
-<div class="fi"><label>KM inicial</label><input id="ml-km" type="number" placeholder="0"></div><div class="fi"><label>Dia de vencimento semanal</label><select id="ml-diavenc"><option value="0">Domingo</option><option value="1">Segunda-feira</option><option value="2">Terca-feira</option><option value="3">Quarta-feira</option><option value="4">Quinta-fera</option><option value="5">Sexta-feira</option><option value="6" selected>Sabado</option></select></div>
+<div class="fi"><label>KM inicial</label><input id="ml-km" type="number" placeholder="0"></div><div class="fi"><label>Dia de vencimento semanal</label><select id="ml-diavenc"><option value="0">Domingo</option><option value="1">Segunda-feira</option><option value="2">Terca-feira</option><option value="3">Quarta-feira</option><option value="4">Quinta-fera</option><option value="5">Sexta-feira</option><option value="6" selected>Sabado</option></select></div><div class="fi"><label>Caução (R$)</label><input id="ml-cauc" type="number" placeholder="1400"></div>
 <div class="fi"><label>Comarca (foro do contrato)</label><input id="ml-comarca" type="text" placeholder="Ex: Belo Horizonte"></div>
 <div class="fi"><label>Uso do veículo</label><select id="ml-uso"><option value="exclusivo">Exclusivo para transporte de passageiros por aplicativo</option><option value="misto">Transporte de passageiros por aplicativo e uso particular</option></select></div>
 <div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarLoc()">Criar contrato</button><button class="bt btg" onclick="fecharModal('ml')">Cancelar</button></div></div></div>
@@ -1104,8 +1110,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <button class="ni" data-s="carros" onclick="goTo('carros',this)"><span class="ic">🚗</span>Carros</button>
     <button class="ni" data-s="motos" onclick="goTo('motos',this)"><span class="ic">👤</span>Motoristas</button>
     <button class="ni" data-s="loc" onclick="goTo('loc',this)"><span class="ic">📋</span>Contratos</button>
-    <button class="ni" data-s="pag" onclick="goTo('pag',this)"><span class="ic">💰</span>Pagtos<div class="nd" id="nd-pag" style="display:none"></div></button>
-    <button class="ni" data-s="ev" onclick="goTo('ev',this)"><span class="ic">🔔</span>Eventos<div class="nd" id="nd-ev" style="display:none"></div></button>
+    <button class="ni" data-s="pag" onclick="goTo('pag',this)"><span class="ic">💵</span>Receb.<div class="nd" id="nd-pag" style="display:none"></div></button>
+    <button class="ni" data-s="ev" onclick="goTo('ev',this)"><span class="ic">🔧</span>Eventos<div class="nd" id="nd-ev" style="display:none"></div></button>
     <button class="ni" data-s="km" onclick="goTo('km',this)"><span class="ic">📍</span>KM</button>
     <button class="ni" data-s="financ" onclick="goTo('financ',this)"><span class="ic">🏦</span>Financ.</button>
     <button class="ni" data-s="rel" onclick="goTo('rel',this)"><span class="ic">📈</span>Relat.</button>
@@ -1136,14 +1142,23 @@ let _isAdminDB=false;
 async function _carregarPlano(){
   if(!_sbUser||!_sb) return;
   try{
-    const{data,error}=await _sb.from('frotando_planos').select('*').eq('user_id',_sbUser.id).single();
-    if(data&&!error){
+    const{data,error}=await _sb.from('frotando_planos')
+      .select('*').eq('user_id',_sbUser.id).maybeSingle();
+    if(error){console.error('Erro ao carregar plano:',error.message);}
+    if(data){
       _plano=data;
+      _isAdminDB = data.is_admin === true;   // fonte da verdade: banco
       _atualizarBadgePlano();
       _renderSemaforoDash();
-  _renderPlanoBadge();
+      _renderPlanoBadge();
     }
-  }catch(e){console.log('Plano nao encontrado, usando trial');}
+  }catch(e){
+    console.error('Falha em _carregarPlano:',e);
+  } finally {
+    // Exibe/oculta o botão admin sempre, mesmo se a query falhar
+    const ab=document.getElementById('btn-admin');
+    if(ab) ab.style.display=_isAdminDB?'block':'none';
+  }
 }
 
 function _atualizarBadgePlano(){
@@ -1262,8 +1277,59 @@ function loadDB(){
   ['config','carros','motos','locs','pags','evs','kms','fins','semAtual'].forEach(k=>{
     DB[k]=LS.get(k)||(Array.isArray(INIT_DATA[k])?[...INIT_DATA[k]]:{...INIT_DATA[k]});
   });
-  _migrarDataVenc();
+  _migrarDataVenc();_migrarStatusMoto();_migrarSeguroParaCarros();
 }
+// Corrige motoristas criados pelo onboarding sem o campo status
+
+// Migração v2.8: o seguro e o rastreador deixaram de ser globais.
+// Distribui o valor que estava em Configurações entre os carros que ainda não
+// têm valor próprio, para que o custo não desapareça dos cálculos.
+function _migrarSeguroParaCarros(){
+  const segGlobal=Number(DB.config.segVal||0);
+  const rasGlobal=Number(DB.config.rasVal||0);
+  if(segGlobal<=0&&rasGlobal<=0) return;
+  if(!DB.carros.length) return;
+
+  const semSeg=DB.carros.filter(c=>!(Number(c.segVal)>0));
+  const semRas=DB.carros.filter(c=>!(Number(c.rasVal)>0));
+  const vSeg = semSeg.length ? Math.round(segGlobal/semSeg.length*100)/100 : 0;
+  const vRas = semRas.length ? Math.round(rasGlobal/semRas.length*100)/100 : 0;
+
+  let mudou=false;
+  DB.carros=DB.carros.map(c=>{
+    const n={...c};
+    if(segGlobal>0&&!(Number(c.segVal)>0)&&vSeg>0){
+      n.segVal=vSeg;
+      n.segNome=n.segNome||DB.config.segNome||'';
+      n.segVenc=n.segVenc||DB.config.segVenc||'';
+      mudou=true;
+    }
+    if(rasGlobal>0&&!(Number(c.rasVal)>0)&&vRas>0){
+      n.rasVal=vRas;
+      n.rasNome=n.rasNome||DB.config.rasNome||'';
+      mudou=true;
+    }
+    return n;
+  });
+
+  if(mudou){
+    // Zera os campos globais para não contar duas vezes
+    DB.config={...DB.config,segVal:0,rasVal:0};
+    saveDB('carros');
+    saveDB('config');
+    setTimeout(()=>toast('Seguro e rastreador migrados para o cadastro de cada veículo','info'),1200);
+  }
+}
+
+function _migrarStatusMoto(){
+  let mudou=false;
+  DB.motos=DB.motos.map(m=>{
+    if(!m.status){mudou=true;return{...m,status:'Ativo'};}
+    return m;
+  });
+  if(mudou) saveDB('motos');
+}
+
 function _migrarDataVenc(){
   // Migração v2: dataVenc deve ser o SÁBADO de início da semana (pagamento antecipado)
   // Parcelas antigas tinham dataVenc = sexta (fim da semana)
@@ -1290,6 +1356,22 @@ function _migrarDataVenc(){
 function saveDB(k){
   LS.set(k,DB[k]);
   sbSync(k); // sync to Supabase in background
+  if(k==='carros') _sincronizarContadorCarros();
+}
+
+// Publica APENAS a contagem de carros em frotando_planos.
+// Nenhum dado sensível sai daqui — só o número, para o cálculo de MRR.
+let _contadorTimer=null;
+function _sincronizarContadorCarros(){
+  if(!_sbUser||!_sb) return;
+  clearTimeout(_contadorTimer);
+  _contadorTimer=setTimeout(async()=>{
+    try{
+      await _sb.from('frotando_planos')
+        .update({carros_count:DB.carros.length})
+        .eq('user_id',_sbUser.id);
+    }catch(e){console.error('Erro ao sincronizar contador:',e);}
+  },1500);
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -1336,6 +1418,43 @@ function goTo(id,el){
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 let _tt;
+
+// ── MÁSCARAS DE ENTRADA ──────────────────────────────────────────────────────
+function _mascaraCpfCnpj(v){
+  const d=v.replace(/\D/g,'').slice(0,14);
+  if(d.length<=11){
+    return d.replace(/(\d{3})(\d)/,'$1.$2')
+            .replace(/(\d{3})(\d)/,'$1.$2')
+            .replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+  }
+  return d.replace(/^(\d{2})(\d)/,'$1.$2')
+          .replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3')
+          .replace(/\.(\d{3})(\d)/,'.$1/$2')
+          .replace(/(\d{4})(\d)/,'$1-$2');
+}
+function _mascaraTelefone(v){
+  const d=v.replace(/\D/g,'').slice(0,11);
+  if(d.length<=10) return d.replace(/^(\d{2})(\d)/,'($1) $2').replace(/(\d{4})(\d)/,'$1-$2');
+  return d.replace(/^(\d{2})(\d)/,'($1) $2').replace(/(\d{5})(\d)/,'$1-$2');
+}
+function _aplicarMascaras(){
+  const mapa=[
+    ['cfg-cpf',_mascaraCpfCnpj],['cfg-cnpj',_mascaraCpfCnpj],
+    ['ob-doc',_mascaraCpfCnpj],['mm-cpf',_mascaraCpfCnpj],['ob-moto-cpf',_mascaraCpfCnpj],
+    ['cfg-tel',_mascaraTelefone],['mm-tel',_mascaraTelefone],['ob-moto-tel',_mascaraTelefone],
+  ];
+  mapa.forEach(([id,fn])=>{
+    const el=document.getElementById(id);
+    if(!el||el.dataset.masked) return;
+    el.dataset.masked='1';
+    el.addEventListener('input',()=>{
+      const posFim = el.selectionStart === el.value.length;
+      el.value=fn(el.value);
+      if(posFim) el.setSelectionRange(el.value.length,el.value.length);
+    });
+  });
+}
+
 function toast(msg,t='ok'){
   const el=document.getElementById('ts');
   el.textContent=msg;el.style.background=t==='ok'?'var(--g)':t==='er'?'var(--r)':'var(--pm)';
@@ -1374,7 +1493,8 @@ function abrirModal(id,dados){
   if(id==='ml'){
     const sm=document.getElementById('ml-moto');
     sm.innerHTML='<option value="">Selecionar...</option>';
-    DB.motos.filter(m=>m.status==='Ativo').forEach(m=>{const o=document.createElement('option');o.value=m.id;o.textContent=m.nome;sm.appendChild(o);});
+    // Aceita registros antigos sem o campo status (só exclui os explicitamente inativos)
+    DB.motos.filter(m=>m.status!=='Inativo').forEach(m=>{const o=document.createElement('option');o.value=m.id;o.textContent=m.nome;sm.appendChild(o);});
     if(!dados.id) document.getElementById('ml-inicio').value=today();
     // Comarca: default da cidade do endereço do locador
     const comarcaEl=document.getElementById('ml-comarca');
@@ -1432,7 +1552,16 @@ function abrirModal(id,dados){
   if(id==='mkm')document.getElementById('mkm-data').value=today();
   // Preencher campos se edição
   if(dados.id){
-    if(id==='mc'){document.getElementById('mc-t').textContent='Editar Carro';document.getElementById('mc-placa').value=dados.placa||'';document.getElementById('mc-modelo').value=dados.modelo||'';document.getElementById('mc-cor').value=dados.cor||'';document.getElementById('mc-ren').value=dados.renavam||dados.ren||'';document.getElementById('mc-km').value=dados.km||0;const mcAno=document.getElementById('mc-ano');if(mcAno)mcAno.value=dados.ano||'';const mcVal=document.getElementById('mc-valor');if(mcVal)mcVal.value=dados.valor||'';}
+    if(id==='mc'){
+    document.getElementById('mc-t').textContent='Editar Carro';
+    const s=(el,v)=>{const e=document.getElementById(el);if(e)e.value=v??'';};
+    s('mc-placa',dados.placa); s('mc-modelo',dados.modelo); s('mc-ano',dados.ano);
+    s('mc-cor',dados.cor); s('mc-ren',dados.renavam||dados.ren); s('mc-km',dados.km||0);
+    s('mc-valor',dados.valor||'');
+    s('mc-seg-nome',dados.segNome); s('mc-seg-pol',dados.segPol);
+    s('mc-seg-val',dados.segVal||''); s('mc-seg-venc',dados.segVenc);
+    s('mc-ras-nome',dados.rasNome); s('mc-ras-val',dados.rasVal||'');
+  }
     if(id==='mm'){document.getElementById('mm-t').textContent='Editar Motorista';document.getElementById('mm-nome').value=dados.nome||'';document.getElementById('mm-cpf').value=dados.cpf||'';document.getElementById('mm-rg').value=dados.rg||'';document.getElementById('mm-cnh').value=dados.cnh||'';document.getElementById('mm-vcnh').value=dados.vCNH||dados.vcnh||'';document.getElementById('mm-tel').value=dados.tel||'';document.getElementById('mm-end').value=dados.endereco||'';document.getElementById('mm-plat').value=dados.plat||'';document.getElementById('mm-nota').value=dados.nota||'';
     _mmFotoBase64='';
     const mmPrev=document.getElementById('mm-foto-preview');
@@ -1440,7 +1569,13 @@ function abrirModal(id,dados){
     const mmInp=document.getElementById('mm-foto-inp');if(mmInp) mmInp.value='';
   }
   } else {
-    if(id==='mc'){document.getElementById('mc-t').textContent='Novo Carro';['mc-placa','mc-modelo','mc-cor','mc-ren'].forEach(i=>document.getElementById(i).value='');document.getElementById('mc-km').value=0;}
+    if(id==='mc'){
+    document.getElementById('mc-t').textContent='Novo Carro';
+    ['mc-placa','mc-modelo','mc-ano','mc-cor','mc-ren','mc-valor',
+     'mc-seg-nome','mc-seg-pol','mc-seg-val','mc-seg-venc',
+     'mc-ras-nome','mc-ras-val'].forEach(i=>{const e=document.getElementById(i);if(e)e.value='';});
+    const k=document.getElementById('mc-km');if(k)k.value=0;
+  }
     if(id==='mm'){document.getElementById('mm-t').textContent='Novo Motorista';['mm-nome','mm-cpf','mm-rg','mm-cnh','mm-vcnh','mm-tel','mm-end','mm-plat','mm-nota'].forEach(i=>document.getElementById(i).value='');
     _mmFotoBase64='';
     const mmPrevN=document.getElementById('mm-foto-preview');if(mmPrevN) mmPrevN.innerHTML='👤';
@@ -1448,20 +1583,48 @@ function abrirModal(id,dados){
   }
   }
   _fixModalForIOS(id);
+  _aplicarMascaras();
   const el=document.getElementById(id);el.style.pointerEvents='all';el.style.display='flex';requestAnimationFrame(()=>el.classList.add('on'));
 }
 function fecharModal(id){const el=document.getElementById(id);el.classList.remove('on');setTimeout(()=>{el.style.display='none';},260);}
 
 // ── CRUD CARROS ───────────────────────────────────────────────────────────────
 function salvarCarro(){
-  const placa=document.getElementById('mc-placa').value.trim().toUpperCase();
-  const modelo=document.getElementById('mc-modelo').value.trim();
+  const g=id=>document.getElementById(id)?.value||'';
+  const gn=id=>Number(document.getElementById(id)?.value)||0;
+  const placa=g('mc-placa').trim().toUpperCase();
+  const modelo=g('mc-modelo').trim();
   if(!placa||!modelo){toast('Placa e modelo obrigatórios','er');return;}
-  // Verificar limite do plano ao cadastrar novo carro
   if(!_curId&&!_podeAdicionarCarro()) return;
-  if(_curId){DB.carros=DB.carros.map(c=>c.id===_curId?{...c,placa,modelo,cor:document.getElementById('mc-cor').value,renavam:document.getElementById('mc-ren').value,ren:document.getElementById('mc-ren').value,km:Number(document.getElementById('mc-km').value)||0}:c);}
-  else{DB.carros.push({id:'c'+uid(),placa,modelo,cor:document.getElementById('mc-cor').value,ren:document.getElementById('mc-ren').value,km:Number(document.getElementById('mc-km').value)||0,status:'Disponível'});}
-  saveDB('carros');markDirty('carros','dash','loc','pag','km','financ','rel','contrato');fecharModal('mc');goTo('carros',document.querySelector('[data-s=carros]'));toast(_curId?'Carro atualizado! ✓':'Carro cadastrado! ✓');
+
+  const dados={
+    placa, modelo,
+    ano:      g('mc-ano'),
+    cor:      g('mc-cor'),
+    renavam:  g('mc-ren'),
+    ren:      g('mc-ren'),          // compatibilidade com registros antigos
+    km:       gn('mc-km'),
+    valor:    gn('mc-valor'),
+    // Seguro individual do veículo
+    segNome:  g('mc-seg-nome'),
+    segPol:   g('mc-seg-pol'),
+    segVal:   gn('mc-seg-val'),
+    segVenc:  g('mc-seg-venc'),
+    // Rastreador individual
+    rasNome:  g('mc-ras-nome'),
+    rasVal:   gn('mc-ras-val'),
+  };
+
+  if(_curId){
+    DB.carros=DB.carros.map(c=>c.id===_curId?{...c,...dados}:c);
+  } else {
+    DB.carros.push({id:'c'+uid(),...dados,status:'Disponível'});
+  }
+  saveDB('carros');
+  markDirty('carros','dash','loc','pag','km','financ','rel','contrato');
+  fecharModal('mc');
+  goTo('carros',document.querySelector('[data-s=carros]'));
+  toast(_curId?'Carro atualizado! ✓':'Carro cadastrado! ✓');
 }
 function excluirCarro(id){if(!confirm('Excluir este carro?'))return;DB.carros=DB.carros.filter(c=>c.id!==id);saveDB('carros');markDirty('dash','loc','rel');renderCarros();toast('Removido');}
 
@@ -2152,6 +2315,19 @@ async function _carregarAdmin(){
   }
 }
 
+
+// Preço mensal real de um cliente, com base nos CARROS EFETIVAMENTE cadastrados.
+// Trial e Cortesia não geram receita.
+const _PRECO_POR_CARRO={pro:19,frota:15,enterprise:12};
+function _mrrDoCliente(u){
+  if(!u.ativo) return 0;
+  if(u.plano==='trial'||u.plano==='cortesia') return 0;
+  const carros=Number(u.carros_count||0);
+  if(u.plano==='starter') return 29;              // preço fixo
+  const preco=_PRECO_POR_CARRO[u.plano];
+  return preco?carros*preco:0;
+}
+
 function renderAdmin(){
   const busca=(document.getElementById('admin-busca')?.value||'').toLowerCase();
   const filtPlano=document.getElementById('admin-filtro-plano')?.value||'';
@@ -2160,24 +2336,40 @@ function renderAdmin(){
     (!filtPlano||u.plano===filtPlano)
   );
 
-  // KPIs
+  // KPIs — MRR calculado sobre CARROS REAIS cadastrados (não sobre o limite do plano)
   const kpiEl=document.getElementById('admin-kpis');
   if(kpiEl){
     const total=_adminData.length;
-    const ativos=_adminData.filter(u=>u.ativo).length;
-    const pagantes=_adminData.filter(u=>u.plano!=='trial'&&u.ativo).length;
-    const mrr=_adminData.filter(u=>u.ativo&&u.plano!=='trial').reduce((s,u)=>{
-      const precos={starter:29,pro:u.limite_carros*19,frota:u.limite_carros*15,enterprise:u.limite_carros*12,cortesia:0};
-      return s+(precos[u.plano]||0);
-    },0);
+    const ativos=_adminData.filter(u=>u.ativo);
+    const naoPagantes=['trial','cortesia'];
+    const pagantes=ativos.filter(u=>!naoPagantes.includes(u.plano));
+    const cortesias=_adminData.filter(u=>u.plano==='cortesia'&&u.ativo).length;
+    const emTrial=_adminData.filter(u=>u.plano==='trial'&&u.ativo).length;
+
+    const mrr=pagantes.reduce((s,u)=>s+_mrrDoCliente(u),0);
+    const carrosGerenciados=_adminData.filter(u=>u.ativo).reduce((s,u)=>s+(u.carros_count||0),0);
+
     kpiEl.innerHTML=[
       ['Total clientes',total,'#94a3b8'],
-      ['Pagantes',pagantes,'#34d399'],
-      ['MRR estimado','R$'+mrr,'#f59e0b'],
+      ['Pagantes',pagantes.length,'#34d399'],
+      ['MRR real','R$ '+mrr,mrr>0?'#f59e0b':'#64748b'],
     ].map(([l,v,c])=>`<div style="background:rgba(255,255,255,.06);border-radius:10px;padding:10px 12px">
       <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase">${l}</div>
       <div style="font-size:20px;font-weight:900;color:${c};margin-top:2px">${v}</div>
     </div>`).join('');
+
+    // Linha secundária de contexto
+    const ctxEl=document.getElementById('admin-ctx');
+    if(ctxEl){
+      ctxEl.innerHTML=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+        ${cortesias?`<span style="background:rgba(236,72,153,.15);color:#ec4899;border:1px solid rgba(236,72,153,.25);border-radius:99px;padding:3px 10px;font-size:10px;font-weight:700">${cortesias} cortesia · R$ 0</span>`:''}
+        ${emTrial?`<span style="background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.25);border-radius:99px;padding:3px 10px;font-size:10px;font-weight:700">${emTrial} em trial</span>`:''}
+        <span style="background:rgba(255,255,255,.06);color:#94a3b8;border:1px solid rgba(255,255,255,.1);border-radius:99px;padding:3px 10px;font-size:10px;font-weight:700">${carrosGerenciados} carros gerenciados</span>
+      </div>
+      ${mrr===0?`<div style="background:rgba(245,158,11,.08);border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;padding:9px 11px;margin-bottom:12px;font-size:11px;color:#fbbf24;line-height:1.5">
+        Nenhum cliente pagante ainda. ${cortesias?`Você tem ${cortesias} cliente(s) em cortesia gerenciando ${_adminData.filter(u=>u.plano==='cortesia').reduce((s,u)=>s+(u.carros_count||0),0)} carro(s).`:''}
+      </div>`:''}`;
+    }
   }
 
   // Lista
@@ -2203,11 +2395,14 @@ function renderAdmin(){
           <span style="background:${u.ativo?'rgba(16,185,129,.2)':'rgba(239,68,68,.2)'};color:${u.ativo?'#34d399':'#f87171'};border-radius:99px;padding:2px 9px;font-size:11px;font-weight:700">${u.ativo?'Ativo':'Inativo'}</span>
         </div>
       </div>
-      <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px">
-        <span style="font-size:11px;color:#64748b">Limite: ${u.limite_carros} carro(s)</span>
-        ${u.plano==='trial'&&dias!==null?`<span style="font-size:11px;color:${dias<=5?'#f87171':'#f59e0b'}">· Trial: ${dias} dias restantes</span>`:''}
-        ${u.obs?`<span style="font-size:11px;color:#64748b">· ${u.obs}</span>`:''}
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
+        <span style="font-size:11px;color:#94a3b8"><strong style="color:#fff">${u.carros_count||0}</strong> de ${u.limite_carros} carros</span>
+        ${_mrrDoCliente(u)>0
+          ?`<span style="background:rgba(16,185,129,.15);color:#34d399;border-radius:99px;padding:2px 8px;font-size:10px;font-weight:700">R$ ${_mrrDoCliente(u)}/mês</span>`
+          :`<span style="background:rgba(148,163,184,.12);color:#64748b;border-radius:99px;padding:2px 8px;font-size:10px;font-weight:700">R$ 0/mês</span>`}
+        ${u.plano==='trial'&&dias!==null?`<span style="font-size:11px;color:${dias<=5?'#f87171':'#f59e0b'}">Trial: ${dias}d</span>`:''}
       </div>
+      ${u.obs?`<div style="font-size:11px;color:#64748b;margin-bottom:8px;font-style:italic">${u.obs}</div>`:'<div style="margin-bottom:4px"></div>'}
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         ${['trial','starter','pro','frota','cortesia','enterprise'].map(p=>`<button onclick="_adminSetPlano('${u.user_id}','${p}')" style="background:${u.plano===p?cor+'33':'rgba(255,255,255,.06)'};color:${u.plano===p?cor:'#94a3b8'};border:1px solid ${u.plano===p?cor+'55':'rgba(255,255,255,.1)'};border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">${p}</button>`).join('')}
         ${_isAdmin()&&u.plano==='cortesia'?`<button onclick="_adminEditarLimite('${u.user_id}',${u.limite_carros})" style="background:rgba(236,72,153,.15);color:#ec4899;border:1px solid rgba(236,72,153,.3);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Limite: ${u.limite_carros}</button>`:''}
@@ -2384,6 +2579,7 @@ function _upgWhatsApp(){
 let _obCarroId=null;
 
 function _obAbrir(){
+  setTimeout(_aplicarMascaras,100);
   const el=document.getElementById('m-onboard');
   if(el){
     el.style.display='block';
@@ -2444,7 +2640,7 @@ function _obSalvarCarro(){
 function _obSalvarMoto(){
   const nome=document.getElementById('ob-moto-nome')?.value?.trim();
   if(!nome){toast('Informe o nome do motorista','er');return;}
-  DB.motos.push({id:'m'+uid(),nome,cpf:document.getElementById('ob-moto-cpf')?.value?.trim()||'',tel:document.getElementById('ob-moto-tel')?.value?.trim()||'',rg:'',cnh:'',vCNH:'',endereco:'',nota:5});
+  DB.motos.push({id:'m'+uid(),nome,cpf:document.getElementById('ob-moto-cpf')?.value?.trim()||'',tel:document.getElementById('ob-moto-tel')?.value?.trim()||'',rg:'',cnh:'',vCNH:'',endereco:'',plat:'',nota:'',status:'Ativo'});
   saveDB('motos');
   markDirty('motos','dash');
   _obConcluir();
@@ -3424,6 +3620,11 @@ function salvarKm(){
 
 // ── CONFIGURAÇÕES ─────────────────────────────────────────────────────────────
 function renderCfg(){
+  const _ab=document.getElementById('btn-admin');
+  if(_ab) _ab.style.display=_isAdmin()?'block':'none';
+  _aplicarMascaras();
+  const _ue=document.getElementById('cfg-user-email');
+  if(_ue&&_sbUser) _ue.textContent='Conectado como '+_sbUser.email;
   const c=DB.config;
   document.getElementById('cfg-nome').value=c.nome||'';
   document.getElementById('cfg-cpf').value=c.cpf||'';
@@ -3436,14 +3637,6 @@ function renderCfg(){
   document.getElementById('cfg-fran').value=c.fran||4800;
   document.getElementById('cfg-km').value=c.kmLim||7000;
   document.getElementById('cfg-kmval').value=c.kmVal||0.80;
-  document.getElementById('cfg-seg-nome').value=c.segNome||'';
-  document.getElementById('cfg-seg-pol').value=c.segPol||'';
-  document.getElementById('cfg-seg-val').value=c.segVal||'';
-  document.getElementById('cfg-seg-venc').value=c.segVenc||'';
-  document.getElementById('cfg-seg-tel').value=c.segTel||'';
-  document.getElementById('cfg-ras-nome').value=c.rasNome||'';
-  document.getElementById('cfg-ras-val').value=c.rasVal||'';
-  document.getElementById('cfg-ras-tel').value=c.rasTel||'';
 }
 function salvarCfg(){
   DB.config={...DB.config,
@@ -3458,14 +3651,6 @@ function salvarCfg(){
     fran:Number(document.getElementById('cfg-fran').value),
     kmLim:Number(document.getElementById('cfg-km').value),
     kmVal:Number(document.getElementById('cfg-kmval').value)||0.80,
-    segNome:document.getElementById('cfg-seg-nome').value,
-    segPol:document.getElementById('cfg-seg-pol').value,
-    segVal:Number(document.getElementById('cfg-seg-val').value)||0,
-    segVenc:document.getElementById('cfg-seg-venc').value,
-    segTel:document.getElementById('cfg-seg-tel').value,
-    rasNome:document.getElementById('cfg-ras-nome').value,
-    rasVal:Number(document.getElementById('cfg-ras-val').value)||0,
-    rasTel:document.getElementById('cfg-ras-tel').value,
   };
   saveDB('config');markDirty('dash','rel','contrato');toast('Configurações salvas! ✓');
 }
@@ -3572,7 +3757,7 @@ function _renderDashExtras(){
   const ativasF=DB.locs.filter(l=>l.status==='Ativa');
   const recMesF=ativasF.reduce((s,l)=>s+Number(l.val)*4.33,0);
   const parcM=DB.fins.filter(f=>f.status==='Ativo').reduce((s,f)=>s+f.parcela,0);
-  const segM=(DB.config.segVal||0)+(DB.config.rasVal||0);
+  const segM=_custoFixoFrota().total;
   const sobra=recMesF-parcM-segM;
   const cfl=document.getElementById('cd-fluxo-dash');
   cfl.innerHTML=`<div class="st">Fluxo/mês</div>
@@ -3642,6 +3827,38 @@ function _recAluguel(p){ return Number(p.valAlug ?? (p.caucAvulso ? 0 : p.val) ?
 // Valor de CAUÇÃO de um pagamento
 function _recCaucao(p){ return Number(p.valCauc||0) + (p.caucAvulso ? Number(p.val||0) : 0); }
 
+
+// ── CUSTOS FIXOS: SEGURO E RASTREADOR ────────────────────────────────────────
+// Seguro e rastreador são cadastrados individualmente em cada veículo.
+// Não há mais valor global rateado — cada carro carrega o próprio custo.
+
+function _segMensalCarro(carroId){
+  const car=cCar(carroId);
+  return car ? Number(car.segVal||0) : 0;
+}
+
+function _rasMensalCarro(carroId){
+  const car=cCar(carroId);
+  return car ? Number(car.rasVal||0) : 0;
+}
+
+// Custo fixo mensal da frota: soma dos valores individuais
+function _custoFixoFrota(){
+  const seg=DB.carros.reduce((s,c)=>s+Number(c.segVal||0),0);
+  const ras=DB.carros.reduce((s,c)=>s+Number(c.rasVal||0),0);
+  return{seg,ras,total:seg+ras};
+}
+
+// Alerta de apólices vencendo (dentro de 30 dias)
+function _apolicesVencendo(){
+  const hoje=new Date();hoje.setHours(0,0,0,0);
+  return DB.carros.filter(c=>{
+    if(!c.segVenc) return false;
+    const d=Math.round((new Date(c.segVenc+'T12:00:00')-hoje)/86400000);
+    return d>=0&&d<=30;
+  }).map(c=>({car:c,dias:Math.round((new Date(c.segVenc+'T12:00:00')-hoje)/86400000)}));
+}
+
 function _rentabilidadeCarro(carroId){
   const hoje=new Date();
   const mes=hoje.getMonth(), ano=hoje.getFullYear();
@@ -3660,10 +3877,9 @@ function _rentabilidadeCarro(carroId){
   const fin=DB.fins.find(f=>f.carroId===carroId&&f.status!=='Quitado');
   const custoFin=fin?Number(fin.parcela||0):0;
 
-  // Custo: seguro e rastreador rateados pelo total de carros
-  const nCarros=Math.max(1,DB.carros.length);
-  const custoSeg=Number(DB.config.segVal||0)/nCarros;
-  const custoRas=Number(DB.config.rasVal||0)/nCarros;
+  // Custo: seguro e rastreador — próprios do veículo ou rateio global
+  const custoSeg=_segMensalCarro(carroId);
+  const custoRas=_rasMensalCarro(carroId);
 
   // Custo: manutenções/eventos do mês
   const custoEv=DB.evs
@@ -3699,6 +3915,23 @@ function renderCarros(){
     </div>
     <div style="font-size:10px;color:var(--txm);margin-bottom:3px">${Number(c.km||0).toLocaleString('pt-BR')} km de 120.000 — ${pct}%</div>
     <div class="pb"><div class="pf" style="width:${pct}%;background:${corKm}"></div></div>
+    ${(()=>{
+      const custo=Number(c.segVal||0)+Number(c.rasVal||0);
+      if(!(custo>0)) return `<div style="margin-top:8px;font-size:10px;color:var(--txm);opacity:.75">
+        🛡️ Sem seguro cadastrado — <span style="color:var(--y)">a rentabilidade deste carro pode estar superestimada</span>
+      </div>`;
+      const d=c.segVenc?Math.round((new Date(c.segVenc+'T12:00:00')-new Date().setHours(0,0,0,0))/86400000):null;
+      const venc = d!==null&&d<0 ? {cor:'var(--r)',txt:'apólice vencida'}
+                 : d!==null&&d<=30 ? {cor:'var(--y)',txt:`vence em ${d}d`}
+                 : null;
+      const partes=[];
+      if(Number(c.segVal)>0) partes.push(`🛡️ ${c.segNome||'Seguro'} ${R(Number(c.segVal))}`);
+      if(Number(c.rasVal)>0) partes.push(`📡 ${R(Number(c.rasVal))}`);
+      return `<div style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:10px;color:var(--txm);flex-wrap:wrap">
+        <span>${partes.join(' · ')}/mês</span>
+        ${venc?`<span style="color:${venc.cor};font-weight:700">· ${venc.txt}</span>`:''}
+      </div>`;
+    })()}
     <!-- SEMÁFORO DE RENTABILIDADE -->
     <div style="background:${r.cor}0f;border:1px solid ${r.cor}33;border-radius:9px;padding:9px 11px;margin-top:10px;cursor:pointer" onclick="_abrirDetalheRent('${c.id}')">
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -4081,7 +4314,7 @@ function renderRel(){
     return parseInt(parts[1])-1===mes&&parseInt(parts[2])===ano;
   }).reduce((s,e)=>s+Number(e.custo||0),0);
   const parcelas=DB.fins.filter(f=>f.status==='Ativo').reduce((s,f)=>s+f.parcela,0);
-  const segRas=(DB.config.segVal||0)+(DB.config.rasVal||0);
+  const segRas=_custoFixoFrota().total;
   const lucro=recMes-custosMes-parcelas-segRas;
   // Caução total em posse (passivo a devolver)
   const caucEmPosse=DB.locs.filter(l=>l.status==='Ativa').reduce((s,l)=>s+Number(l.caucPago||0),0);
@@ -4248,7 +4481,7 @@ function exportarRelHTML(){
   const totalAbonosMes=abonosMes.reduce((s,e)=>{const loc=DB.locs.find(l=>l.id===e.abonoLocId);const diaria=(loc?.val||0)/7;return s+(e.abonoModo==='valor'?e.abonoVal:Math.round(e.abonoVal*diaria*100)/100);},0);
   const parcelasAtivas=DB.fins.filter(f=>f.status==='Ativo');
   const parcelas=parcelasAtivas.reduce((s,f)=>s+f.parcela,0);
-  const custSeg=cfg.segVal||0;const custRas=cfg.rasVal||0;
+  const _cf=_custoFixoFrota();const custSeg=_cf.seg;const custRas=_cf.ras;
   const segRas=custSeg+custRas;
   const lucro=recMes-custosMes-parcelas-segRas;
   const ativas=DB.locs.filter(l=>l.status==='Ativa');
@@ -5051,7 +5284,7 @@ function gerarRelContabil(){
   const custEvt=evsMes.reduce((s,e)=>s+Number(e.custo||0),0);
   const parcelasAtivas=DB.fins.filter(f=>f.status==='Ativo');
   const custFinanc=parcelasAtivas.reduce((s,f)=>s+f.parcela,0);
-  const custSeg=cfg.segVal||0;const custRas=cfg.rasVal||0;
+  const _cf=_custoFixoFrota();const custSeg=_cf.seg;const custRas=_cf.ras;
   const custTotal=custEvt+custFinanc+custSeg+custRas;const lucro=recTotal-custTotal;
   const ln=(l,v,p=38)=>l.padEnd(p)+String(v);const S=()=>'-'.repeat(46);const T=(t)=>'\n'+t+'\n'+S();
   const L='\n';
@@ -5296,7 +5529,21 @@ function mlAtualizarCauc(){
   const modo=document.getElementById('ml-cauc-modo')?.value||'integral';
   const areaParc=document.getElementById('ml-cauc-parc-area');
   const resumo=document.getElementById('ml-cauc-resumo');
+  const campoCauc=document.getElementById('ml-cauc');
   if(areaParc) areaParc.style.display=modo==='parcelado'?'block':'none';
+  // Dispensado: zera e desabilita o campo de valor
+  if(campoCauc){
+    if(modo==='dispensado'){
+      campoCauc.value=0;
+      campoCauc.disabled=true;
+      campoCauc.style.opacity='.5';
+      if(resumo) resumo.style.display='none';
+      return;
+    }
+    campoCauc.disabled=false;
+    campoCauc.style.opacity='1';
+    if(!Number(campoCauc.value)) campoCauc.value=DB.config.cauc||1400;
+  }
   if(modo==='parcelado'){
     const totalCauc=Number(document.getElementById('ml-cauc').value)||1400;
     const parcSem=Number(document.getElementById('ml-cauc-parc')?.value)||0;
@@ -6153,6 +6400,10 @@ function _buildInsights(){
   return h;
 }
 
+function _confirmarLogout(){
+  if(confirm('Sair da conta? Seus dados permanecem salvos na nuvem.')) logout();
+}
+
 async function logout(){
   await _sb.auth.signOut();
   _sbUser=null;
@@ -6235,14 +6486,28 @@ function renderAlertas(){
   const hoje=new Date();hoje.setHours(0,0,0,0);
   const alertas=[];
 
-  // CNH vencendo
-  DB.motos.filter(m=>m.status==='Ativo'&&m.vcnh).forEach(m=>{
-    const d=new Date(m.vcnh+'T12:00:00');
+  // Apólice de seguro vencendo (até 30 dias)
+  DB.carros.filter(c=>Number(c.segVal)>0&&c.segVenc).forEach(c=>{
+    const dias=Math.round((new Date(c.segVenc+'T12:00:00')-hoje)/86400000);
+    if(dias<=30){
+      const nivel=dias<=7?'critico':dias<=15?'alto':'medio';
+      const cor=dias<=7?'var(--r)':dias<=15?'var(--a)':'var(--y)';
+      alertas.push({nivel,cor,icone:'🛡️',
+        titulo:`Apólice vencendo — ${c.placa}`,
+        desc:`${c.segNome||'Seguro'} vence em ${fD(c.segVenc)} (${dias>0?dias+' dias':'VENCIDA!'})`,
+        link:'carros'});
+    }
+  });
+
+  // CNH vencendo — aceita vCNH (novo) e vcnh (legado)
+  DB.motos.filter(m=>m.status!=='Inativo'&&(m.vCNH||m.vcnh)).forEach(m=>{
+    const val=m.vCNH||m.vcnh;
+    const d=new Date(val+'T12:00:00');
     const dias=Math.round((d-hoje)/86400000);
     if(dias<=90){
       const nivel=dias<=15?'critico':dias<=30?'alto':'medio';
       const cor=dias<=15?'var(--r)':dias<=30?'var(--a)':'var(--y)';
-      alertas.push({nivel,cor,icone:'🪪',titulo:`CNH vencendo — ${m.nome.split(' ')[0]}`,desc:`Vence em ${fD(m.vcnh)} (${dias > 0 ? dias+' dias' : 'VENCIDA!'})`,link:'motos'});
+      alertas.push({nivel,cor,icone:'🪪',titulo:`CNH vencendo — ${m.nome.split(' ')[0]}`,desc:`Vence em ${fD(val)} (${dias > 0 ? dias+' dias' : 'VENCIDA!'})`,link:'motos'});
     }
   });
 
@@ -6574,7 +6839,7 @@ async function login(){
         });
         LS.set('schema_ver',SCHEMA_VER);
       }
-    } else _migrarDataVenc();
+    } else _migrarDataVenc();_migrarStatusMoto();_migrarSeguroParaCarros();
     gerarParcelasPendentes();
     _entrarNoApp();
     _carregarPlano();
@@ -6627,9 +6892,12 @@ function _mostrarConfirmeEmail(email){
   overlay.innerHTML=`<div style="text-align:center;max-width:340px">
     <div style="font-size:48px;margin-bottom:12px">📧</div>
     <div style="font-size:20px;font-weight:900;color:#fff;margin-bottom:8px">Confirme seu e-mail</div>
-    <div style="font-size:13px;color:rgba(255,255,255,.65);line-height:1.6;margin-bottom:6px">Enviamos um link de confirmação para:</div>
-    <div style="font-size:14px;font-weight:700;color:#f59e0b;margin-bottom:16px;word-break:break-all">${email}</div>
-    <div style="font-size:12px;color:rgba(255,255,255,.45);line-height:1.6;margin-bottom:22px">Abra seu e-mail e clique no link para ativar a conta. Verifique também a caixa de spam.</div>
+    <div style="font-size:16px;color:#fff;line-height:1.6;margin-bottom:8px;font-weight:600">Enviamos um link de confirmação para:</div>
+    <div style="font-size:17px;font-weight:800;color:#f59e0b;margin-bottom:18px;word-break:break-all;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:9px;padding:10px 14px">${email}</div>
+    <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:14px 16px;margin-bottom:22px">
+      <div style="font-size:15px;color:#fff;line-height:1.65;font-weight:600;margin-bottom:6px">Abra seu e-mail e clique no link para ativar a conta.</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.7);line-height:1.6">⚠️ Não encontrou? Verifique a <strong style="color:#fbbf24">caixa de spam</strong> ou lixo eletrônico.</div>
+    </div>
     <button onclick="_reenviarConfirmacao('${email}',this)" style="width:100%;background:rgba(255,255,255,.1);color:#fff;border:1.5px solid rgba(255,255,255,.25);border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px">Reenviar e-mail</button>
     <button onclick="document.getElementById('ov-confirme-email').remove();voltarLanding()" style="width:100%;background:#f59e0b;color:#0d2b3e;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">Voltar ao início</button>
   </div>`;
@@ -6710,7 +6978,7 @@ async function esqueceuSenha(){
   if(!_sb&&!_initSB()){_loginMsg('Erro de conexão','#f87171');return;}
   _loginMsg('Enviando link...','#fbbf24');
   const{error}=await _sb.auth.resetPasswordForEmail(email,{
-    redirectTo:'https://frotando-app.netlify.app'
+    redirectTo:window.location.origin
   });
   if(error){
     _loginMsg(error.message,'#f87171');
@@ -6929,10 +7197,11 @@ document.addEventListener('DOMContentLoaded',async()=>{
         });
         LS.set('schema_ver',SCHEMA_VER);
       }
-    } else _migrarDataVenc();
+    } else _migrarDataVenc();_migrarStatusMoto();_migrarSeguroParaCarros();
       gerarParcelasPendentes();
       _entrarNoApp();
       _carregarPlano();
+      _sincronizarContadorCarros();
       const obFeito=LS.get('ob_done');
       if(!temDados&&!obFeito) setTimeout(()=>_obAbrir(),800);
     } else {
