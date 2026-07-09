@@ -133,7 +133,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.4.1</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.5.0</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -686,7 +686,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       <button onclick="fecharAdmin()" style="background:rgba(255,255,255,.1);border:none;color:#fff;border-radius:8px;padding:7px 12px;font-size:14px;cursor:pointer;font-family:inherit">✕ Fechar</button>
     </div>
     <!-- KPIs admin -->
-    <div id="admin-kpis" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px"></div>
+    <div id="admin-kpis" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px"></div>
+    <div id="admin-ctx"></div>
     <!-- Filtro -->
     <div style="display:flex;gap:8px;margin-bottom:12px">
       <input id="admin-busca" type="text" placeholder="Buscar por e-mail..." oninput="renderAdmin()" style="flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:8px 12px;color:#fff;font-family:inherit;font-size:13px">
@@ -1299,6 +1300,22 @@ function _migrarDataVenc(){
 function saveDB(k){
   LS.set(k,DB[k]);
   sbSync(k); // sync to Supabase in background
+  if(k==='carros') _sincronizarContadorCarros();
+}
+
+// Publica APENAS a contagem de carros em frotando_planos.
+// Nenhum dado sensível sai daqui — só o número, para o cálculo de MRR.
+let _contadorTimer=null;
+function _sincronizarContadorCarros(){
+  if(!_sbUser||!_sb) return;
+  clearTimeout(_contadorTimer);
+  _contadorTimer=setTimeout(async()=>{
+    try{
+      await _sb.from('frotando_planos')
+        .update({carros_count:DB.carros.length})
+        .eq('user_id',_sbUser.id);
+    }catch(e){console.error('Erro ao sincronizar contador:',e);}
+  },1500);
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -2161,6 +2178,19 @@ async function _carregarAdmin(){
   }
 }
 
+
+// Preço mensal real de um cliente, com base nos CARROS EFETIVAMENTE cadastrados.
+// Trial e Cortesia não geram receita.
+const _PRECO_POR_CARRO={pro:19,frota:15,enterprise:12};
+function _mrrDoCliente(u){
+  if(!u.ativo) return 0;
+  if(u.plano==='trial'||u.plano==='cortesia') return 0;
+  const carros=Number(u.carros_count||0);
+  if(u.plano==='starter') return 29;              // preço fixo
+  const preco=_PRECO_POR_CARRO[u.plano];
+  return preco?carros*preco:0;
+}
+
 function renderAdmin(){
   const busca=(document.getElementById('admin-busca')?.value||'').toLowerCase();
   const filtPlano=document.getElementById('admin-filtro-plano')?.value||'';
@@ -2169,24 +2199,40 @@ function renderAdmin(){
     (!filtPlano||u.plano===filtPlano)
   );
 
-  // KPIs
+  // KPIs — MRR calculado sobre CARROS REAIS cadastrados (não sobre o limite do plano)
   const kpiEl=document.getElementById('admin-kpis');
   if(kpiEl){
     const total=_adminData.length;
-    const ativos=_adminData.filter(u=>u.ativo).length;
-    const pagantes=_adminData.filter(u=>u.plano!=='trial'&&u.ativo).length;
-    const mrr=_adminData.filter(u=>u.ativo&&u.plano!=='trial').reduce((s,u)=>{
-      const precos={starter:29,pro:u.limite_carros*19,frota:u.limite_carros*15,enterprise:u.limite_carros*12,cortesia:0};
-      return s+(precos[u.plano]||0);
-    },0);
+    const ativos=_adminData.filter(u=>u.ativo);
+    const naoPagantes=['trial','cortesia'];
+    const pagantes=ativos.filter(u=>!naoPagantes.includes(u.plano));
+    const cortesias=_adminData.filter(u=>u.plano==='cortesia'&&u.ativo).length;
+    const emTrial=_adminData.filter(u=>u.plano==='trial'&&u.ativo).length;
+
+    const mrr=pagantes.reduce((s,u)=>s+_mrrDoCliente(u),0);
+    const carrosGerenciados=_adminData.filter(u=>u.ativo).reduce((s,u)=>s+(u.carros_count||0),0);
+
     kpiEl.innerHTML=[
       ['Total clientes',total,'#94a3b8'],
-      ['Pagantes',pagantes,'#34d399'],
-      ['MRR estimado','R$'+mrr,'#f59e0b'],
+      ['Pagantes',pagantes.length,'#34d399'],
+      ['MRR real','R$ '+mrr,mrr>0?'#f59e0b':'#64748b'],
     ].map(([l,v,c])=>`<div style="background:rgba(255,255,255,.06);border-radius:10px;padding:10px 12px">
       <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase">${l}</div>
       <div style="font-size:20px;font-weight:900;color:${c};margin-top:2px">${v}</div>
     </div>`).join('');
+
+    // Linha secundária de contexto
+    const ctxEl=document.getElementById('admin-ctx');
+    if(ctxEl){
+      ctxEl.innerHTML=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+        ${cortesias?`<span style="background:rgba(236,72,153,.15);color:#ec4899;border:1px solid rgba(236,72,153,.25);border-radius:99px;padding:3px 10px;font-size:10px;font-weight:700">${cortesias} cortesia · R$ 0</span>`:''}
+        ${emTrial?`<span style="background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.25);border-radius:99px;padding:3px 10px;font-size:10px;font-weight:700">${emTrial} em trial</span>`:''}
+        <span style="background:rgba(255,255,255,.06);color:#94a3b8;border:1px solid rgba(255,255,255,.1);border-radius:99px;padding:3px 10px;font-size:10px;font-weight:700">${carrosGerenciados} carros gerenciados</span>
+      </div>
+      ${mrr===0?`<div style="background:rgba(245,158,11,.08);border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;padding:9px 11px;margin-bottom:12px;font-size:11px;color:#fbbf24;line-height:1.5">
+        Nenhum cliente pagante ainda. ${cortesias?`Você tem ${cortesias} cliente(s) em cortesia gerenciando ${_adminData.filter(u=>u.plano==='cortesia').reduce((s,u)=>s+(u.carros_count||0),0)} carro(s).`:''}
+      </div>`:''}`;
+    }
   }
 
   // Lista
@@ -2212,11 +2258,14 @@ function renderAdmin(){
           <span style="background:${u.ativo?'rgba(16,185,129,.2)':'rgba(239,68,68,.2)'};color:${u.ativo?'#34d399':'#f87171'};border-radius:99px;padding:2px 9px;font-size:11px;font-weight:700">${u.ativo?'Ativo':'Inativo'}</span>
         </div>
       </div>
-      <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px">
-        <span style="font-size:11px;color:#64748b">Limite: ${u.limite_carros} carro(s)</span>
-        ${u.plano==='trial'&&dias!==null?`<span style="font-size:11px;color:${dias<=5?'#f87171':'#f59e0b'}">· Trial: ${dias} dias restantes</span>`:''}
-        ${u.obs?`<span style="font-size:11px;color:#64748b">· ${u.obs}</span>`:''}
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
+        <span style="font-size:11px;color:#94a3b8"><strong style="color:#fff">${u.carros_count||0}</strong> de ${u.limite_carros} carros</span>
+        ${_mrrDoCliente(u)>0
+          ?`<span style="background:rgba(16,185,129,.15);color:#34d399;border-radius:99px;padding:2px 8px;font-size:10px;font-weight:700">R$ ${_mrrDoCliente(u)}/mês</span>`
+          :`<span style="background:rgba(148,163,184,.12);color:#64748b;border-radius:99px;padding:2px 8px;font-size:10px;font-weight:700">R$ 0/mês</span>`}
+        ${u.plano==='trial'&&dias!==null?`<span style="font-size:11px;color:${dias<=5?'#f87171':'#f59e0b'}">Trial: ${dias}d</span>`:''}
       </div>
+      ${u.obs?`<div style="font-size:11px;color:#64748b;margin-bottom:8px;font-style:italic">${u.obs}</div>`:'<div style="margin-bottom:4px"></div>'}
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         ${['trial','starter','pro','frota','cortesia','enterprise'].map(p=>`<button onclick="_adminSetPlano('${u.user_id}','${p}')" style="background:${u.plano===p?cor+'33':'rgba(255,255,255,.06)'};color:${u.plano===p?cor:'#94a3b8'};border:1px solid ${u.plano===p?cor+'55':'rgba(255,255,255,.1)'};border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">${p}</button>`).join('')}
         ${_isAdmin()&&u.plano==='cortesia'?`<button onclick="_adminEditarLimite('${u.user_id}',${u.limite_carros})" style="background:rgba(236,72,153,.15);color:#ec4899;border:1px solid rgba(236,72,153,.3);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Limite: ${u.limite_carros}</button>`:''}
@@ -6944,6 +6993,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       gerarParcelasPendentes();
       _entrarNoApp();
       _carregarPlano();
+      _sincronizarContadorCarros();
       const obFeito=LS.get('ob_done');
       if(!temDados&&!obFeito) setTimeout(()=>_obAbrir(),800);
     } else {
