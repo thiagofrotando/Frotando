@@ -133,7 +133,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.8.0</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.15.0</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -806,6 +806,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
         </select>
       </div>
       <div class="fi"><label>Observações gerais</label><textarea id="enc-obs" placeholder="Detalhes sobre a devolução..." rows="2"></textarea></div>
+      <!-- Vistoria fotográfica de devolução (só se módulo ativo) -->
+      <div id="enc-bloco-vistoria" style="display:none;margin-bottom:14px"></div>
       <!-- Parcelas pendentes -->
       <div id="enc-bloco-pend" style="display:none;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:12px 13px;margin-bottom:12px">
         <div style="font-size:12px;font-weight:800;color:var(--p);margin-bottom:8px">⏳ Parcelas pendentes</div>
@@ -833,7 +835,9 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 
     <!-- ETAPA 2: Vistoria e descontos -->
     <div id="enc-etapa2" style="display:none">
-      <div style="font-size:12px;color:var(--txm);margin-bottom:12px">Marque os itens com <strong>avaria</strong> e informe o desconto no caução quando aplicável.</div>
+      <div id="enc-checklist-hint" style="font-size:12px;color:var(--txm);margin-bottom:12px">Marque os itens com <strong>avaria</strong> e informe o desconto no caução quando aplicável.</div>
+      <!-- Resumo da vistoria (Opção A) — substitui o checklist quando o módulo está ativo -->
+      <div id="enc-vistoria-resumo" style="display:none;margin-bottom:12px"></div>
       <div id="enc-checklist"></div>
       <div style="background:var(--bg);border-radius:10px;padding:11px 13px;margin-top:12px;margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
@@ -1078,10 +1082,10 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
   <div class="ms" onclick="event.stopPropagation()">
     <div class="mh"></div>
     <div class="mt">Imprimir Contrato</div>
-    <div id="mc-resumo" style="background:var(--bg);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:12px;color:var(--tx)"></div>
-    <div class="fi"><label>KM na entrega *</label><input id="mc-km" type="number" placeholder="Ex: 48200"></div>
+    <div id="mct-resumo" style="background:var(--bg);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:12px;color:var(--tx)"></div>
+    <div class="fi"><label>KM na entrega *</label><input id="mct-km" type="number" placeholder="Ex: 48200"></div>
     <div class="fi"><label>Nivel de combustivel</label>
-      <select id="mc-comb">
+      <select id="mct-comb">
         <option>Tanque cheio</option>
         <option selected>Metade do tanque (1/2)</option>
         <option>3/4 do tanque</option>
@@ -1089,8 +1093,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
         <option>Reserva</option>
       </select>
     </div>
-    <div class="fi"><label>Data de assinatura</label><input id="mc-data" type="date"></div>
-    <div class="fi"><label>Franquia do seguro (R$)</label><input id="mc-fran" type="number" placeholder="4800"></div>
+    <div class="fi"><label>Data de assinatura</label><input id="mct-data" type="date"></div>
+    <div class="fi"><label>Franquia do seguro (R$)</label><input id="mct-fran" type="number" placeholder="4800"></div>
     <div style="display:flex;gap:8px;margin-top:4px">
       <button class="bt btp" style="flex:1" onclick="gerarPDF()">🖶 Imprimir / Salvar PDF</button>
       <button class="bt btg" onclick="fecharModal('mcontrato')">Cancelar</button>
@@ -1124,6 +1128,64 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 const _SB_URL='https://tytmcpmyemnyzgnuflhq.supabase.co';
 const _SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5dG1jcG15ZW1ueXpnbnVmbGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2Nzk5MTcsImV4cCI6MjA5ODI1NTkxN30.9yZLEprQmJDBjUfJvh3F6tJGxodTnIk5Tw7g-TJQFig';
 let _sb=null;
+// URL do Worker de vistoria (Cloudflare R2)
+const _VIST_WORKER='https://frotando-vistoria.thiagofrotando.workers.dev';
+
+// Token de login atual (para autenticar no Worker)
+async function _tokenAtual(){
+  try{ const{data}=await _sb.auth.getSession(); return data?.session?.access_token||null; }
+  catch(e){ return null; }
+}
+
+// Sobe uma foto (Blob) para o R2 via Worker. Retorna a chave do objeto.
+async function _r2Upload(chave, blob, contentType){
+  const token=await _tokenAtual();
+  if(!token) throw new Error('Sessão expirada');
+  const r=await fetch(`${_VIST_WORKER}/${chave}`,{
+    method:'PUT',
+    headers:{'Authorization':`Bearer ${token}`,'Content-Type':contentType||'image/jpeg'},
+    body:blob,
+  });
+  if(!r.ok){ const e=await r.json().catch(()=>({})); throw new Error(e.error||`Falha no upload (${r.status})`); }
+  return chave;
+}
+
+// Baixa uma foto do R2 como URL utilizável em <img> (blob local temporário)
+async function _r2Download(chave){
+  const token=await _tokenAtual();
+  if(!token) return null;
+  const r=await fetch(`${_VIST_WORKER}/${chave}`,{headers:{'Authorization':`Bearer ${token}`}});
+  if(!r.ok) return null;
+  const blob=await r.blob();
+  return URL.createObjectURL(blob);
+}
+
+// Remove uma foto do R2
+async function _r2Delete(chave){
+  const token=await _tokenAtual();
+  if(!token) return false;
+  const r=await fetch(`${_VIST_WORKER}/${chave}`,{method:'DELETE',headers:{'Authorization':`Bearer ${token}`}});
+  return r.ok;
+}
+
+// Comprime uma imagem antes de subir (reduz custo e tempo)
+function _comprimirImagem(file, maxLado=1280, quality=0.75){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      let{width:w,height:h}=img;
+      if(w>h&&w>maxLado){ h=Math.round(h*maxLado/w); w=maxLado; }
+      else if(h>maxLado){ w=Math.round(w*maxLado/h); h=maxLado; }
+      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      cv.toBlob(b=>b?resolve(b):reject(new Error('Falha ao comprimir')),'image/jpeg',quality);
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Imagem inválida'));};
+    img.src=url;
+  });
+}
 function _initSB(){
   try{
     if(typeof supabase!=='undefined'&&supabase.createClient){
@@ -1138,6 +1200,7 @@ let _plano={plano:'trial',limite_carros:2,ativo:true,trial_ate:null};
 // Admin é determinado pela coluna is_admin no banco (frotando_planos),
 // NUNCA por comparação de e-mail no cliente — isso é falsificável no console.
 let _isAdminDB=false;
+let _vistoriaAtiva=false;  // módulo de vistoria (add-on habilitado pelo admin no banco)
 
 async function _carregarPlano(){
   if(!_sbUser||!_sb) return;
@@ -1148,6 +1211,7 @@ async function _carregarPlano(){
     if(data){
       _plano=data;
       _isAdminDB = data.is_admin === true;   // fonte da verdade: banco
+      _vistoriaAtiva = data.vistoria_ativa === true;  // add-on de vistoria
       _atualizarBadgePlano();
       _renderSemaforoDash();
       _renderPlanoBadge();
@@ -1222,7 +1286,17 @@ async function sbLoad(){
   if(!_sbUser||!_sb) return false;
   try{
     const{data,error}=await _sb.from('frotando_data').select('chave,valor').eq('user_id',_sbUser.id);
-    if(error||!data?.length) return false;
+    if(error){console.error('sbLoad error:',error.message);return false;}
+    // SEGURANÇA: zera TODAS as chaves antes de aplicar as do banco.
+    // Sem isso, dados de um usuário anterior sobreviveriam no localStorage
+    // para chaves que a conta atual não possui na nuvem (vazamento entre contas).
+    const CHAVES=['config','carros','motos','locs','pags','evs','kms','fins','semAtual','vist'];
+    CHAVES.forEach(k=>{
+      DB[k]=Array.isArray(EMPTY_DATA[k])?[...EMPTY_DATA[k]]:{...EMPTY_DATA[k]};
+      LS.set(k,DB[k]);
+    });
+    if(!data?.length) return false;   // conta sem nenhum dado na nuvem
+    // Aplica o que existe no banco por cima do estado limpo
     data.forEach(row=>{
       DB[row.chave]=row.valor;
       LS.set(row.chave,row.valor);
@@ -1256,6 +1330,7 @@ const INIT_DATA={
   ],
   fins:[{id:'f1',carroId:'c1',vTotal:38900,entrada:3890,vFin:35010,taxa:0.0203,nparcelas:36,npg:3,parcela:1379.77,inicio:'2026-06-22',status:'Ativo'}],
   semAtual:[{id:'s1',locId:'l1',motoId:'m1',carroId:'c1',val:600,valAlug:600,valCauc:0,temCauc:false,pago:false}],
+  vist:[]
 };
 
 // Carregar dados (ou inicializar)
@@ -1265,16 +1340,16 @@ const SCHEMA_VER=4; // incrementar ao mudar estrutura de dados
 // Dados vazios para novos usuários (sem demo)
 const EMPTY_DATA={
   config:{nome:'',cpf:'',pix:'',alug:600,cauc:1400,kmLim:7000,kmVal:0.80,segVal:0,rasVal:0},
-  carros:[],motos:[],locs:[],pags:[],evs:[],kms:[],fins:[],semAtual:[]
+  carros:[],motos:[],locs:[],pags:[],evs:[],kms:[],fins:[],semAtual:[],vist:[]
 };
 function loadDB(){
   const savedVer=LS.get('schema_ver')||0;
   if(savedVer<SCHEMA_VER){
     // Schema desatualizado: limpar dados para evitar inconsistências
-    ['config','carros','motos','locs','pags','evs','kms','fins','semAtual'].forEach(k=>LS.del(k));
+    ['config','carros','motos','locs','pags','evs','kms','fins','semAtual','vist'].forEach(k=>LS.del(k));
     LS.set('schema_ver',SCHEMA_VER);
   }
-  ['config','carros','motos','locs','pags','evs','kms','fins','semAtual'].forEach(k=>{
+  ['config','carros','motos','locs','pags','evs','kms','fins','semAtual','vist'].forEach(k=>{
     DB[k]=LS.get(k)||(Array.isArray(INIT_DATA[k])?[...INIT_DATA[k]]:{...INIT_DATA[k]});
   });
   _migrarDataVenc();_migrarStatusMoto();_migrarSeguroParaCarros();
@@ -2289,6 +2364,7 @@ function abrirPrivacidade(){
 let _adminData=[];
 
 function _isAdmin(){ return _isAdminDB===true; }
+function _temVistoria(){ return _vistoriaAtiva===true; }
 
 async function abrirAdmin(){
   if(!_isAdmin()){toast('Acesso negado','er');return;}
@@ -2407,6 +2483,8 @@ function renderAdmin(){
         ${['trial','starter','pro','frota','cortesia','enterprise'].map(p=>`<button onclick="_adminSetPlano('${u.user_id}','${p}')" style="background:${u.plano===p?cor+'33':'rgba(255,255,255,.06)'};color:${u.plano===p?cor:'#94a3b8'};border:1px solid ${u.plano===p?cor+'55':'rgba(255,255,255,.1)'};border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">${p}</button>`).join('')}
         ${_isAdmin()&&u.plano==='cortesia'?`<button onclick="_adminEditarLimite('${u.user_id}',${u.limite_carros})" style="background:rgba(236,72,153,.15);color:#ec4899;border:1px solid rgba(236,72,153,.3);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Limite: ${u.limite_carros}</button>`:''}
         <button onclick="_adminToggleAtivo('${u.user_id}',${!u.ativo})" style="background:${u.ativo?'rgba(239,68,68,.15)':'rgba(16,185,129,.15)'};color:${u.ativo?'#f87171':'#34d399'};border:1px solid ${u.ativo?'rgba(239,68,68,.3)':'rgba(16,185,129,.3)'};border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">${u.ativo?'Desativar':'Ativar'}</button>
+        <button onclick="_adminToggleVistoria('${u.user_id}',${!u.vistoria_ativa})" style="background:${u.vistoria_ativa?'rgba(139,92,246,.2)':'rgba(255,255,255,.06)'};color:${u.vistoria_ativa?'#a78bfa':'#94a3b8'};border:1px solid ${u.vistoria_ativa?'rgba(139,92,246,.4)':'rgba(255,255,255,.1)'};border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🔍 Vistoria: ${u.vistoria_ativa?'ON':'OFF'}</button>
+        <button onclick="_adminResetSenha('${(u.email||'').replace(/'/g,"\\'")}')" style="background:rgba(255,255,255,.06);color:#94a3b8;border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🔑 Redefinir senha</button>
         <button onclick="_adminEditarObs('${u.user_id}')" style="background:rgba(255,255,255,.06);color:#94a3b8;border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:inherit">Obs</button>
       </div>`;
     lista.appendChild(d);
@@ -2437,6 +2515,26 @@ async function _adminEditarLimite(userId,limiteAtual){
   if(error){toast('Erro','er');return;}
   _adminData=_adminData.map(u=>u.user_id===userId?{...u,limite_carros:novoLimite}:u);
   renderAdmin();toast('Limite atualizado ✓');
+}
+
+async function _adminResetSenha(email){
+  if(!email){toast('Cliente sem e-mail cadastrado','er');return;}
+  if(!confirm(`Enviar e-mail de redefinição de senha para:\n\n${email}\n\nO cliente receberá um link e definirá a própria nova senha.`)) return;
+  try{
+    const{error}=await _sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin});
+    if(error) throw error;
+    toast('E-mail de redefinição enviado ✓');
+  }catch(e){
+    toast('Erro ao enviar: '+(e.message||'tente novamente'),'er');
+  }
+}
+
+async function _adminToggleVistoria(userId,novoValor){
+  const{error}=await _sb.from('frotando_planos').update({vistoria_ativa:novoValor}).eq('user_id',userId);
+  if(error){toast('Erro ao alterar módulo de vistoria','er');return;}
+  _adminData=_adminData.map(u=>u.user_id===userId?{...u,vistoria_ativa:novoValor}:u);
+  renderAdmin();
+  toast(novoValor?'Módulo de Vistoria habilitado ✓':'Módulo de Vistoria desabilitado');
 }
 
 async function _adminToggleAtivo(userId,novoAtivo){
@@ -2704,6 +2802,7 @@ function abrirEncerramento(locId){
   }
   // Checklist
   _encMontarChecklist();
+  _encRenderBlocoVistoria();
   _encIrEtapa(1);
   const el=document.getElementById('menc');
   el.style.pointerEvents='all';
@@ -2750,19 +2849,73 @@ function _encMontarChecklist(){
 }
 
 function _encAtualizarDesc(){
-  let total=0;
-  _ENC_CHECKLIST.forEach(item=>{
-    const chk=document.getElementById('enc-chk-'+item.id);
-    if(chk?.checked){
-      total+=Number(document.getElementById('enc-val-'+item.id)?.value)||0;
-    }
-  });
-  total+=Number(document.getElementById('enc-desc-extra')?.value)||0;
+  const{total}=_encGetDescontos();
   const el=document.getElementById('enc-total-desc');
   if(el) el.textContent=R(total);
 }
 
+// Na etapa 2, decide entre checklist manual e resumo da vistoria (Opção A)
+function _encRenderEtapa2Vistoria(){
+  const devol=_temVistoria()?_vistoriaDo(_encLocId,'devolucao'):null;
+  const checklist=document.getElementById('enc-checklist');
+  const hint=document.getElementById('enc-checklist-hint');
+  const resumo=document.getElementById('enc-vistoria-resumo');
+  if(!resumo)return;
+
+  if(devol){
+    // Esconde o checklist manual; mostra o resumo da vistoria
+    if(checklist) checklist.style.display='none';
+    if(hint) hint.style.display='none';
+    resumo.style.display='block';
+
+    const avarias=devol.itens.filter(it=>it.ok===false);
+    const oks=devol.itens.filter(it=>it.ok===true).length;
+    const naoVist=devol.itens.filter(it=>it.ok===null).length;
+    const{total}=_vistTotalAvarias(devol.id);
+
+    resumo.innerHTML=`
+      <div style="background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.25);border-radius:11px;padding:13px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span style="font-size:16px">🔍</span>
+          <div style="font-size:12px;font-weight:800;color:var(--p)">Avarias apuradas na vistoria de devolução</div>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <div style="flex:1;text-align:center;background:rgba(16,163,74,.08);border-radius:7px;padding:6px"><div style="font-size:15px;font-weight:900;color:var(--g)">${oks}</div><div style="font-size:9px;color:var(--txm)">OK</div></div>
+          <div style="flex:1;text-align:center;background:rgba(220,38,38,.08);border-radius:7px;padding:6px"><div style="font-size:15px;font-weight:900;color:var(--r)">${avarias.length}</div><div style="font-size:9px;color:var(--txm)">Avarias</div></div>
+          <div style="flex:1;text-align:center;background:var(--bg);border-radius:7px;padding:6px"><div style="font-size:15px;font-weight:900;color:var(--txm)">${naoVist}</div><div style="font-size:9px;color:var(--txm)">Não vist.</div></div>
+        </div>
+        ${avarias.length?avarias.map(a=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px solid var(--sll);font-size:12px">
+            <span style="color:var(--tx)">⚠ ${a.nome}${a.obs?` — <span style="color:var(--txm)">${a.obs}</span>`:''}</span>
+            <span style="font-weight:800;color:var(--r);white-space:nowrap">${R(Number(a.valorAvaria||0))}</span>
+          </div>`).join(''):'<div style="font-size:12px;color:var(--g);padding:6px 0">Nenhuma avaria registrada ✓</div>'}
+        <div style="display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:2px solid var(--sll);font-size:13px">
+          <span style="font-weight:700">Total de avarias</span>
+          <span style="font-weight:900;color:var(--r)">${R(total)}</span>
+        </div>
+        <button onclick="_encAbrirVistoriaDevol()" style="width:100%;margin-top:12px;background:transparent;border:1px solid #8b5cf6;color:#8b5cf6;border-radius:8px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Editar vistoria</button>
+      </div>`;
+    _encAtualizarDesc();
+  } else {
+    // Sem vistoria: checklist tradicional
+    if(checklist) checklist.style.display='block';
+    if(hint) hint.style.display='block';
+    resumo.style.display='none';
+  }
+}
+
 function _encGetDescontos(){
+  // OPÇÃO A: com módulo de vistoria ativo E vistoria de devolução existente,
+  // as avarias vêm da vistoria fotográfica (fonte da verdade), não do checklist.
+  const devol=_temVistoria()?_vistoriaDo(_encLocId,'devolucao'):null;
+  if(devol){
+    const{itens,total}=_vistTotalAvarias(devol.id);
+    const extra=Number(document.getElementById('enc-desc-extra')?.value)||0;
+    const lista=[...itens];
+    if(extra>0) lista.push({id:'extra',label:'Desconto adicional',obs:'',val:extra});
+    return{itens:lista,total:total+extra,fonte:'vistoria'};
+  }
+  // Sem módulo/vistoria: checklist manual tradicional
   let itens=[];
   let total=0;
   _ENC_CHECKLIST.forEach(item=>{
@@ -2777,7 +2930,7 @@ function _encGetDescontos(){
   const extra=Number(document.getElementById('enc-desc-extra')?.value)||0;
   if(extra>0) itens.push({id:'extra',label:'Desconto adicional',obs:'',val:extra});
   total+=extra;
-  return{itens,total};
+  return{itens,total,fonte:'checklist'};
 }
 
 function _encIrEtapa(n){
@@ -2786,6 +2939,7 @@ function _encIrEtapa(n){
     const s=document.getElementById('enc-s'+i);
     if(s) s.style.background=i<=n?'var(--a)':'var(--sll)';
   });
+  if(n===2) _encRenderEtapa2Vistoria();
   const labels=['','Etapa 1 de 3 — Dados da devolução','Etapa 2 de 3 — Vistoria do veículo','Etapa 3 de 3 — Resumo e confirmação'];
   const lbl=document.getElementById('enc-step-label');
   if(lbl) lbl.textContent=labels[n];
@@ -2896,12 +3050,19 @@ function _encConfirmar(){
   const saldoDevedor=Math.max(0,-saldoFavor);
 
   // Atualizar contrato
+  // Marca a vistoria de devolução como parte do encerramento
+  const _vd=_temVistoria()?_vistoriaDo(_encLocId,'devolucao'):null;
+  if(_vd){
+    DB.vist=DB.vist.map(v=>v.id===_vd.id?{...v,status:'concluida',concluidaEm:new Date().toISOString()}:v);
+  }
   DB.locs=DB.locs.map(l=>l.id===_encLocId?{...l,
     status:'Encerrada',fim:dataEnc,
     encMotivo:motivo,encKmFinal:kmFinal,encComb:comb,
     encObs:obs,encAvarias:itens,encDescTotal:totalDesc,
     encCaucDevolver:caucDevolver,encSaldoDevedor:saldoDevedor,
-    encCobrarPend:cobrarPend,encValPend:cobrarPend?valPend:0
+    encCobrarPend:cobrarPend,encValPend:cobrarPend?valPend:0,
+    encVistoriaId:(_temVistoria()?(_vistoriaDo(_encLocId,'devolucao')?.id||null):null),
+    encTemLaudo:(_temVistoria()&&!!_vistoriaDo(_encLocId,'devolucao'))
   }:l);
   // Atualizar KM do carro
   DB.carros=DB.carros.map(c=>c.id===loc.carroId?{...c,status:'Disponível',km:kmFinal||c.km}:c);
@@ -3053,6 +3214,7 @@ function _gerarTermoDivida(loc,mot,car,cfg,saldoDevedor){
 
 <p style="margin-top:10pt"><strong>Avarias identificadas na vistoria:</strong></p>
 <p>${avariasTexto}</p>
+${loc.encTemLaudo?`<p style="margin-top:8pt;font-size:12px">As avarias acima foram apuradas mediante <strong>vistoria fotográfica de devolução</strong>, realizada com registro de imagens, geolocalização e data/hora, arquivada eletronicamente e comparada à vistoria de entrega do veículo. O laudo fotográfico integral constitui documento probatório complementar a este Termo e encontra-se à disposição das partes.</p>`:''}
 
 <table style="margin-top:10pt">
   <tr><td class="label">Caução recebido</td><td>R$ ${R2(loc.caucPago||0)}</td></tr>
@@ -3236,6 +3398,7 @@ function _gerarPDFEncerramento(loc){
     <div class="section">
       <div class="st">Vistoria de devolução</div>
       <table class="tbl"><thead class="vis-th"><tr><th>Item</th><th>Descrição do dano</th><th style="text-align:right">Desconto</th></tr></thead><tbody>${avariasHTML}</tbody></table>
+      ${loc.encTemLaudo?`<div style="margin-top:8px;font-size:11px;color:#64748b;line-height:1.5;background:#f8fafc;border-left:3px solid #8b5cf6;padding:8px 10px;border-radius:0 6px 6px 0">🔍 Avarias apuradas por <strong>vistoria fotográfica</strong> com registro de imagens, geolocalização e data/hora, comparada à vistoria de entrega. Laudo arquivado eletronicamente.</div>`:''}
     </div>
     <div class="section">
       <div class="st">Acerto do caução</div>
@@ -3685,7 +3848,7 @@ async function _confirmarReset(btn){
   // Remover overlay
   btn.closest('div[style*="position:fixed"]').remove();
   // Limpar localStorage — apenas chaves deste usuário
-  ['config','carros','motos','locs','pags','evs','kms','fins','semAtual','schema_ver'].forEach(k=>LS.del(k));
+  ['config','carros','motos','locs','pags','evs','kms','fins','semAtual','vist','schema_ver'].forEach(k=>LS.del(k));
   LS.set('schema_ver',SCHEMA_VER);
   // Limpar dados na nuvem — APENAS do usuário logado
   if(_sbUser&&_sb){
@@ -3704,7 +3867,7 @@ async function _confirmarReset(btn){
   if(_isAdmin()){
     loadDB();
   } else {
-    const chaves=['config','carros','motos','locs','pags','evs','kms','fins','semAtual'];
+    const chaves=['config','carros','motos','locs','pags','evs','kms','fins','semAtual','vist'];
     chaves.forEach(k=>{
       DB[k]=Array.isArray(EMPTY_DATA[k])?[...EMPTY_DATA[k]]:{...EMPTY_DATA[k]};
       LS.set(k,DB[k]);
@@ -4066,6 +4229,7 @@ function renderLocs(){
       <button class="bt btg bts" style="flex:1;font-size:11px;padding:5px 4px" onclick="editarLoc('${l.id}')">✏️ Editar</button>
       ${l.status==='Ativa'?`<button class="bt bts" style="flex:1;font-size:11px;padding:5px 4px;background:rgba(239,68,68,.12);color:var(--r);border:none;border-radius:7px;cursor:pointer;font-family:inherit" onclick="abrirEncerramento('${l.id}')">⬛ Encerrar</button>`:''}
       <button class="bt btp bts" style="flex:1;font-size:11px;padding:5px 4px" onclick="abrirModalContrato('${l.id}')">📄 Contrato</button>
+      ${_temVistoria()?`<button class="bt bts" style="flex:1;font-size:11px;padding:5px 4px;background:rgba(139,92,246,.15);color:#8b5cf6;border:none;border-radius:7px;cursor:pointer;font-family:inherit" onclick="abrirVistoria('${l.id}')">🔍 Vistoria</button>`:''}
       <button class="bt btd bts" style="font-size:11px;padding:5px 8px" onclick="excluirLoc('${l.id}')">🗑</button>
     </div>`;
     el.appendChild(d);
@@ -4958,6 +5122,1005 @@ function kmLimExtenso(v){
 
 let _ctLocId='';
 
+
+
+// ═══ CAPTURA DE ASSINATURA (canvas na tela do celular) ═══
+let _sigCanvas=null, _sigCtx=null, _sigDesenhando=false, _sigVazia=true, _sigCallback=null;
+
+function _abrirAssinatura(titulo, callback){
+  _sigCallback=callback;
+  _sigVazia=true;
+  let ov=document.getElementById('sig-overlay');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.id='sig-overlay';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(13,43,62,.96);z-index:700;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px';
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML=`
+    <div style="background:#fff;border-radius:16px;padding:18px;width:100%;max-width:440px">
+      <div style="font-size:15px;font-weight:900;color:#0d2b3e;text-align:center;margin-bottom:4px">${titulo}</div>
+      <div style="font-size:11px;color:#64748b;text-align:center;margin-bottom:12px">Assine no quadro abaixo usando o dedo</div>
+      <canvas id="sig-canvas" style="width:100%;height:200px;border:2px dashed #cbd5e1;border-radius:10px;background:#fafbfc;touch-action:none;display:block"></canvas>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button onclick="_sigLimpar()" style="flex:1;background:transparent;border:1.5px solid #cbd5e1;color:#64748b;border-radius:9px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Limpar</button>
+        <button onclick="_sigCancelar()" style="flex:1;background:transparent;border:1.5px solid #cbd5e1;color:#64748b;border-radius:9px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Cancelar</button>
+        <button onclick="_sigConfirmar()" style="flex:1.4;background:#16a34a;color:#fff;border:none;border-radius:9px;padding:11px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">Confirmar</button>
+      </div>
+    </div>`;
+  ov.style.display='flex';
+
+  requestAnimationFrame(()=>{
+    _sigCanvas=document.getElementById('sig-canvas');
+    // Ajusta resolução real do canvas ao tamanho renderizado (nitidez)
+    const r=_sigCanvas.getBoundingClientRect();
+    _sigCanvas.width=r.width*2;
+    _sigCanvas.height=r.height*2;
+    _sigCtx=_sigCanvas.getContext('2d');
+    _sigCtx.scale(2,2);
+    _sigCtx.lineWidth=2.2;
+    _sigCtx.lineCap='round';
+    _sigCtx.lineJoin='round';
+    _sigCtx.strokeStyle='#0d2b3e';
+
+    const pos=(e)=>{
+      const rect=_sigCanvas.getBoundingClientRect();
+      const t=e.touches?e.touches[0]:e;
+      return {x:t.clientX-rect.left, y:t.clientY-rect.top};
+    };
+    const inicio=(e)=>{e.preventDefault();_sigDesenhando=true;const p=pos(e);_sigCtx.beginPath();_sigCtx.moveTo(p.x,p.y);};
+    const move=(e)=>{if(!_sigDesenhando)return;e.preventDefault();const p=pos(e);_sigCtx.lineTo(p.x,p.y);_sigCtx.stroke();_sigVazia=false;};
+    const fim=(e)=>{e.preventDefault();_sigDesenhando=false;};
+
+    _sigCanvas.addEventListener('touchstart',inicio,{passive:false});
+    _sigCanvas.addEventListener('touchmove',move,{passive:false});
+    _sigCanvas.addEventListener('touchend',fim,{passive:false});
+    _sigCanvas.addEventListener('mousedown',inicio);
+    _sigCanvas.addEventListener('mousemove',move);
+    _sigCanvas.addEventListener('mouseup',fim);
+    _sigCanvas.addEventListener('mouseleave',fim);
+  });
+}
+
+function _sigLimpar(){
+  if(_sigCtx&&_sigCanvas){_sigCtx.clearRect(0,0,_sigCanvas.width,_sigCanvas.height);_sigVazia=true;}
+}
+function _sigCancelar(){
+  const ov=document.getElementById('sig-overlay');
+  if(ov)ov.style.display='none';
+  _sigCallback=null;
+}
+function _sigConfirmar(){
+  if(_sigVazia){toast('Assine antes de confirmar','er');return;}
+  const dataURL=_sigCanvas.toDataURL('image/png');
+  const cb=_sigCallback;
+  const ov=document.getElementById('sig-overlay');
+  if(ov)ov.style.display='none';
+  _sigCallback=null;
+  if(cb)cb(dataURL);
+}
+
+// ═══ MÓDULO DE VISTORIA — modelo de dados e partes padrão ═══
+const _VIST_PARTES_PADRAO=[
+  {id:'lat_dir',nome:'Lataria — lado direito',icone:'🚗'},
+  {id:'lat_esq',nome:'Lataria — lado esquerdo',icone:'🚗'},
+  {id:'dianteira',nome:'Parte dianteira',icone:'🔦'},
+  {id:'traseira',nome:'Parte traseira',icone:'🚙'},
+  {id:'teto',nome:'Teto',icone:'⬛'},
+  {id:'parabrisa',nome:'Parabrisa e vidros',icone:'🪟'},
+  {id:'farois',nome:'Faróis e lanternas',icone:'💡'},
+  {id:'pneus',nome:'Pneus e rodas',icone:'⚙️'},
+  {id:'painel',nome:'Painel',icone:'🎛️'},
+  {id:'bancos',nome:'Bancos e interior',icone:'💺'},
+  {id:'km',nome:'Quilometragem (odômetro)',icone:'🔢'},
+  {id:'combustivel',nome:'Nível de combustível',icone:'⛽'},
+];
+function _novaVistoria(locId,tipo){
+  const loc=DB.locs.find(l=>l.id===locId);
+  return {id:'v'+uid(),locId,tipo,carroId:loc?.carroId||'',motoId:loc?.motoId||'',
+    criadaEm:new Date().toISOString(),geo:null,status:'rascunho',
+    itens:_VIST_PARTES_PADRAO.map(p=>({parteId:p.id,nome:p.nome,icone:p.icone,fotos:[],obs:'',ok:null})),
+    assinaturaLocador:null,assinaturaLocatario:null,laudoObs:''};
+}
+function _vistoriaDo(locId,tipo){return (DB.vist||[]).find(v=>v.locId===locId&&v.tipo===tipo);}
+
+// ── MÓDULO DE VISTORIA (add-on) ──────────────────────────────────────────────
+// Ponto de entrada. Revalida a permissão no banco antes de abrir — o flag local
+// é só para exibir o botão; a autorização real vem do servidor a cada uso.
+async function abrirVistoria(locId){
+  if(!_temVistoria()){toast('Módulo de Vistoria não está habilitado nesta conta','er');return;}
+  try{
+    const{data}=await _sb.from('frotando_planos').select('vistoria_ativa').eq('user_id',_sbUser.id).maybeSingle();
+    if(!data?.vistoria_ativa){_vistoriaAtiva=false;toast('Módulo de Vistoria não está habilitado','er');markDirty('contrato');renderContrato();return;}
+  }catch(e){console.error('validar vistoria:',e);}
+
+  const loc=DB.locs.find(l=>l.id===locId);
+  if(!loc){toast('Contrato não encontrado','er');return;}
+  let v=_vistoriaDo(locId,'entrega');
+  if(!v){
+    v=_novaVistoria(locId,'entrega');
+    DB.vist=[...(DB.vist||[]),v];
+    saveDB('vist');
+  }
+  _vistAbrirTela(v.id);
+}
+
+let _vistAtualId=null;
+
+
+// ═══ VISTORIA DE DEVOLUÇÃO (integrada ao encerramento) ═══
+function _encRenderBlocoVistoria(){
+  const bloco=document.getElementById('enc-bloco-vistoria');
+  if(!bloco)return;
+  if(!_temVistoria()){ bloco.style.display='none'; return; }
+  bloco.style.display='block';
+
+  const entrega=_vistoriaDo(_encLocId,'entrega');
+  const devol=_vistoriaDo(_encLocId,'devolucao');
+
+  const temEntrega = !!entrega;
+  const preench = devol ? devol.itens.filter(i=>i.ok!==null||i.fotos.length>0).length : 0;
+  const total = devol ? devol.itens.length : 0;
+
+  bloco.innerHTML=`
+    <div style="background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.25);border-radius:11px;padding:13px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:18px">🔍</span>
+        <div style="font-size:13px;font-weight:800;color:var(--p)">Vistoria de devolução</div>
+      </div>
+      ${temEntrega
+        ? `<div style="font-size:11px;color:var(--txm);line-height:1.5;margin-bottom:10px">Há uma vistoria de <strong>entrega</strong> registrada. A devolução será comparada parte a parte com ela.</div>`
+        : `<div style="font-size:11px;color:var(--a);line-height:1.5;margin-bottom:10px">⚠️ Não há vistoria de entrega para este contrato. A devolução será registrada <strong>sem base comparativa</strong>.</div>`}
+      ${devol&&preench>0
+        ? `<div style="background:var(--card);border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:12px;color:var(--tx)">✓ Vistoria iniciada — <strong>${preench}/${total}</strong> itens registrados</div>`
+        : ''}
+      <button onclick="_encAbrirVistoriaDevol()" style="width:100%;background:#8b5cf6;color:#fff;border:none;border-radius:9px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">
+        ${devol&&preench>0?'Continuar vistoria de devolução':'Iniciar vistoria de devolução'}
+      </button>
+    </div>`;
+}
+
+// Cria (ou recupera) a vistoria de devolução, clonando a estrutura da entrega
+function _encAbrirVistoriaDevol(){
+  let devol=_vistoriaDo(_encLocId,'devolucao');
+  if(!devol){
+    const entrega=_vistoriaDo(_encLocId,'entrega');
+    devol=_novaVistoria(_encLocId,'devolucao');
+    if(entrega){
+      // Clona a estrutura de partes da entrega, alinhando por parteId.
+      // Guarda referência às fotos da entrega para o comparativo lado a lado.
+      devol.baseEntregaId=entrega.id;
+      devol.itens=entrega.itens.map(ie=>({
+        parteId:ie.parteId, nome:ie.nome, icone:ie.icone,
+        fotos:[], obs:'', ok:null,
+        entregaFotos: ie.fotos.map(f=>f.chave),  // chaves das fotos da entrega
+        entregaObs: ie.obs||'',
+        entregaOk: ie.ok,
+      }));
+    }
+    DB.vist=[...(DB.vist||[]),devol];
+    saveDB('vist');
+  }
+  // Fecha o modal de encerramento visualmente e abre a vistoria em tela cheia
+  const menc=document.getElementById('menc');
+  if(menc){menc.style.display='none';menc.classList.remove('on');}
+  _vistAbrirTela(devol.id);
+}
+
+function _vistAbrirTela(vistId){
+  _vistAtualId=vistId;
+  const v=(DB.vist||[]).find(x=>x.id===vistId);
+  if(!v){toast('Vistoria não encontrada','er');return;}
+  const car=cCar(v.carroId), mot=cMot(v.motoId);
+  let tela=document.getElementById('vist-fullscreen');
+  if(!tela){
+    tela=document.createElement('div');
+    tela.id='vist-fullscreen';
+    tela.style.cssText='position:fixed;inset:0;background:var(--bg);z-index:600;overflow-y:auto;-webkit-overflow-scrolling:touch';
+    document.body.appendChild(tela);
+  }
+  const tipoLabel=v.tipo==='entrega'?'Entrega':'Devolução';
+  const tipoCor=v.tipo==='entrega'?'#8b5cf6':'#f59e0b';
+  const preench=v.itens.filter(i=>i.ok!==null||i.fotos.length>0).length;
+  tela.innerHTML=`
+    <div style="background:${tipoCor};color:#fff;padding:16px 18px;position:sticky;top:0;z-index:5;box-shadow:0 2px 12px rgba(0,0,0,.15)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button onclick="_vistFechar()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:18px;cursor:pointer;flex-shrink:0">←</button>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:16px;font-weight:900">Vistoria de ${tipoLabel}</div>
+          <div style="font-size:11px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${car?.placa||'?'} · ${mot?.nome?.split(' ').slice(0,2).join(' ')||'?'}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:18px;font-weight:900">${preench}/${v.itens.length}</div>
+          <div style="font-size:10px;opacity:.85">itens</div>
+        </div>
+      </div>
+      <div style="font-size:10px;opacity:.9;margin-top:8px;display:flex;align-items:center;gap:5px">
+        <span>📍</span><span id="vist-geo-txt">Obtendo localização…</span>
+      </div>
+    </div>
+    <div style="padding:14px">
+      <div style="display:flex;flex-direction:column;gap:8px" id="vist-itens"></div>
+      <button onclick="_vistAddParte()" style="width:100%;margin-top:12px;background:transparent;border:1.5px dashed var(--sll);color:var(--txm);border-radius:10px;padding:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">+ Adicionar parte personalizada</button>
+      <div style="height:1px;background:var(--sll);margin:18px 0"></div>
+      <button onclick="_vistIrParaLaudo()" style="width:100%;background:${tipoCor};color:#fff;border:none;border-radius:11px;padding:15px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit">Concluir e gerar laudo →</button>
+      <div style="height:40px"></div>
+    </div>`;
+  tela.style.display='block';
+  _vistRenderItens();
+  _vistCapturarGeo();
+}
+
+function _vistFechar(){
+  const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
+  const eraDevolucao = v && v.tipo==='devolucao';
+  const t=document.getElementById('vist-fullscreen');
+  if(t) t.style.display='none';
+  _vistAtualId=null;
+  // Se era vistoria de devolução, volta ao modal de encerramento
+  if(eraDevolucao){
+    const menc=document.getElementById('menc');
+    if(menc){
+      menc.style.display='flex';
+      requestAnimationFrame(()=>menc.classList.add('on'));
+      _encRenderBlocoVistoria();  // atualiza o status "X/Y itens"
+      return;
+    }
+  }
+  markDirty('contrato');
+  renderContrato();
+}
+
+function _vistCapturarGeo(){
+  const txt=document.getElementById('vist-geo-txt');
+  if(!navigator.geolocation){if(txt)txt.textContent='Localização indisponível';return;}
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
+      if(v){v.geo={lat:pos.coords.latitude,lng:pos.coords.longitude,precisao:Math.round(pos.coords.accuracy)};saveDB('vist');}
+      if(txt)txt.textContent=`${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)} · ${new Date().toLocaleString('pt-BR')}`;
+    },
+    err=>{if(txt)txt.textContent='Localização não autorizada — vistoria continua válida';},
+    {enableHighAccuracy:true,timeout:8000,maximumAge:60000}
+  );
+}
+
+function _vistRenderItens(){
+  const cont=document.getElementById('vist-itens');
+  if(!cont)return;
+  const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
+  if(!v)return;
+  cont.innerHTML=v.itens.map((it,idx)=>{
+    const cor=it.ok===true?'var(--g)':it.ok===false?'var(--r)':'var(--sll)';
+    const bg=it.ok===true?'rgba(16,163,74,.08)':it.ok===false?'rgba(220,38,38,.06)':'var(--card)';
+    const txt=it.ok===true?'✓ OK':it.ok===false?'⚠ Avaria':'—';
+    return `<div style="background:${bg};border:1px solid ${cor};border-radius:11px;padding:12px 13px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">${it.icone||'📋'}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;color:var(--tx)">${it.nome}</div>
+          <div style="font-size:10px;color:var(--txm)">${it.fotos.length} foto(s) · ${it.obs?'com observação':'sem observação'}</div>
+        </div>
+        <span style="font-size:11px;font-weight:800;color:${cor==='var(--sll)'?'var(--txm)':cor}">${txt}</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <button onclick="_vistSetOk(${idx},true)" style="flex:1;background:${it.ok===true?'var(--g)':'transparent'};color:${it.ok===true?'#fff':'var(--g)'};border:1px solid var(--g);border-radius:7px;padding:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">OK</button>
+        <button onclick="_vistSetOk(${idx},false)" style="flex:1;background:${it.ok===false?'var(--r)':'transparent'};color:${it.ok===false?'#fff':'var(--r)'};border:1px solid var(--r);border-radius:7px;padding:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Avaria</button>
+        <button onclick="_vistAbrirItem(${idx})" style="flex:1.4;background:var(--p);color:#fff;border:none;border-radius:7px;padding:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">📷 Foto / obs</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _vistSetOk(idx,ok){
+  const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
+  if(!v)return;
+  v.itens[idx].ok=(v.itens[idx].ok===ok)?null:ok;
+  saveDB('vist');
+  _vistRenderItens();
+}
+
+function _vistAddParte(){
+  const nome=prompt('Nome da parte a vistoriar (ex: Estepe, Retrovisor esquerdo):');
+  if(!nome||!nome.trim())return;
+  const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
+  if(!v)return;
+  v.itens.push({parteId:'custom_'+uid(),nome:nome.trim(),icone:'📌',fotos:[],obs:'',ok:null});
+  saveDB('vist');
+  _vistRenderItens();
+}
+
+function _vistAbrirItem(idx){
+  const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
+  if(!v)return;
+  _vistItemIdx=idx;
+  const it=v.itens[idx];
+
+  let tela=document.getElementById('vist-item-modal');
+  if(!tela){
+    tela=document.createElement('div');
+    tela.id='vist-item-modal';
+    tela.style.cssText='position:fixed;inset:0;background:var(--bg);z-index:610;overflow-y:auto;-webkit-overflow-scrolling:touch';
+    document.body.appendChild(tela);
+  }
+  tela.innerHTML=`
+    <div style="background:var(--p);color:#fff;padding:16px 18px;position:sticky;top:0;z-index:5">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button onclick="_vistFecharItem()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:18px;cursor:pointer">←</button>
+        <div style="flex:1"><div style="font-size:16px;font-weight:900">${it.icone||''} ${it.nome}</div></div>
+      </div>
+    </div>
+    <div style="padding:16px">
+      ${(it.entregaFotos&&it.entregaFotos.length)||it.entregaObs?`
+        <div style="background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.2);border-radius:10px;padding:11px;margin-bottom:14px">
+          <div style="font-size:11px;font-weight:800;color:#8b5cf6;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📸 Como estava na entrega ${it.entregaOk===true?'· ✓ OK':it.entregaOk===false?'· ⚠ tinha avaria':''}</div>
+          <div id="vist-entrega-fotos" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px"></div>
+          ${it.entregaObs?`<div style="font-size:11px;color:var(--txm);margin-top:8px;font-style:italic">"${it.entregaObs}"</div>`:''}
+        </div>
+        <div style="font-size:11px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📷 Estado atual (devolução)</div>
+      `:''}
+      <input type="file" id="vist-file-input" accept="image/*" capture="environment" style="display:none" onchange="_vistFotoEscolhida(event)">
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button onclick="document.getElementById('vist-file-input').setAttribute('capture','environment');document.getElementById('vist-file-input').click()" style="flex:1;background:var(--p);color:#fff;border:none;border-radius:10px;padding:13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📷 Tirar foto</button>
+        <button onclick="document.getElementById('vist-file-input').removeAttribute('capture');document.getElementById('vist-file-input').click()" style="flex:1;background:transparent;color:var(--p);border:1.5px solid var(--p);border-radius:10px;padding:13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🖼️ Galeria</button>
+      </div>
+
+      <div id="vist-fotos-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px"></div>
+      <div id="vist-upload-status" style="text-align:center;font-size:12px;color:var(--txm);margin-bottom:12px;display:none"></div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <label style="font-size:12px;font-weight:700;color:var(--tx)">Observações</label>
+        <button id="vist-voz-btn" onclick="_vistToggleVoz()" style="background:transparent;border:1px solid var(--p);color:var(--p);border-radius:7px;padding:5px 11px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px">🎤 Ditar</button>
+      </div>
+      <textarea id="vist-obs" rows="4" placeholder="Descreva o estado, avarias, detalhes…" style="width:100%;border:1px solid var(--sll);border-radius:9px;padding:11px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box" oninput="_vistSalvarObs()">${it.obs||''}</textarea>
+
+      <div style="margin-top:14px">
+        <label style="font-size:12px;font-weight:700;color:var(--tx);display:block;margin-bottom:6px">Situação da parte</label>
+        <div style="display:flex;gap:8px">
+          <button id="vist-item-ok" onclick="_vistItemSetOk(true)" style="flex:1;border:1px solid var(--g);border-radius:9px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;background:${it.ok===true?'var(--g)':'transparent'};color:${it.ok===true?'#fff':'var(--g)'}">✓ OK</button>
+          <button id="vist-item-avaria" onclick="_vistItemSetOk(false)" style="flex:1;border:1px solid var(--r);border-radius:9px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;background:${it.ok===false?'var(--r)':'transparent'};color:${it.ok===false?'#fff':'var(--r)'}">⚠ Avaria</button>
+        </div>
+      </div>
+
+      <div id="vist-avaria-valor" style="margin-top:12px;display:${(it.ok===false&&v.tipo==='devolucao')?'block':'none'}">
+        <label style="font-size:12px;font-weight:700;color:var(--r);display:block;margin-bottom:6px">Valor do desconto por esta avaria</label>
+        <div style="display:flex;align-items:center;gap:8px;background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.25);border-radius:9px;padding:10px 12px">
+          <span style="font-size:13px;color:var(--txm);white-space:nowrap">R$</span>
+          <input type="number" id="vist-item-valor" step="0.01" placeholder="0,00" value="${it.valorAvaria||''}" oninput="_vistSalvarValorAvaria()" style="flex:1;border:none;background:transparent;font-size:15px;font-weight:800;color:var(--r);font-family:inherit;outline:none">
+        </div>
+        <div style="font-size:10px;color:var(--txm);margin-top:5px;line-height:1.4">Este valor será descontado do caução no acerto financeiro do encerramento.</div>
+      </div>
+
+      <button onclick="_vistFecharItem()" style="width:100%;margin-top:16px;background:var(--g);color:#fff;border:none;border-radius:10px;padding:14px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit">Salvar e voltar</button>
+      <div style="height:30px"></div>
+    </div>`;
+  tela.style.display='block';
+  _vistRenderFotos();
+  _vistRenderEntregaFotos();
+}
+
+let _vistItemIdx=null;
+
+// Carrega as fotos da ENTREGA no painel comparativo (só na vistoria de devolução)
+async function _vistRenderEntregaFotos(){
+  const grid=document.getElementById('vist-entrega-fotos');
+  if(!grid)return;
+  const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
+  if(!v||_vistItemIdx===null)return;
+  const it=v.itens[_vistItemIdx];
+  if(!it.entregaFotos||!it.entregaFotos.length){
+    grid.innerHTML='<div style="grid-column:1/-1;font-size:11px;color:var(--txm)">Sem foto na entrega</div>';
+    return;
+  }
+  grid.innerHTML=it.entregaFotos.map((_,i)=>`<div id="vist-ent-${i}" style="aspect-ratio:1;background:var(--sll);border-radius:7px;overflow:hidden;position:relative"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--txm)">…</div></div>`).join('');
+  for(let i=0;i<it.entregaFotos.length;i++){
+    const url=await _r2Download(it.entregaFotos[i]);
+    const box=document.getElementById('vist-ent-'+i);
+    if(box&&url){
+      box.innerHTML=`<img src="${url}" style="width:100%;height:100%;object-fit:cover">`;
+    }
+  }
+}
+
+function _vistFecharItem(){
+  if(_vozAtivo) _vistPararVoz();
+  const t=document.getElementById('vist-item-modal');
+  if(t)t.style.display='none';
+  _vistItemIdx=null;
+  _vistRenderItens();
+}
+
+function _vistSalvarObs(){
+  const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
+  if(!v||_vistItemIdx===null)return;
+  v.itens[_vistItemIdx].obs=document.getElementById('vist-obs').value;
+  saveDB('vist');
+}
+
+// ═══ TRANSCRIÇÃO POR VOZ (Web Speech API) ═══
+let _vozRecon=null, _vozAtivo=false, _vozTextoBase='';
+
+function _vistToggleVoz(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){
+    toast('Ditado por voz não suportado neste navegador. Use o Chrome no Android.','er');
+    return;
+  }
+  if(_vozAtivo){ _vistPararVoz(); return; }
+
+  const ta=document.getElementById('vist-obs');
+  if(!ta)return;
+  _vozTextoBase=ta.value?ta.value.trim()+' ':'';
+
+  _vozRecon=new SR();
+  _vozRecon.lang='pt-BR';
+  _vozRecon.continuous=true;
+  _vozRecon.interimResults=true;
+
+  _vozRecon.onresult=(ev)=>{
+    let finais='', parciais='';
+    for(let i=ev.resultIndex;i<ev.results.length;i++){
+      const t=ev.results[i][0].transcript;
+      if(ev.results[i].isFinal) finais+=t+' ';
+      else parciais+=t;
+    }
+    if(finais) _vozTextoBase+=finais;
+    ta.value=_vozTextoBase+parciais;
+  };
+  _vozRecon.onerror=(ev)=>{
+    if(ev.error==='not-allowed'||ev.error==='service-not-allowed'){
+      toast('Permita o acesso ao microfone','er');
+    }
+    _vistPararVoz();
+  };
+  _vozRecon.onend=()=>{
+    // Se ainda deveria estar ativo (parou sozinho), reinicia
+    if(_vozAtivo){ try{_vozRecon.start();}catch(e){_vistPararVoz();} }
+  };
+
+  try{
+    _vozRecon.start();
+    _vozAtivo=true;
+    _vistAtualizarBotaoVoz(true);
+    toast('Ouvindo… fale as observações');
+  }catch(e){ _vistPararVoz(); }
+}
+
+function _vistPararVoz(){
+  _vozAtivo=false;
+  if(_vozRecon){ try{_vozRecon.stop();}catch(e){} _vozRecon=null; }
+  const ta=document.getElementById('vist-obs');
+  if(ta) _vistSalvarObs();  // grava o texto final
+  _vistAtualizarBotaoVoz(false);
+}
+
+function _vistAtualizarBotaoVoz(ativo){
+  const b=document.getElementById('vist-voz-btn');
+  if(!b)return;
+  if(ativo){
+    b.style.background='var(--r)'; b.style.color='#fff'; b.style.borderColor='var(--r)';
+    b.innerHTML='⏹ Parar';
+  }else{
+    b.style.background='transparent'; b.style.color='var(--p)'; b.style.borderColor='var(--p)';
+    b.innerHTML='🎤 Ditar';
+  }
+}
+
+
+// OK/Avaria dentro da tela do item (com campo de valor para devolução)
+function _vistItemSetOk(ok){
+  const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
+  if(!v||_vistItemIdx===null)return;
+  const it=v.itens[_vistItemIdx];
+  it.ok=(it.ok===ok)?null:ok;
+  if(it.ok!==false) it.valorAvaria=0;  // limpa valor se não for mais avaria
+  saveDB('vist');
+  // Atualizar visual dos botões
+  const bOk=document.getElementById('vist-item-ok');
+  const bAv=document.getElementById('vist-item-avaria');
+  const box=document.getElementById('vist-avaria-valor');
+  if(bOk){bOk.style.background=it.ok===true?'var(--g)':'transparent';bOk.style.color=it.ok===true?'#fff':'var(--g)';}
+  if(bAv){bAv.style.background=it.ok===false?'var(--r)':'transparent';bAv.style.color=it.ok===false?'#fff':'var(--r)';}
+  if(box) box.style.display=(it.ok===false&&v.tipo==='devolucao')?'block':'none';
+}
+
+function _vistSalvarValorAvaria(){
+  const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
+  if(!v||_vistItemIdx===null)return;
+  v.itens[_vistItemIdx].valorAvaria=Number(document.getElementById('vist-item-valor').value)||0;
+  saveDB('vist');
+}
+
+// Total de descontos por avaria de uma vistoria de devolução
+function _vistTotalAvarias(vistId){
+  const v=(DB.vist||[]).find(x=>x.id===vistId);
+  if(!v) return {itens:[],total:0};
+  const itens=v.itens
+    .filter(it=>it.ok===false && Number(it.valorAvaria)>0)
+    .map(it=>({id:it.parteId,label:it.nome,obs:it.obs||'',val:Number(it.valorAvaria)}));
+  const total=itens.reduce((s,it)=>s+it.val,0);
+  return {itens,total};
+}
+
+async function _vistFotoEscolhida(ev){
+  const file=ev.target.files?.[0];
+  ev.target.value='';
+  if(!file)return;
+  const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
+  if(!v||_vistItemIdx===null)return;
+  const it=v.itens[_vistItemIdx];
+
+  const status=document.getElementById('vist-upload-status');
+  const mostra=(txt)=>{if(status){status.style.display='block';status.textContent=txt;}};
+
+  try{
+    mostra('Comprimindo foto…');
+    const blob=await _comprimirImagem(file);
+
+    // Geolocalização da foto
+    let geo=v.geo||null;
+    try{
+      geo=await new Promise((res)=>{
+        if(!navigator.geolocation){res(v.geo);return;}
+        navigator.geolocation.getCurrentPosition(
+          p=>res({lat:p.coords.latitude,lng:p.coords.longitude}),
+          ()=>res(v.geo),{timeout:5000,maximumAge:60000}
+        );
+      });
+    }catch(e){}
+
+    const fotoId='f'+uid();
+    const chave=`vist/${v.id}/${it.parteId}_${fotoId}.jpg`;
+
+    mostra('Enviando para a nuvem…');
+    await _r2Upload(chave, blob, 'image/jpeg');
+
+    it.fotos.push({chave,geo,ts:new Date().toISOString(),pins:[]});
+    saveDB('vist');
+
+    if(status)status.style.display='none';
+    _vistRenderFotos();
+    toast('Foto salva ✓');
+  }catch(e){
+    mostra('');
+    if(status)status.style.display='none';
+    toast('Erro ao salvar foto: '+e.message,'er');
+  }
+}
+
+async function _vistRenderFotos(){
+  const grid=document.getElementById('vist-fotos-grid');
+  if(!grid)return;
+  const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
+  if(!v||_vistItemIdx===null)return;
+  const it=v.itens[_vistItemIdx];
+
+  if(!it.fotos.length){
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--txm);font-size:12px">Nenhuma foto ainda</div>';
+    return;
+  }
+
+  grid.innerHTML=it.fotos.map((f,i)=>`
+    <div style="position:relative;aspect-ratio:1;background:var(--sll);border-radius:9px;overflow:hidden;cursor:pointer" id="vist-foto-${i}" onclick="_vistAbrirPinEditor(${i})">
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--txm)">carregando…</div>
+      <button onclick="event.stopPropagation();_vistRemoverFoto(${i})" style="position:absolute;top:4px;right:4px;background:rgba(220,38,38,.9);color:#fff;border:none;width:22px;height:22px;border-radius:50%;font-size:12px;cursor:pointer;z-index:3">×</button>
+      ${(f.pins&&f.pins.length)?`<div style="position:absolute;top:4px;left:4px;background:var(--a);color:#fff;border-radius:99px;min-width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;z-index:2;padding:0 5px">📌${f.pins.length}</div>`:''}
+      ${f.geo?`<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.6);color:#fff;font-size:7px;padding:2px 3px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:1">📍 ${f.geo.lat.toFixed(4)},${f.geo.lng.toFixed(4)}</div>`:''}
+    </div>
+  `).join('');
+
+  // Carrega as imagens do R2 (assíncrono, uma a uma)
+  for(let i=0;i<it.fotos.length;i++){
+    const url=await _r2Download(it.fotos[i].chave);
+    const box=document.getElementById('vist-foto-'+i);
+    if(box&&url){
+      const ph=box.querySelector('div');
+      if(ph)ph.remove();
+      const img=document.createElement('img');
+      img.src=url;
+      img.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover';
+      box.insertBefore(img,box.firstChild);
+    }
+  }
+}
+
+
+// ═══ EDITOR DE PIN — anotações sobre a foto ═══
+let _pinFotoIdx=null, _pinImgURL=null;
+
+async function _vistAbrirPinEditor(fotoIdx){
+  const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
+  if(!v||_vistItemIdx===null)return;
+  const it=v.itens[_vistItemIdx];
+  const foto=it.fotos[fotoIdx];
+  if(!foto)return;
+  _pinFotoIdx=fotoIdx;
+  if(!foto.pins) foto.pins=[];
+
+  let tela=document.getElementById('vist-pin-modal');
+  if(!tela){
+    tela=document.createElement('div');
+    tela.id='vist-pin-modal';
+    tela.style.cssText='position:fixed;inset:0;background:#0d1520;z-index:640;display:flex;flex-direction:column';
+    document.body.appendChild(tela);
+  }
+  tela.style.display='flex';
+  tela.innerHTML=`
+    <div style="background:var(--p);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0">
+      <button onclick="_vistFecharPinEditor()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:18px;cursor:pointer">←</button>
+      <div style="flex:1"><div style="font-size:14px;font-weight:800">Anotar avarias</div><div style="font-size:11px;opacity:.8">Toque na foto para marcar um ponto</div></div>
+    </div>
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:12px;overflow:hidden;position:relative">
+      <div id="pin-img-wrap" style="position:relative;max-width:100%;max-height:100%;line-height:0">
+        <div style="color:#64748b;font-size:13px;padding:40px">carregando imagem…</div>
+      </div>
+    </div>
+    <div id="pin-lista" style="background:#111c2e;max-height:38vh;overflow-y:auto;flex-shrink:0;padding:12px 14px calc(12px + env(safe-area-inset-bottom))"></div>`;
+
+  // Carrega a imagem do R2
+  const url=await _r2Download(foto.chave);
+  _pinImgURL=url;
+  const wrap=document.getElementById('pin-img-wrap');
+  if(!url){ if(wrap)wrap.innerHTML='<div style="color:#f87171;padding:40px;font-size:13px">Não foi possível carregar a foto</div>'; return; }
+
+  wrap.innerHTML=`<img id="pin-img" src="${url}" style="max-width:100%;max-height:60vh;border-radius:8px;display:block;user-select:none" draggable="false">
+    <div id="pin-layer" style="position:absolute;inset:0"></div>`;
+
+  const img=document.getElementById('pin-img');
+  const onReady=()=>{ _pinRenderMarcadores(); };
+  if(img.complete) onReady(); else img.onload=onReady;
+
+  // Toque/click na imagem adiciona pin
+  const layer=document.getElementById('pin-layer');
+  layer.addEventListener('click',(e)=>{
+    const r=layer.getBoundingClientRect();
+    const x=((e.clientX-r.left)/r.width)*100;
+    const y=((e.clientY-r.top)/r.height)*100;
+    if(x<0||x>100||y<0||y>100)return;
+    foto.pins.push({x:Math.round(x*10)/10, y:Math.round(y*10)/10, texto:''});
+    saveDB('vist');
+    _pinRenderMarcadores();
+    _pinRenderLista();
+    // Foca no campo do pin recém-criado
+    setTimeout(()=>{ const inp=document.getElementById('pin-txt-'+(foto.pins.length-1)); if(inp)inp.focus(); },100);
+  });
+
+  _pinRenderMarcadores();
+  _pinRenderLista();
+}
+
+function _pinFotoAtual(){
+  const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
+  if(!v||_vistItemIdx===null||_pinFotoIdx===null)return null;
+  return v.itens[_vistItemIdx].fotos[_pinFotoIdx];
+}
+
+function _pinRenderMarcadores(){
+  const layer=document.getElementById('pin-layer');
+  const foto=_pinFotoAtual();
+  if(!layer||!foto)return;
+  layer.innerHTML=foto.pins.map((p,i)=>`
+    <div style="position:absolute;left:${p.x}%;top:${p.y}%;transform:translate(-50%,-50%);z-index:2">
+      <div style="width:26px;height:26px;background:var(--r);color:#fff;border:2px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;box-shadow:0 2px 6px rgba(0,0,0,.4)">${i+1}</div>
+    </div>`).join('');
+}
+
+function _pinRenderLista(){
+  const lista=document.getElementById('pin-lista');
+  const foto=_pinFotoAtual();
+  if(!lista||!foto)return;
+  if(!foto.pins.length){
+    lista.innerHTML='<div style="color:#64748b;font-size:12px;text-align:center;padding:14px">Toque na foto para adicionar uma anotação</div>';
+    return;
+  }
+  lista.innerHTML=foto.pins.map((p,i)=>`
+    <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
+      <div style="width:24px;height:24px;background:var(--r);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">${i+1}</div>
+      <input id="pin-txt-${i}" value="${(p.texto||'').replace(/"/g,'&quot;')}" placeholder="Descreva (ex: arranhão de 5cm)" oninput="_pinSalvarTexto(${i},this.value)" style="flex:1;background:#1e293b;border:1px solid #334155;border-radius:7px;padding:8px 10px;font-size:12px;color:#fff;font-family:inherit;outline:none">
+      <button onclick="_pinRemover(${i})" style="background:rgba(220,38,38,.2);color:#f87171;border:none;width:28px;height:28px;border-radius:7px;font-size:14px;cursor:pointer;flex-shrink:0">🗑</button>
+    </div>`).join('');
+}
+
+function _pinSalvarTexto(i,txt){
+  const foto=_pinFotoAtual();
+  if(!foto||!foto.pins[i])return;
+  foto.pins[i].texto=txt;
+  saveDB('vist');
+}
+
+function _pinRemover(i){
+  const foto=_pinFotoAtual();
+  if(!foto)return;
+  foto.pins.splice(i,1);
+  saveDB('vist');
+  _pinRenderMarcadores();
+  _pinRenderLista();
+}
+
+function _vistFecharPinEditor(){
+  const t=document.getElementById('vist-pin-modal');
+  if(t)t.style.display='none';
+  _pinFotoIdx=null;
+  _vistRenderFotos();  // atualiza badge de contagem
+}
+
+async function _vistRemoverFoto(i){
+  if(!confirm('Remover esta foto?'))return;
+  const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
+  if(!v||_vistItemIdx===null)return;
+  const it=v.itens[_vistItemIdx];
+  const foto=it.fotos[i];
+  if(foto)await _r2Delete(foto.chave).catch(()=>{});
+  it.fotos.splice(i,1);
+  saveDB('vist');
+  _vistRenderFotos();
+}
+
+function _vistIrParaLaudo(){
+  const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
+  if(!v)return;
+  const car=cCar(v.carroId), mot=cMot(v.motoId);
+
+  // Status sugerido: reprovado se houver avaria com valor alto? Deixa o usuário decidir.
+  const avarias=v.itens.filter(i=>i.ok===false).length;
+  const naoVist=v.itens.filter(i=>i.ok===null).length;
+
+  let tela=document.getElementById('vist-laudo-modal');
+  if(!tela){
+    tela=document.createElement('div');
+    tela.id='vist-laudo-modal';
+    tela.style.cssText='position:fixed;inset:0;background:var(--bg);z-index:620;overflow-y:auto;-webkit-overflow-scrolling:touch';
+    document.body.appendChild(tela);
+  }
+  const sigL=v.assinaturaLocador, sigT=v.assinaturaLocatario;
+  tela.innerHTML=`
+    <div style="background:var(--p);color:#fff;padding:16px 18px;position:sticky;top:0;z-index:5">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button onclick="document.getElementById('vist-laudo-modal').style.display='none'" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:18px;cursor:pointer">←</button>
+        <div style="flex:1"><div style="font-size:16px;font-weight:900">Concluir vistoria</div><div style="font-size:11px;opacity:.85">${car?.placa||'?'} · ${v.tipo==='entrega'?'Entrega':'Devolução'}</div></div>
+      </div>
+    </div>
+    <div style="padding:16px">
+      ${naoVist>0?`<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:9px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#92400e">⚠️ ${naoVist} ${naoVist===1?'parte não foi vistoriada':'partes não foram vistoriadas'}. Você pode concluir mesmo assim.</div>`:''}
+
+      <label style="font-size:12px;font-weight:800;color:var(--p);display:block;margin-bottom:8px">STATUS DO LAUDO</label>
+      <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:18px">
+        <button onclick="_vistSetStatus('aprovado')" id="vist-st-aprovado" style="text-align:left;background:${v.status==='aprovado'?'rgba(16,163,74,.12)':'var(--card)'};border:1.5px solid ${v.status==='aprovado'?'var(--g)':'var(--sll)'};border-radius:10px;padding:12px 14px;cursor:pointer;font-family:inherit">
+          <div style="font-size:13px;font-weight:800;color:var(--g)">✓ Aprovado</div>
+          <div style="font-size:11px;color:var(--txm)">Veículo em conformidade, sem avarias relevantes</div>
+        </button>
+        <button onclick="_vistSetStatus('ressalvas')" id="vist-st-ressalvas" style="text-align:left;background:${v.status==='ressalvas'?'rgba(245,158,11,.12)':'var(--card)'};border:1.5px solid ${v.status==='ressalvas'?'var(--a)':'var(--sll)'};border-radius:10px;padding:12px 14px;cursor:pointer;font-family:inherit">
+          <div style="font-size:13px;font-weight:800;color:var(--a)">⚠ Aprovado com ressalvas</div>
+          <div style="font-size:11px;color:var(--txm)">Avarias registradas, mas o veículo é aceito</div>
+        </button>
+        <button onclick="_vistSetStatus('reprovado')" id="vist-st-reprovado" style="text-align:left;background:${v.status==='reprovado'?'rgba(220,38,38,.12)':'var(--card)'};border:1.5px solid ${v.status==='reprovado'?'var(--r)':'var(--sll)'};border-radius:10px;padding:12px 14px;cursor:pointer;font-family:inherit">
+          <div style="font-size:13px;font-weight:800;color:var(--r)">✕ Reprovado</div>
+          <div style="font-size:11px;color:var(--txm)">Avarias graves, veículo não conforme</div>
+        </button>
+      </div>
+
+      <label style="font-size:12px;font-weight:800;color:var(--p);display:block;margin-bottom:8px">OBSERVAÇÕES GERAIS DO LAUDO</label>
+      <textarea id="vist-laudo-obs" rows="3" placeholder="Considerações finais…" style="width:100%;border:1px solid var(--sll);border-radius:9px;padding:11px;font-size:13px;font-family:inherit;box-sizing:border-box;margin-bottom:18px" oninput="_vistSalvarLaudoObs()">${v.laudoObs||''}</textarea>
+
+      <label style="font-size:12px;font-weight:800;color:var(--p);display:block;margin-bottom:8px">ASSINATURAS</label>
+      <div style="display:flex;gap:8px;margin-bottom:18px">
+        <div style="flex:1;text-align:center">
+          <div style="border:1.5px solid ${sigL?'var(--g)':'var(--sll)'};border-radius:10px;height:90px;display:flex;align-items:center;justify-content:center;background:${sigL?'#fff':'var(--bg)'};overflow:hidden;cursor:pointer" onclick="_vistAssinar('locador')">
+            ${sigL?`<img src="${sigL}" style="max-width:100%;max-height:100%">`:'<span style="font-size:11px;color:var(--txm)">Toque para assinar</span>'}
+          </div>
+          <div style="font-size:11px;color:var(--txm);margin-top:5px">Locador${sigL?' ✓':''}</div>
+        </div>
+        <div style="flex:1;text-align:center">
+          <div style="border:1.5px solid ${sigT?'var(--g)':'var(--sll)'};border-radius:10px;height:90px;display:flex;align-items:center;justify-content:center;background:${sigT?'#fff':'var(--bg)'};overflow:hidden;cursor:pointer" onclick="_vistAssinar('locatario')">
+            ${sigT?`<img src="${sigT}" style="max-width:100%;max-height:100%">`:'<span style="font-size:11px;color:var(--txm)">Toque para assinar</span>'}
+          </div>
+          <div style="font-size:11px;color:var(--txm);margin-top:5px">${mot?.nome?.split(' ')[0]||'Locatário'}${sigT?' ✓':''}</div>
+        </div>
+      </div>
+
+      <button onclick="_vistGerarLaudo()" style="width:100%;background:var(--p);color:#fff;border:none;border-radius:11px;padding:15px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit">📄 Gerar laudo em PDF</button>
+      <div style="height:40px"></div>
+    </div>`;
+  tela.style.display='block';
+}
+
+function _vistSetStatus(st){
+  const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
+  if(!v)return;
+  v.status=st; saveDB('vist');
+  ['aprovado','ressalvas','reprovado'].forEach(s=>{
+    const b=document.getElementById('vist-st-'+s);
+    if(!b)return;
+    const cor=s==='aprovado'?'var(--g)':s==='ressalvas'?'var(--a)':'var(--r)';
+    const bgOn=s==='aprovado'?'rgba(16,163,74,.12)':s==='ressalvas'?'rgba(245,158,11,.12)':'rgba(220,38,38,.12)';
+    b.style.background=(s===st)?bgOn:'var(--card)';
+    b.style.borderColor=(s===st)?cor:'var(--sll)';
+  });
+}
+
+function _vistSalvarLaudoObs(){
+  const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
+  if(!v)return;
+  v.laudoObs=document.getElementById('vist-laudo-obs').value;
+  saveDB('vist');
+}
+
+function _vistAssinar(quem){
+  const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
+  if(!v)return;
+  const mot=cMot(v.motoId);
+  const titulo=quem==='locador'?'Assinatura do Locador':`Assinatura de ${mot?.nome?.split(' ').slice(0,2).join(' ')||'Locatário'}`;
+  _abrirAssinatura(titulo,(dataURL)=>{
+    if(quem==='locador') v.assinaturaLocador=dataURL;
+    else v.assinaturaLocatario=dataURL;
+    saveDB('vist');
+    _vistIrParaLaudo(); // re-renderiza mostrando a assinatura
+  });
+}
+
+// Gera o laudo de vistoria em PDF (abre em nova aba com botão de imprimir/salvar)
+async function _vistGerarLaudo(){
+  const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
+  if(!v)return;
+  if(!v.status||v.status==='rascunho'){toast('Selecione o status do laudo','er');return;}
+
+  const car=cCar(v.carroId), mot=cMot(v.motoId), cfg=DB.config||{};
+  toast('Gerando laudo… aguarde as fotos');
+
+  // Pré-carrega todas as fotos do R2 como dataURL (para embutir no PDF)
+  const cacheFotos={};
+  const todasChaves=[];
+  v.itens.forEach(it=>it.fotos.forEach(f=>todasChaves.push(f.chave)));
+  for(const chave of todasChaves){
+    try{
+      const url=await _r2Download(chave);
+      if(url){
+        const blob=await fetch(url).then(r=>r.blob());
+        cacheFotos[chave]=await new Promise(res=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.readAsDataURL(blob);});
+        URL.revokeObjectURL(url);
+      }
+    }catch(e){}
+  }
+
+  const statusInfo={
+    aprovado:{txt:'APROVADO',cor:'#16a34a',bg:'#f0fdf4'},
+    ressalvas:{txt:'APROVADO COM RESSALVAS',cor:'#d97706',bg:'#fffbeb'},
+    reprovado:{txt:'REPROVADO',cor:'#dc2626',bg:'#fef2f2'},
+  }[v.status];
+
+  const fmtGeo=(g)=>g?`${g.lat.toFixed(5)}, ${g.lng.toFixed(5)}`:'—';
+  const fmtData=(iso)=>iso?new Date(iso).toLocaleString('pt-BR'):'—';
+  const geoHeader=v.geo?`${fmtGeo(v.geo)}`:'Localização não registrada';
+
+  // Blocos de itens (só os que têm foto, obs ou status)
+  const itensComConteudo=v.itens.filter(it=>it.fotos.length||it.obs||it.ok!==null);
+
+  const itensHTML=itensComConteudo.map(it=>{
+    const statusItem=it.ok===true?'<span style="color:#16a34a;font-weight:700">✓ OK</span>':it.ok===false?'<span style="color:#dc2626;font-weight:700">⚠ Avaria</span>':'<span style="color:#94a3b8">—</span>';
+    const valorAv=(it.ok===false&&it.valorAvaria)?` · Desconto: R$ ${Number(it.valorAvaria).toFixed(2).replace('.',',')}`:'';
+    let _pinCounter=0;
+    const _pinDescricoes=[];
+    const fotosHTML=it.fotos.length?`<div class="fotos">${it.fotos.map(f=>{
+      const src=cacheFotos[f.chave];
+      const legenda=`${f.geo?'📍 '+fmtGeo(f.geo):''}${f.geo&&f.ts?' · ':''}${f.ts?fmtData(f.ts):''}`;
+      const marcadores=(f.pins&&f.pins.length)?f.pins.map(p=>{
+        _pinCounter++;
+        if(p.texto) _pinDescricoes.push({n:_pinCounter,txt:p.texto});
+        return `<div style="position:absolute;left:${p.x}%;top:${p.y}%;transform:translate(-50%,-50%);width:15px;height:15px;background:#dc2626;color:#fff;border:1.5px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800">${_pinCounter}</div>`;
+      }).join(''):'';
+      return `<div class="foto">
+        <div style="position:relative;line-height:0">
+          ${src?`<img src="${src}">`:'<div class="foto-erro">foto indisponível</div>'}
+          ${marcadores}
+        </div>
+        <div class="foto-leg">${legenda||'sem metadados'}</div>
+      </div>`;
+    }).join('')}</div>`:'<div class="sem-foto">Sem fotografia</div>';
+    const pinsListaHTML=_pinDescricoes.length?`<div class="pins-lista">${_pinDescricoes.map(p=>`<div class="pin-item"><span class="pin-num">${p.n}</span> ${p.txt}</div>`).join('')}</div>`:'';
+    return `<div class="item">
+      <div class="item-head">
+        <span class="item-nome">${it.icone||''} ${it.nome}</span>
+        <span>${statusItem}${valorAv}</span>
+      </div>
+      ${it.obs?`<div class="item-obs">${it.obs}</div>`:''}
+      ${fotosHTML}
+      ${pinsListaHTML}
+    </div>`;
+  }).join('');
+
+  const totalAvarias=v.itens.filter(i=>i.ok===false&&Number(i.valorAvaria)>0).reduce((s,i)=>s+Number(i.valorAvaria),0);
+
+  const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Laudo de Vistoria — ${car?.placa||'?'} — ${v.tipo==='entrega'?'Entrega':'Devolução'}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f1f5f9;color:#1e293b;padding:14px;font-size:12px}
+  @media print{body{background:#fff;padding:0}.no-print{display:none}.page{box-shadow:none;max-width:100%}.item{page-break-inside:avoid}}
+  .page{max-width:760px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.1)}
+  .header{background:linear-gradient(135deg,#0d2b3e,#1a4a6b);color:#fff;padding:18px 22px}
+  .htit{font-size:19px;font-weight:900}
+  .hsub{font-size:12px;opacity:.85;margin-top:2px}
+  .status-badge{display:inline-block;margin-top:10px;padding:6px 16px;border-radius:99px;font-size:13px;font-weight:900;background:${statusInfo.bg};color:${statusInfo.cor}}
+  .meta{background:#f8fafc;padding:12px 22px;font-size:11px;color:#475569;border-bottom:1px solid #e2e8f0;display:flex;flex-wrap:wrap;gap:14px}
+  .meta b{color:#0d2b3e}
+  .body{padding:18px 22px}
+  .partes{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;font-size:11px}
+  .pcard{background:#f8fafc;border-radius:8px;padding:8px 11px}
+  .pcard b{color:#0d2b3e}
+  .item{border:1px solid #e2e8f0;border-radius:9px;padding:12px;margin-bottom:12px}
+  .item-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:13px}
+  .item-nome{font-weight:800;color:#0d2b3e}
+  .item-obs{font-size:12px;color:#475569;font-style:italic;margin-bottom:8px;padding:6px 9px;background:#f8fafc;border-radius:6px}
+  .fotos{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+  .foto{border-radius:6px;overflow:hidden;background:#f1f5f9}
+  .foto img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+  .foto-erro,.sem-foto{padding:16px;text-align:center;color:#94a3b8;font-size:10px;font-style:italic}
+  .foto-leg{font-size:6.5px;color:#64748b;padding:2px 4px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#f8fafc}
+  .pins-lista{margin-top:8px;padding:8px 10px;background:#fef2f2;border-radius:7px}
+  .pin-item{font-size:11px;color:#475569;margin-bottom:3px;display:flex;align-items:center;gap:6px}
+  .pin-num{background:#dc2626;color:#fff;border-radius:50%;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0}
+  .sem-foto{background:#f8fafc;border-radius:6px}
+  .resumo{background:#fef2f2;border:1px solid #fecaca;border-radius:9px;padding:12px;margin:14px 0;font-size:13px}
+  .assinaturas{display:flex;gap:24px;margin-top:34px;padding-top:10px}
+  .assbox{flex:1;text-align:center}
+  .assimg{height:70px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:4px}
+  .assimg img{max-height:70px;max-width:100%}
+  .assline{border-top:1.5px solid #0d2b3e;padding-top:5px;font-size:11px}
+  .assline b{display:block;color:#0d2b3e}
+  .footer{text-align:center;font-size:10px;color:#94a3b8;padding:14px 22px;border-top:1px solid #e2e8f0}
+  .btn{background:#0d2b3e;color:#fff;border:none;border-radius:8px;padding:11px 22px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:block;margin:14px auto;max-width:300px;width:100%}
+</style></head><body>
+<button class="btn no-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+<div class="page">
+  <div class="header">
+    <div class="htit">Laudo de Vistoria Veicular</div>
+    <div class="hsub">Vistoria de ${v.tipo==='entrega'?'ENTREGA':'DEVOLUÇÃO'} · ${car?.placa||'?'} — ${car?.modelo||''}</div>
+    <div class="status-badge">${statusInfo.txt}</div>
+  </div>
+  <div class="meta">
+    <span>📍 <b>Local:</b> ${geoHeader}</span>
+    <span>🗓️ <b>Data/hora:</b> ${fmtData(v.criadaEm)}</span>
+  </div>
+  <div class="body">
+    <div class="partes">
+      <div class="pcard"><b>Veículo:</b> ${car?.modelo||'—'} · ${car?.placa||'—'}${car?.cor?' · '+car.cor:''}</div>
+      <div class="pcard"><b>Locatário:</b> ${mot?.nome||'—'}${mot?.cpf?' · CPF '+mot.cpf:''}</div>
+      <div class="pcard"><b>Locador:</b> ${cfg.nome||'—'}${cfg.cpf?' · '+cfg.cpf:''}</div>
+      <div class="pcard"><b>Itens vistoriados:</b> ${itensComConteudo.length} de ${v.itens.length}</div>
+    </div>
+
+    ${itensHTML}
+
+    ${totalAvarias>0?`<div class="resumo"><b>Total de descontos por avarias:</b> R$ ${totalAvarias.toFixed(2).replace('.',',')}</div>`:''}
+    ${v.laudoObs?`<div style="margin-top:12px;font-size:12px"><b>Observações gerais:</b> ${v.laudoObs}</div>`:''}
+
+    <div class="assinaturas">
+      <div class="assbox">
+        <div class="assimg">${v.assinaturaLocador?`<img src="${v.assinaturaLocador}">`:''}</div>
+        <div class="assline"><b>${cfg.nome||'Locador'}</b>Locador</div>
+      </div>
+      <div class="assbox">
+        <div class="assimg">${v.assinaturaLocatario?`<img src="${v.assinaturaLocatario}">`:''}</div>
+        <div class="assline"><b>${mot?.nome||'Locatário'}</b>Locatário</div>
+      </div>
+    </div>
+  </div>
+  <div class="footer">
+    Laudo gerado eletronicamente pelo Frotando em ${new Date().toLocaleString('pt-BR')}.<br>
+    Documento com fotografias georreferenciadas e assinaturas digitais das partes.
+  </div>
+</div>
+</body></html>`;
+
+  const win=window.open('','_blank');
+  if(!win){toast('Permita pop-ups para ver o laudo','er');return;}
+  win.document.write(html); win.document.close();
+  toast('Laudo gerado ✓');
+}
+
+
+
 function renderContrato(){
   _ctLocId='';
   ctMostrarPasso(1);
@@ -5572,25 +6735,25 @@ function abrirModalContrato(locId){
   _pdfLocId=locId;
   const l=DB.locs.find(x=>x.id===locId);
   const car=cCar(l?.carroId);const mot=cMot(l?.motoId);
-  const el=document.getElementById('mc-resumo');
+  const el=document.getElementById('mct-resumo');
   if(el) el.innerHTML='<b>'+(car?.placa||'?')+'</b> &harr; '+((mot?.nome)||'?');
-  const ke=document.getElementById('mc-km');if(ke) ke.value=l?.kmIni||car?.km||'';
-  const fe=document.getElementById('mc-fran');if(fe) fe.value=DB.config.fran||4800;
-  const de=document.getElementById('mc-data');if(de) de.value=today();
+  const ke=document.getElementById('mct-km');if(ke) ke.value=l?.kmIni||car?.km||'';
+  const fe=document.getElementById('mct-fran');if(fe) fe.value=DB.config.fran||4800;
+  const de=document.getElementById('mct-data');if(de) de.value=today();
   abrirModal('mcontrato',{});
 }
 
 function gerarPDF(){
   if(!_pdfLocId){toast('Nenhum contrato selecionado','er');return;}
-  const ke=document.getElementById('mc-km');
+  const ke=document.getElementById('mct-km');
   if(!ke?.value){toast('Informe o KM na entrega','er');return;}
   const l=DB.locs.find(x=>x.id===_pdfLocId);
   const car=cCar(l?.carroId),mot=cMot(l?.motoId),cfg=DB.config;
   const kmNum=Number(ke.value||0);
   const kmFmt=kmNum.toLocaleString('pt-BR');
-  const comb=document.getElementById('mc-comb').value;
-  const dataAss=document.getElementById('mc-data').value;
-  const fran=Number(document.getElementById('mc-fran').value)||cfg.fran||4800;
+  const comb=document.getElementById('mct-comb').value;
+  const dataAss=document.getElementById('mct-data').value;
+  const fran=Number(document.getElementById('mct-fran').value)||cfg.fran||4800;
 
   const meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
   let dataExt='___ de ___________ de ______';
@@ -6408,6 +7571,10 @@ async function logout(){
   await _sb.auth.signOut();
   _sbUser=null;
   _isAdminDB=false;
+  _vistoriaAtiva=false;
+  // Limpa dados locais para não vazarem para o próximo login neste dispositivo
+  ['config','carros','motos','locs','pags','evs','kms','fins','semAtual','vist','ob_done','schema_ver']
+    .forEach(k=>LS.del(k));
   document.getElementById('app').style.display='none';
   const _navEl=document.getElementById('nav');if(_navEl){_navEl.classList.remove('nav-visible');_navEl.style.cssText='display:none!important';}
   const l=document.getElementById('ls');l.style.display='flex';l.style.opacity='0';
@@ -6832,14 +7999,14 @@ async function login(){
       if(_isAdmin()){
         loadDB(); // admin vê dados demo
       } else {
-        const chaves=['config','carros','motos','locs','pags','evs','kms','fins','semAtual'];
+        const chaves=['config','carros','motos','locs','pags','evs','kms','fins','semAtual','vist'];
         chaves.forEach(k=>{
           DB[k]=Array.isArray(EMPTY_DATA[k])?[...EMPTY_DATA[k]]:{...EMPTY_DATA[k]};
           LS.set(k,DB[k]);
         });
         LS.set('schema_ver',SCHEMA_VER);
       }
-    } else _migrarDataVenc();_migrarStatusMoto();_migrarSeguroParaCarros();
+    } else { _migrarDataVenc();_migrarStatusMoto();_migrarSeguroParaCarros(); }
     gerarParcelasPendentes();
     _entrarNoApp();
     _carregarPlano();
@@ -6874,7 +8041,7 @@ async function cadastrar(){
 
   // Fallback: se a confirmação estiver desativada, entra direto
   _sbUser=data.user;
-  const chaves=['config','carros','motos','locs','pags','evs','kms','fins','semAtual'];
+  const chaves=['config','carros','motos','locs','pags','evs','kms','fins','semAtual','vist'];
   chaves.forEach(k=>{
     DB[k]=Array.isArray(EMPTY_DATA[k])?[...EMPTY_DATA[k]]:{...EMPTY_DATA[k]};
     LS.set(k,DB[k]);
@@ -7190,14 +8357,14 @@ document.addEventListener('DOMContentLoaded',async()=>{
       if(_isAdmin()){
         loadDB(); // admin vê dados demo
       } else {
-        const chaves=['config','carros','motos','locs','pags','evs','kms','fins','semAtual'];
+        const chaves=['config','carros','motos','locs','pags','evs','kms','fins','semAtual','vist'];
         chaves.forEach(k=>{
           DB[k]=Array.isArray(EMPTY_DATA[k])?[...EMPTY_DATA[k]]:{...EMPTY_DATA[k]};
           LS.set(k,DB[k]);
         });
         LS.set('schema_ver',SCHEMA_VER);
       }
-    } else _migrarDataVenc();_migrarStatusMoto();_migrarSeguroParaCarros();
+    } else { _migrarDataVenc();_migrarStatusMoto();_migrarSeguroParaCarros(); }
       gerarParcelasPendentes();
       _entrarNoApp();
       _carregarPlano();
