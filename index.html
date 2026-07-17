@@ -1255,14 +1255,14 @@ const repoConfig = {
 const repoCarros = {
   async listar() {
     return _repoExec(
-      _sb.from('carros').select('*').is('deleted_at', null).order('modelo').order('placa'),
+      _sb.from('carros').select('*').eq('owner_id', _userId()).is('deleted_at', null).order('modelo').order('placa'),
       'listar carros'
     );
   },
 
   async buscarPorId(id) {
     return _repoExec(
-      _sb.from('carros').select('*').eq('id', id).is('deleted_at', null).maybeSingle(),
+      _sb.from('carros').select('*').eq('id', id).eq('owner_id', _userId()).is('deleted_at', null).maybeSingle(),
       'buscar carro'
     );
   },
@@ -1313,7 +1313,7 @@ const repoCarros = {
     }
     payload.updated_at = new Date().toISOString();
     return _repoExec(
-      _sb.from('carros').update(payload).eq('id', id).select().single(),
+      _sb.from('carros').update(payload).eq('id', id).eq('owner_id', _userId()).select().single(),
       'atualizar carro'
     );
   },
@@ -1322,14 +1322,14 @@ const repoCarros = {
   // Preserva o histórico de contratos/pagamentos que referenciam este carro.
   async excluir(id) {
     return _repoExec(
-      _sb.from('carros').update({ deleted_at: new Date().toISOString() }).eq('id', id),
+      _sb.from('carros').update({ deleted_at: new Date().toISOString() }).eq('id', id).eq('owner_id', _userId()),
       'excluir carro'
     );
   },
 
   async marcarStatus(id, status) {
     return _repoExec(
-      _sb.from('carros').update({ status }).eq('id', id),
+      _sb.from('carros').update({ status }).eq('id', id).eq('owner_id', _userId()),
       'atualizar status do carro'
     );
   },
@@ -1341,14 +1341,14 @@ const repoCarros = {
 const repoMotoristas = {
   async listar() {
     return _repoExec(
-      _sb.from('motoristas').select('*').is('deleted_at', null).order('nome'),
+      _sb.from('motoristas').select('*').eq('owner_id', _userId()).is('deleted_at', null).order('nome'),
       'listar motoristas'
     );
   },
 
   async buscarPorId(id) {
     return _repoExec(
-      _sb.from('motoristas').select('*').eq('id', id).is('deleted_at', null).maybeSingle(),
+      _sb.from('motoristas').select('*').eq('id', id).eq('owner_id', _userId()).is('deleted_at', null).maybeSingle(),
       'buscar motorista'
     );
   },
@@ -1388,14 +1388,14 @@ const repoMotoristas = {
     if (dados.fotoUrl !== undefined) payload.foto_url = dados.fotoUrl;
     if (dados.status !== undefined) payload.status = dados.status;
     return _repoExec(
-      _sb.from('motoristas').update(payload).eq('id', id).select().single(),
+      _sb.from('motoristas').update(payload).eq('id', id).eq('owner_id', _userId()).select().single(),
       'atualizar motorista'
     );
   },
 
   async excluir(id) {
     return _repoExec(
-      _sb.from('motoristas').update({ deleted_at: new Date().toISOString() }).eq('id', id),
+      _sb.from('motoristas').update({ deleted_at: new Date().toISOString() }).eq('id', id).eq('owner_id', _userId()),
       'excluir motorista'
     );
   },
@@ -1406,14 +1406,14 @@ const repoMotoristas = {
 // ═══════════════════════════════════════════════════════════════════════
 const repoContratos = {
   async listar(filtroStatus) {
-    let q = _sb.from('contratos').select('*').order('inicio', { ascending: false });
+    let q = _sb.from('contratos').select('*').eq('owner_id', _userId()).order('inicio', { ascending: false });
     if (filtroStatus) q = q.eq('status', filtroStatus);
     return _repoExec(q, 'listar contratos');
   },
 
   async buscarPorId(id) {
     return _repoExec(
-      _sb.from('contratos').select('*').eq('id', id).maybeSingle(),
+      _sb.from('contratos').select('*').eq('id', id).eq('owner_id', _userId()).maybeSingle(),
       'buscar contrato'
     );
   },
@@ -1424,7 +1424,7 @@ const repoContratos = {
   // UX melhor; a garantia real de integridade é do banco.
   async existeContratoAtivo(carroId) {
     const r = await _repoExec(
-      _sb.from('contratos').select('id, motorista_id').eq('carro_id', carroId).eq('status', 'Ativa').maybeSingle(),
+      _sb.from('contratos').select('id, motorista_id').eq('carro_id', carroId).eq('owner_id', _userId()).eq('status', 'Ativa').maybeSingle(),
       'checar contrato ativo'
     );
     return r.data || null;
@@ -1485,7 +1485,7 @@ const repoContratos = {
     if (dados.comarca !== undefined) payload.comarca = dados.comarca || null;
     if (dados.uso !== undefined) payload.uso = dados.uso;
     return _repoExec(
-      _sb.from('contratos').update(payload).eq('id', id).select().single(),
+      _sb.from('contratos').update(payload).eq('id', id).eq('owner_id', _userId()).select().single(),
       'atualizar contrato'
     );
   },
@@ -1509,7 +1509,7 @@ const repoContratos = {
       updated_at: new Date().toISOString(),
     };
     const r = await _repoExec(
-      _sb.from('contratos').update(payload).eq('id', id).select().single(),
+      _sb.from('contratos').update(payload).eq('id', id).eq('owner_id', _userId()).select().single(),
       'encerrar contrato'
     );
     if (!r.error && r.data?.carro_id) {
@@ -1521,7 +1521,7 @@ const repoContratos = {
   async excluir(id) {
     const contrato = await this.buscarPorId(id);
     const r = await _repoExec(
-      _sb.from('contratos').delete().eq('id', id),
+      _sb.from('contratos').delete().eq('id', id).eq('owner_id', _userId()),
       'excluir contrato'
     );
     if (!r.error && contrato.data?.carro_id) {
@@ -1538,21 +1538,21 @@ const repoContratos = {
 const repoPagamentos = {
   async listarTodos() {
     return _repoExec(
-      _sb.from('pagamentos').select('*').order('data_vencimento', { ascending: false }),
+      _sb.from('pagamentos').select('*').eq('owner_id', _userId()).order('data_vencimento', { ascending: false }),
       'listar todos os pagamentos'
     );
   },
 
   async listarPorContrato(contratoId) {
     return _repoExec(
-      _sb.from('pagamentos').select('*').eq('contrato_id', contratoId).order('data_vencimento'),
+      _sb.from('pagamentos').select('*').eq('contrato_id', contratoId).eq('owner_id', _userId()).order('data_vencimento'),
       'listar pagamentos do contrato'
     );
   },
 
   async listarPendentes() {
     return _repoExec(
-      _sb.from('pagamentos').select('*').eq('pago', false).order('data_vencimento'),
+      _sb.from('pagamentos').select('*').eq('owner_id', _userId()).eq('pago', false).order('data_vencimento'),
       'listar pagamentos pendentes'
     );
   },
@@ -1596,7 +1596,7 @@ const repoPagamentos = {
     if (dados.cancelado !== undefined) payload.cancelado = !!dados.cancelado;
     if (dados.debitoEncerramento !== undefined) payload.debito_encerramento = !!dados.debitoEncerramento;
     return _repoExec(
-      _sb.from('pagamentos').update(payload).eq('id', id).select().single(),
+      _sb.from('pagamentos').update(payload).eq('id', id).eq('owner_id', _userId()).select().single(),
       'atualizar pagamento'
     );
   },
@@ -1607,13 +1607,13 @@ const repoPagamentos = {
         pago: true,
         data_pagamento: dataPagamento || new Date().toISOString().slice(0, 10),
         updated_at: new Date().toISOString(),
-      }).eq('id', id).select().single(),
+      }).eq('id', id).eq('owner_id', _userId()).select().single(),
       'marcar pagamento como pago'
     );
   },
 
   async excluir(id) {
-    return _repoExec(_sb.from('pagamentos').delete().eq('id', id), 'excluir pagamento');
+    return _repoExec(_sb.from('pagamentos').delete().eq('id', id).eq('owner_id', _userId()), 'excluir pagamento');
   },
 };
 
@@ -1623,21 +1623,21 @@ const repoPagamentos = {
 const repoEventos = {
   async listarTodos() {
     return _repoExec(
-      _sb.from('eventos').select('*').order('data', { ascending: false }),
+      _sb.from('eventos').select('*').eq('owner_id', _userId()).order('data', { ascending: false }),
       'listar todos os eventos'
     );
   },
 
   async listarPorCarro(carroId) {
     return _repoExec(
-      _sb.from('eventos').select('*').eq('carro_id', carroId).order('data', { ascending: false }),
+      _sb.from('eventos').select('*').eq('carro_id', carroId).eq('owner_id', _userId()).order('data', { ascending: false }),
       'listar eventos do carro'
     );
   },
 
   async listarAbertos() {
     return _repoExec(
-      _sb.from('eventos').select('*').eq('resolvido', false).order('data', { ascending: false }),
+      _sb.from('eventos').select('*').eq('owner_id', _userId()).eq('resolvido', false).order('data', { ascending: false }),
       'listar eventos abertos'
     );
   },
@@ -1675,20 +1675,20 @@ const repoEventos = {
     if (dados.abonoVal !== undefined) payload.abono_valor = Number(dados.abonoVal) || 0;
     if (dados.resolvido !== undefined) payload.resolvido = !!dados.resolvido;
     return _repoExec(
-      _sb.from('eventos').update(payload).eq('id', id).select().single(),
+      _sb.from('eventos').update(payload).eq('id', id).eq('owner_id', _userId()).select().single(),
       'atualizar evento'
     );
   },
 
   async resolver(id) {
     return _repoExec(
-      _sb.from('eventos').update({ resolvido: true }).eq('id', id),
+      _sb.from('eventos').update({ resolvido: true }).eq('id', id).eq('owner_id', _userId()),
       'resolver evento'
     );
   },
 
   async excluir(id) {
-    return _repoExec(_sb.from('eventos').delete().eq('id', id), 'excluir evento');
+    return _repoExec(_sb.from('eventos').delete().eq('id', id).eq('owner_id', _userId()), 'excluir evento');
   },
 };
 
@@ -1698,14 +1698,14 @@ const repoEventos = {
 const repoKm = {
   async listarTodos() {
     return _repoExec(
-      _sb.from('km_registros').select('*').order('data', { ascending: false }),
+      _sb.from('km_registros').select('*').eq('owner_id', _userId()).order('data', { ascending: false }),
       'listar todos os registros de km'
     );
   },
 
   async listarPorCarro(carroId) {
     return _repoExec(
-      _sb.from('km_registros').select('*').eq('carro_id', carroId).order('data', { ascending: false }),
+      _sb.from('km_registros').select('*').eq('carro_id', carroId).eq('owner_id', _userId()).order('data', { ascending: false }),
       'listar registros de km'
     );
   },
@@ -1725,7 +1725,7 @@ const repoKm = {
   },
 
   async excluir(id) {
-    return _repoExec(_sb.from('km_registros').delete().eq('id', id), 'excluir registro de km');
+    return _repoExec(_sb.from('km_registros').delete().eq('id', id).eq('owner_id', _userId()), 'excluir registro de km');
   },
 };
 
@@ -1735,14 +1735,14 @@ const repoKm = {
 const repoFinanciamentos = {
   async listarPorCarro(carroId) {
     return _repoExec(
-      _sb.from('financiamentos').select('*').eq('carro_id', carroId),
+      _sb.from('financiamentos').select('*').eq('carro_id', carroId).eq('owner_id', _userId()),
       'listar financiamentos do carro'
     );
   },
 
   async listarTodos() {
     return _repoExec(
-      _sb.from('financiamentos').select('*'),
+      _sb.from('financiamentos').select('*').eq('owner_id', _userId()),
       'listar financiamentos'
     );
   },
@@ -1792,7 +1792,7 @@ const repoFinanciamentos = {
       updated_at: new Date().toISOString(),
     };
     return _repoExec(
-      _sb.from('financiamentos').update(payload).eq('id', id).select().single(),
+      _sb.from('financiamentos').update(payload).eq('id', id).eq('owner_id', _userId()).select().single(),
       'atualizar financiamento'
     );
   },
@@ -1811,18 +1811,18 @@ const repoFinanciamentos = {
     if (dados.parcela !== undefined) payload.valor_parcela = Number(dados.parcela) || 0;
     if (dados.nparcelas !== undefined) payload.num_parcelas = Number(dados.nparcelas) || 0;
     return _repoExec(
-      _sb.from('financiamentos').update(payload).eq('id', id).select().single(),
+      _sb.from('financiamentos').update(payload).eq('id', id).eq('owner_id', _userId()).select().single(),
       'atualizar campos do financiamento'
     );
   },
 
   async excluir(id) {
-    return _repoExec(_sb.from('financiamentos').delete().eq('id', id), 'excluir financiamento');
+    return _repoExec(_sb.from('financiamentos').delete().eq('id', id).eq('owner_id', _userId()), 'excluir financiamento');
   },
 
   async registrarParcelaPaga(id) {
     const atual = await _repoExec(
-      _sb.from('financiamentos').select('parcelas_pagas,num_parcelas').eq('id', id).single(),
+      _sb.from('financiamentos').select('parcelas_pagas,num_parcelas').eq('id', id).eq('owner_id', _userId()).single(),
       'buscar financiamento'
     );
     if (atual.error) return atual;
@@ -1849,7 +1849,7 @@ const repoFinanciamentos = {
 const repoVistorias = {
   async buscarPorContrato(contratoId, tipo) {
     return _repoExec(
-      _sb.from('vistorias').select('*').eq('contrato_id', contratoId).eq('tipo', tipo).maybeSingle(),
+      _sb.from('vistorias').select('*').eq('contrato_id', contratoId).eq('tipo', tipo).eq('owner_id', _userId()).maybeSingle(),
       'buscar vistoria do contrato'
     );
   },
@@ -1884,7 +1884,7 @@ const repoVistorias = {
     if (dados.concluidaEm !== undefined) payload.concluida_em = dados.concluidaEm || null;
     if (dados.baseEntregaId !== undefined) payload.base_entrega_id = dados.baseEntregaId || null;
     return _repoExec(
-      _sb.from('vistorias').update(payload).eq('id', id).select().single(),
+      _sb.from('vistorias').update(payload).eq('id', id).eq('owner_id', _userId()).select().single(),
       'atualizar vistoria'
     );
   },
@@ -1894,7 +1894,7 @@ const repoVistorias = {
   // manipulação (que fazem v.itens[i].fotos.push(...) etc.) continuam
   // funcionando sem precisar ser reescritas uma a uma.
   async carregarCompleta(vistoriaId) {
-    const vRes = await _repoExec(_sb.from('vistorias').select('*').eq('id', vistoriaId).single(), 'buscar vistoria');
+    const vRes = await _repoExec(_sb.from('vistorias').select('*').eq('id', vistoriaId).eq('owner_id', _userId()).single(), 'buscar vistoria');
     if (vRes.error) return vRes;
 
     const itensRes = await _repoExec(
@@ -2050,7 +2050,7 @@ const repoVistoriaPins = {
 // ═══════════════════════════════════════════════════════════════════════
 const repoSemanaAtual = {
   async listarTodos() {
-    return _repoExec(_sb.from('semana_atual').select('*'), 'listar semana atual');
+    return _repoExec(_sb.from('semana_atual').select('*').eq('owner_id', _userId()), 'listar semana atual');
   },
 
   async criar(dados) {
@@ -2078,7 +2078,7 @@ const repoSemanaAtual = {
     if (dados.valCauc !== undefined) payload.valor_caucao = Number(dados.valCauc) || 0;
     if (dados.temCauc !== undefined) payload.tem_caucao = !!dados.temCauc;
     return _repoExec(
-      _sb.from('semana_atual').update(payload).eq('id', id),
+      _sb.from('semana_atual').update(payload).eq('id', id).eq('owner_id', _userId()),
       'atualizar semana atual'
     );
   },
@@ -2089,7 +2089,7 @@ const repoSemanaAtual = {
   // único comando, buscamos as linhas e atualizamos uma a uma.
   async atualizarPendentesDoContrato(contratoId, dados) {
     const r = await _repoExec(
-      _sb.from('semana_atual').select('id').eq('contrato_id', contratoId).eq('pago', false),
+      _sb.from('semana_atual').select('id').eq('contrato_id', contratoId).eq('owner_id', _userId()).eq('pago', false),
       'buscar pendentes da semana atual'
     );
     if (r.error) return r;
@@ -2112,8 +2112,15 @@ const repoSemanaAtual = {
 // REPO: AVARIAS DO ENCERRAMENTO
 // ═══════════════════════════════════════════════════════════════════════
 const repoContratoAvarias = {
-  async listarTodas() {
-    return _repoExec(_sb.from('contrato_avarias').select('*'), 'listar avarias');
+  // Recebe uma lista de contrato_id já pertencentes ao usuário logado (obtidos
+  // de uma consulta de contratos já filtrada por owner_id). Evita buscar
+  // avarias de todas as contas — essa tabela não tem coluna owner_id própria.
+  async listarPorContratos(contratoIds) {
+    if(!contratoIds||!contratoIds.length) return {data:[],error:null};
+    return _repoExec(
+      _sb.from('contrato_avarias').select('*').in('contrato_id', contratoIds),
+      'listar avarias'
+    );
   },
 
   async listarPorContrato(contratoId) {
@@ -2536,7 +2543,7 @@ function _brParaISO(dataBR){
 async function migrarDadosReaisFase1(){
   if(!_sbUser||!_sb){toast('Faça login antes de migrar','er');return;}
 
-  const jaTem=await _sb.from('carros').select('id').limit(1);
+  const jaTem=await _sb.from('carros').select('id').eq('owner_id',_sbUser.id).limit(1);
   if(jaTem.data&&jaTem.data.length>0){
     if(!confirm('Esta conta já parece ter dados no banco relacional (encontrei pelo menos 1 carro). Rodar a migração de novo pode DUPLICAR os dados. Tem certeza que quer continuar?')) return;
   }
@@ -3271,7 +3278,7 @@ async function _carregarContratosRelacional(){
   // gerados de novo, ou reabertos, mostrarem os valores corretos)
   const encerrados = DB.locs.filter(l=>l.status==='Encerrada');
   if(encerrados.length){
-    const rAv = await Repo.contratoAvarias.listarTodas();
+    const rAv = await Repo.contratoAvarias.listarPorContratos(encerrados.map(l=>l.id));
     if(!rAv.error){
       const porContrato={};
       (rAv.data||[]).forEach(a=>{
@@ -7527,10 +7534,16 @@ function _vistAbrirItem(idx){
         <div style="font-size:11px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📷 Estado atual (devolução)</div>
       `:''}
       <input type="file" id="vist-file-input" accept="image/*" capture="environment" style="display:none" onchange="_vistFotoEscolhida(event)">
-      <div style="display:flex;gap:8px;margin-bottom:14px">
-        <button onclick="document.getElementById('vist-file-input').setAttribute('capture','environment');document.getElementById('vist-file-input').click()" style="flex:1;background:var(--p);color:#fff;border:none;border-radius:10px;padding:13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📷 Tirar foto</button>
-        <button onclick="document.getElementById('vist-file-input').removeAttribute('capture');document.getElementById('vist-file-input').click()" style="flex:1;background:transparent;color:var(--p);border:1.5px solid var(--p);border-radius:10px;padding:13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🖼️ Galeria</button>
-      </div>
+      ${(()=>{
+        const total=v.itens.reduce((s,i)=>s+(i.fotos?.length||0),0);
+        const limite=60;
+        const perto=total>=limite;
+        return `<div style="font-size:10px;color:${perto?'var(--r)':'var(--txm)'};text-align:right;margin-bottom:6px;font-weight:${perto?'700':'400'}">${total}/${limite} fotos na vistoria</div>
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <button ${perto?'disabled':''} onclick="document.getElementById('vist-file-input').setAttribute('capture','environment');document.getElementById('vist-file-input').click()" style="flex:1;background:${perto?'var(--sll)':'var(--p)'};color:#fff;border:none;border-radius:10px;padding:13px;font-size:13px;font-weight:700;cursor:${perto?'not-allowed':'pointer'};font-family:inherit">📷 Tirar foto</button>
+          <button ${perto?'disabled':''} onclick="document.getElementById('vist-file-input').removeAttribute('capture');document.getElementById('vist-file-input').click()" style="flex:1;background:transparent;color:${perto?'var(--sll)':'var(--p)'};border:1.5px solid ${perto?'var(--sll)':'var(--p)'};border-radius:10px;padding:13px;font-size:13px;font-weight:700;cursor:${perto?'not-allowed':'pointer'};font-family:inherit">🖼️ Galeria</button>
+        </div>`;
+      })()}
 
       <div id="vist-fotos-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px"></div>
       <div id="vist-upload-status" style="text-align:center;font-size:12px;color:var(--txm);margin-bottom:12px;display:none"></div>
@@ -7724,6 +7737,13 @@ async function _vistFotoEscolhida(ev){
   if(!v||_vistItemIdx===null)return;
   if(_vistBloquearSeTravada(v))return;
   const it=v.itens[_vistItemIdx];
+
+  const LIMITE_FOTOS_VISTORIA=60;
+  const totalFotosVistoria=v.itens.reduce((s,i)=>s+(i.fotos?.length||0),0);
+  if(totalFotosVistoria>=LIMITE_FOTOS_VISTORIA){
+    toast(`Limite de ${LIMITE_FOTOS_VISTORIA} fotos por vistoria atingido`,'er');
+    return;
+  }
 
   const status=document.getElementById('vist-upload-status');
   const mostra=(txt)=>{if(status){status.style.display='block';status.textContent=txt;}};
