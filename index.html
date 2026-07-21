@@ -10455,7 +10455,7 @@ async function gerarParcelasPendentes(){
           alterou=true;
         }
       }
-      sab.setDate(sab.getDate()+7);
+      dv.setDate(dv.getDate()+7);
     }
     // Corrigir parcelas pendentes com caução já quitado
     if(l.caucModo==='parcelado'&&(l.caucPago||0)>=l.cauc){
