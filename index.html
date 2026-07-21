@@ -374,6 +374,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 
     <!-- DASHBOARD -->
     <div class="sc" id="sc-dash">
+      <!-- Resumo executivo (frota grande): inadimplência, carros no prejuízo, ociosidade -->
+      <div id="cd-resumo-exec" style="margin-bottom:10px"></div>
       <!-- KPIs principais -->
       <div class="kg" id="kg-dash"></div>
       <!-- Gráfico receita semanal -->
@@ -1545,6 +1547,22 @@ const repoContratos = {
     return r;
   },
 
+  async reabrir(id) {
+    // Volta o contrato para Ativa e limpa os campos de encerramento que
+    // dependem de anuência (assinaturas), forçando nova assinatura.
+    return _repoExec(
+      _sb.from('contratos').update({
+        status: 'Ativa',
+        fim: null,
+        enc_data: null,
+        enc_assinatura_locador: null,
+        enc_assinatura_locatario: null,
+        updated_at: new Date().toISOString(),
+      }).eq('id', id).eq('owner_id', _userId()).select().single(),
+      'reabrir contrato'
+    );
+  },
+
   async excluir(id) {
     const contrato = await this.buscarPorId(id);
     const r = await _repoExec(
@@ -1613,6 +1631,7 @@ const repoPagamentos = {
     if (dados.sem !== undefined) payload.semana_label = dados.sem || null;
     if (dados.dataVenc !== undefined) payload.data_vencimento = dados.dataVenc || null;
     if (dados.val !== undefined) payload.valor_total = Number(dados.val) || 0;
+    if (dados.valAlug !== undefined) payload.valor_aluguel = Number(dados.valAlug) || 0;
     if (dados.valCauc !== undefined) payload.valor_caucao = Number(dados.valCauc) || 0;
     if (dados.temCauc !== undefined) payload.tem_caucao = !!dados.temCauc;
     if (dados.data !== undefined) payload.data_pagamento = dados.data || null;
@@ -4361,7 +4380,34 @@ const _ENC_CHECKLIST=[
   {id:'mecanica',   label:'Problemas mecânicos',      desc:'Motor, freios, suspensão'},
 ];
 
+async function reabrirEncerramento(locId){
+  const loc=DB.locs.find(l=>l.id===locId);
+  if(!loc||loc.status!=='Encerrada') return;
+  if(!confirm('Reabrir este encerramento?\n\nAs assinaturas do locador e do motorista serão APAGADAS — será preciso assinar de novo para garantir a anuência de ambos. O contrato volta a ficar Ativo.')) return;
+
+  // Reverte status e limpa assinaturas do encerramento (exige nova anuência)
+  const r=await Repo.contratos.reabrir(locId);
+  if(r.error){ toast('Erro ao reabrir: '+r.mensagem,'er'); return; }
+
+  // Reverte o carro para Alugado (estava com este contrato)
+  await Repo.carros.marcarStatus(loc.carroId,'Alugado');
+
+  DB.locs=DB.locs.map(l=>l.id===locId?{...l,
+    status:'Ativa', fim:null, encData:null,
+    encAssinaturaLocador:null, encAssinaturaLocatario:null,
+  }:l);
+  DB.carros=DB.carros.map(c=>c.id===loc.carroId?{...c,status:'Alugado'}:c);
+  markDirty('loc','dash','rel','pag');
+  renderLocs();
+  toast('Encerramento reaberto. Assinaturas apagadas.');
+}
+
 function abrirEncerramento(locId){
+  const _locChk=DB.locs.find(l=>l.id===locId);
+  if(_locChk&&_locChk.status==='Encerrada'){
+    toast('Contrato já encerrado. Use "Reabrir" para alterar o encerramento.','er');
+    return;
+  }
   _encLocId=locId;
   _encSigLocador=null; _encSigLocatario=null;
   const _pd=document.getElementById('enc-prazo-dias'); if(_pd) _pd.value='';
@@ -4751,7 +4797,7 @@ async function _encConfirmar(){
     const pendOrd=[...pend].sort((a,b)=>String(a.dataVenc||'').localeCompare(String(b.dataVenc||'')));
     for(const p of pendOrd){
       const campo = primeira
-        ? {debitoEncerramento:true, val:_calcPend.proporcional, proporcional:true}
+        ? {debitoEncerramento:true, val:_calcPend.proporcional, valAlug:_calcPend.proporcional}
         : {cancelado:true};
       const r=await Repo.pagamentos.atualizar(p.id,campo);
       if(!r.error) DB.pags=DB.pags.map(x=>x.id===p.id?{...x,...campo}:x);
@@ -5775,7 +5821,72 @@ function _renderDashKpis(){
     <div class="ki"><div class="kl">Pgtos pendentes</div><div class="kv" style="color:${pend>0?'var(--r)':'var(--g)'}">${pend}</div><div class="ks">${pend>0?'aguardando':'em dia'}</div></div>
     <div class="ki"><div class="kl">Saldo devedor</div><div class="kv" style="color:var(--r)">${R(saldo)}</div><div class="ks">financiamentos</div></div>`;
 }
+function _renderResumoExec(){
+  const el=document.getElementById('cd-resumo-exec');
+  if(!el) return;
+
+  // 1) Inadimplência: total em R$ e nº de motoristas com parcela vencida em aberto
+  const hoje=new Date();hoje.setHours(0,0,0,0);
+  const atrasadas=DB.pags.filter(p=>{
+    if(p.pago||p.cancelado||p.caucAvulso) return false;
+    const dv=p.dataVenc?new Date(p.dataVenc+'T12:00:00'):null;
+    return dv&&dv<hoje;
+  });
+  const totalInadimplente=atrasadas.reduce((s,p)=>s+_recAluguel(p),0);
+  const motInadimplentes=new Set(atrasadas.map(p=>p.motoId)).size;
+
+  // 2) Carros no prejuízo (semáforo vermelho no mês) — só entre os alugados
+  const alugados=DB.carros.filter(c=>c.status==='Alugado');
+  const noPrejuizo=alugados.filter(c=>_rentabilidadeCarro(c.id).lucro<0).length;
+
+  // 3) Ociosidade: carros disponíveis (parados) / total — receita parada
+  const total=DB.carros.length;
+  const parados=DB.carros.filter(c=>c.status==='Disponível').length;
+  const pctOcioso=total>0?Math.round(parados/total*100):0;
+  // Estimativa de receita perdida/semana com os carros parados (usa aluguel médio)
+  const alugMedio=DB.locs.length?Math.round(DB.locs.reduce((s,l)=>s+Number(l.val||0),0)/DB.locs.length):Number(DB.config.alug||600);
+  const receitaParada=parados*alugMedio;
+
+  const card=(cor,bg,valor,titulo,sub,onclick)=>`
+    <div style="background:${bg};border:1px solid ${cor}33;border-radius:11px;padding:11px 12px;cursor:${onclick?'pointer':'default'}" ${onclick?`onclick="${onclick}"`:''}>
+      <div style="font-size:20px;font-weight:900;color:${cor};line-height:1.1">${valor}</div>
+      <div style="font-size:10px;font-weight:800;color:${cor};text-transform:uppercase;letter-spacing:.3px;margin-top:3px">${titulo}</div>
+      <div style="font-size:10px;color:var(--txm);margin-top:1px">${sub}</div>
+    </div>`;
+
+  el.innerHTML=`<div class="cd" style="margin-bottom:0">
+    <div class="st">Resumo executivo</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+      ${card(
+        totalInadimplente>0?'var(--r)':'var(--g)',
+        totalInadimplente>0?'rgba(239,68,68,.08)':'rgba(16,185,129,.08)',
+        R(Math.round(totalInadimplente)),
+        'Inadimplência',
+        `${motInadimplentes} motorista${motInadimplentes===1?'':'s'} em atraso`,
+        "goTo('pag')"
+      )}
+      ${card(
+        noPrejuizo>0?'var(--r)':'var(--g)',
+        noPrejuizo>0?'rgba(239,68,68,.08)':'rgba(16,185,129,.08)',
+        noPrejuizo,
+        'No prejuízo',
+        `de ${alugados.length} carro${alugados.length===1?'':'s'} alugado${alugados.length===1?'':'s'}`,
+        "goTo('carros')"
+      )}
+      ${card(
+        pctOcioso>=20?'var(--y)':'var(--pl)',
+        pctOcioso>=20?'rgba(245,158,11,.08)':'rgba(42,106,154,.08)',
+        pctOcioso+'%',
+        'Ociosidade',
+        parados>0?`${parados} parado${parados===1?'':'s'} · ${R(receitaParada)}/sem`:'frota toda alugada',
+        "goTo('carros')"
+      )}
+    </div>
+  </div>`;
+}
+
 function _renderDashExtras(){
+  _renderResumoExec();
   // Gráfico barras — últimas 8 semanas de pagamentos
   renderGrafico();
   // Alertas
@@ -5817,14 +5928,24 @@ function _renderDashExtras(){
       <span style="color:var(--p)">Sobra</span>
       <span style="color:${sobra>0?'var(--g)':'var(--r)'}">${R(Math.round(sobra))}</span>
     </div>`;
-  // Financiamentos
+  // Financiamentos — mostra só os 5 maiores saldos; resume o restante (frota grande)
   const cfd=document.getElementById('cd-financ-dash');cfd.innerHTML=`<div class="st">Financiamentos</div>`;
   _renderPlanoBadge();
-  DB.fins.filter(f=>f.status==='Ativo').forEach(f=>{
+  const finsAtivos=DB.fins.filter(f=>f.status==='Ativo')
+    .map(f=>({f,saldo:calcSaldo(f)}))
+    .sort((a,b)=>b.saldo-a.saldo);
+  const TOP_FIN=5;
+  const topFins=finsAtivos.slice(0,TOP_FIN);
+  topFins.forEach(({f,saldo})=>{
     const c=cCar(f.carroId);const pct=Math.round(f.npg/f.nparcelas*100);
-    cfd.innerHTML+=`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="font-weight:600">${c?.placa||'?'} — ${f.npg}/${f.nparcelas}</span><span style="color:var(--r);font-weight:700">${R(calcSaldo(f))}</span></div><div class="pb"><div class="pf" style="width:${pct}%;background:var(--pl)"></div></div><div style="font-size:10px;color:var(--txm);margin-top:2px">${f.parcela.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}/mês · ${f.nparcelas-f.npg} restantes</div></div>`;
+    cfd.innerHTML+=`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="font-weight:600">${c?.placa||'?'} — ${f.npg}/${f.nparcelas}</span><span style="color:var(--r);font-weight:700">${R(saldo)}</span></div><div class="pb"><div class="pf" style="width:${pct}%;background:var(--pl)"></div></div><div style="font-size:10px;color:var(--txm);margin-top:2px">${f.parcela.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}/mês · ${f.nparcelas-f.npg} restantes</div></div>`;
   });
-  if(!DB.fins.filter(f=>f.status==='Ativo').length)cfd.innerHTML+=`<div style="font-size:12px;color:var(--txm);font-style:italic">Nenhum financiamento ativo</div>`;
+  if(finsAtivos.length>TOP_FIN){
+    const restantes=finsAtivos.length-TOP_FIN;
+    const saldoResto=finsAtivos.slice(TOP_FIN).reduce((s,x)=>s+x.saldo,0);
+    cfd.innerHTML+=`<div style="display:flex;justify-content:space-between;font-size:11px;padding:7px 0;border-top:1px solid rgba(203,213,225,.25);color:var(--txm)"><span>+ ${restantes} outro${restantes===1?'':'s'} financiamento${restantes===1?'':'s'}</span><span style="font-weight:700">${R(saldoResto)}</span></div>`;
+  }
+  if(!finsAtivos.length)cfd.innerHTML+=`<div style="font-size:12px;color:var(--txm);font-style:italic">Nenhum financiamento ativo</div>`;
 }
 
 
@@ -6110,6 +6231,22 @@ function _renderLocsDOM(){
     return c?.placa?.toUpperCase().includes(busca)||m?.nome?.toUpperCase().includes(busca);
   });
   if(!fil.length){el.innerHTML=`<div style="text-align:center;padding:32px;color:var(--txm)"><div style="font-size:32px;margin-bottom:8px">📋</div><div style="font-weight:700">${busca?'Nenhum contrato encontrado':'Nenhum contrato'}</div></div>`;return;}
+
+  // Totalizador responsivo ao filtro atual
+  const totAtivas=fil.filter(l=>l.status==='Ativa').length;
+  const totEncerradas=fil.filter(l=>l.status==='Encerrada').length;
+  const somaSemanal=fil.filter(l=>l.status==='Ativa').reduce((s,l)=>s+Number(l.val||0),0);
+  const totDiv=document.createElement('div');
+  totDiv.className='cd';
+  totDiv.style.marginBottom='10px';
+  totDiv.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <div style="font-size:12px;color:var(--txm)"><strong style="font-size:15px;color:var(--p)">${fil.length}</strong> contrato${fil.length===1?'':'s'}${_filtLoc!=='Todas'?` (${_filtLoc.toLowerCase()}s)`:''}</div>
+      ${totAtivas>0?`<div style="font-size:12px;color:var(--txm)">Receita semanal ativa: <strong style="color:var(--g)">${R(somaSemanal)}</strong></div>`:''}
+    </div>
+    ${_filtLoc==='Todas'&&fil.length>0?`<div style="display:flex;gap:12px;margin-top:6px;font-size:11px;color:var(--txm)"><span>🟢 ${totAtivas} ativa${totAtivas===1?'':'s'}</span><span>⬛ ${totEncerradas} encerrada${totEncerradas===1?'':'s'}</span></div>`:''}`;
+  el.appendChild(totDiv);
+
   fil.forEach(l=>{
     const c=cCar(l.carroId),m=cMot(l.motoId);
     const pagsL=DB.pags.filter(p=>p.locId===l.id);
@@ -6134,8 +6271,11 @@ function _renderLocsDOM(){
       <div style="flex:1;background:${pend>0?'rgba(239,68,68,.08)':'var(--bg)'};border-radius:6px;padding:4px 6px"><div style="font-size:8px;color:${pend>0?'var(--r)':'var(--txm)'};font-weight:700">PENDENTE</div><div style="font-size:11px;font-weight:700;color:${pend>0?'var(--r)':'var(--txm)'}">${R(pend)}</div></div>
     </div>
     <div style="display:flex;gap:4px">
-      <button class="bt btg bts" style="flex:1;font-size:11px;padding:5px 4px" onclick="editarLoc('${l.id}')">✏️ Editar</button>
+      ${l.status==='Encerrada'
+        ? `<button class="bt bts" style="flex:1;font-size:11px;padding:5px 4px;background:rgba(245,158,11,.15);color:var(--a);border:none;border-radius:7px;cursor:pointer;font-family:inherit" onclick="reabrirEncerramento('${l.id}')">🔓 Reabrir</button>`
+        : `<button class="bt btg bts" style="flex:1;font-size:11px;padding:5px 4px" onclick="editarLoc('${l.id}')">✏️ Editar</button>`}
       ${l.status==='Ativa'?`<button class="bt bts" style="flex:1;font-size:11px;padding:5px 4px;background:rgba(239,68,68,.12);color:var(--r);border:none;border-radius:7px;cursor:pointer;font-family:inherit" onclick="abrirEncerramento('${l.id}')">⬛ Encerrar</button>`:''}
+      ${l.status==='Encerrada'?`<button class="bt bts" style="flex:1;font-size:11px;padding:5px 4px;background:rgba(245,158,11,.15);color:var(--a);border:none;border-radius:7px;cursor:pointer;font-family:inherit" onclick="_abrirReciboEncerramento('${l.id}')">🖨️ ${(l.encSaldoDevedor??0)>0?'Termo dívida':'Recibo'}</button>`:''}
       <button class="bt btp bts" style="flex:1;font-size:11px;padding:5px 4px" onclick="abrirModalContrato('${l.id}')">📄 Contrato</button>
       ${_temVistoria()?`<button class="bt bts" style="flex:1;font-size:11px;padding:5px 4px;background:rgba(139,92,246,.15);color:#8b5cf6;border:none;border-radius:7px;cursor:pointer;font-family:inherit" onclick="abrirVistoria('${l.id}')">🔍 Vistoria</button>`:''}
       <button class="bt btd bts" style="font-size:11px;padding:5px 8px" onclick="excluirLoc('${l.id}')">🗑</button>
@@ -6236,6 +6376,50 @@ function renderHistPag(){
   _renderHistPagPage(h);
 }
 
+function _detalharPag(pagId){
+  const p=DB.pags.find(x=>x.id===pagId);
+  if(!p) return;
+  const m=cMot(p.motoId), car=cCar(p.carroId);
+  const total=Number(p.val||0);
+  const aluguel=Number(p.valAlug??p.val??0);
+  const caucao=Number(p.valCauc||0);
+  const abono=Number(p.descAbono||0);
+
+  const linha=(label,valor,cor)=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--sll);font-size:13px">
+    <span style="color:var(--txm)">${label}</span>
+    <span style="font-weight:700;color:${cor||'var(--tx)'}">${R(valor)}</span>
+  </div>`;
+
+  // Explica a divergência entre total e semanal cheio
+  let explicacao='';
+  if(p.proporcional){
+    explicacao=`<div style="background:rgba(245,158,11,.1);border-radius:9px;padding:10px 12px;margin-top:12px;font-size:12px;color:var(--tx)">⚖️ Valor <strong>proporcional</strong> — cobrado por dias parciais (encerramento por inadimplência), não a semana cheia.</div>`;
+  } else if(caucao>0){
+    explicacao=`<div style="background:rgba(42,106,154,.1);border-radius:9px;padding:10px 12px;margin-top:12px;font-size:12px;color:var(--tx)">🔒 Este valor inclui <strong>parcela da caução</strong> (garantia), somada ao aluguel da semana.</div>`;
+  }
+
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:flex-end;justify-content:center';
+  overlay.onclick=e=>{if(e.target===overlay)overlay.remove();};
+  overlay.innerHTML=`<div style="background:var(--card);border-radius:18px 18px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));width:100%;max-width:480px;max-height:85svh;overflow-y:auto" onclick="event.stopPropagation()">
+    <div style="width:36px;height:4px;background:var(--sll);border-radius:99px;margin:0 auto 16px"></div>
+    <div style="text-align:center;margin-bottom:14px">
+      <div style="font-size:15px;font-weight:900;color:var(--p)">Detalhe do recebimento</div>
+      <div style="font-size:11px;color:var(--txm)">${m?.nome?.split(' ').slice(0,2).join(' ')||'?'} · ${car?.placa||'?'} · ${p.sem||fD(p.dataVenc)||'—'}</div>
+    </div>
+    ${linha('Aluguel da semana',aluguel,'var(--g)')}
+    ${caucao>0?linha('Parcela da caução',caucao,'var(--pl)'):''}
+    ${abono>0?linha('Desconto/abono',-abono,'var(--a)'):''}
+    <div style="display:flex;justify-content:space-between;padding:12px 0 0;font-size:15px;font-weight:900">
+      <span>Total ${p.pago?'recebido':'a receber'}</span><span style="color:var(--p)">${R(total)}</span>
+    </div>
+    ${explicacao}
+    ${p.dataVenc?`<div style="font-size:11px;color:var(--txm);text-align:center;margin-top:12px">Vencimento: ${fD(p.dataVenc)}</div>`:''}
+    <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;background:var(--bg);color:var(--txm);border:1px solid var(--sll);border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:14px">Fechar</button>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+
 function _renderHistPagPage(h){
   if(!h) h=document.getElementById('hist-pag');
   if(!h) return;
@@ -6268,7 +6452,7 @@ function _renderHistPagPage(h){
             <div style="font-weight:800;font-size:12px;flex-shrink:0;margin-left:6px">${R(p.val)}</div>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1px">
-            <div style="font-size:9px;color:var(--txm)">${p.sem||fD(p.dataVenc)||fD(p.data)||'---'}${p.descAbono>0?` · <span style="color:var(--a);font-weight:700">🎁-${R(p.descAbono)}</span>`:''}</div>
+            <div style="font-size:9px;color:var(--txm)">${p.sem||'---'}${p.dataVenc?` · vence ${fD(p.dataVenc)}`:''}${p.descAbono>0?` · <span style="color:var(--a);font-weight:700">🎁-${R(p.descAbono)}</span>`:''}${(Number(p.val||0)!==Number(p.valAlug??p.val)||Number(p.valCauc||0)>0||p.proporcional)?` · <span onclick="event.stopPropagation();_detalharPag('${p.id}')" style="color:var(--pl);font-weight:700;cursor:pointer;text-decoration:underline">detalhes</span>`:''}</div>
             <span style="background:${bgStatus};color:${corStatus};border-radius:99px;padding:1px 6px;font-size:9px;font-weight:700">${labelStatus}</span>
           </div>
         </div>
@@ -9403,6 +9587,10 @@ function _vEx(v){
 // ── EDITAR / EXCLUIR CONTRATO (LOC) ──────────────────────────────────────────
 function editarLoc(id){
   const l=DB.locs.find(x=>x.id===id);if(!l) return;
+  if(l.status==='Encerrada'){
+    toast('Contrato encerrado é somente leitura. Reabra o encerramento para editar.','er');
+    return;
+  }
   // Abrir modal primeiro (ele seta today() e defaults)
   abrirModal('ml',{});
   // Sobrescrever com dados reais no próximo frame — APÓS abrirModal ter rodado
