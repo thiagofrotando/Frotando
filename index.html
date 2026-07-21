@@ -3387,23 +3387,31 @@ async function _gerarPagsIniciais(loc){
   const caucQuitado=loc.caucModo==='parcelado'&&(loc.caucPago||0)>=loc.cauc;
   const valCaucSem=(!caucQuitado&&loc.caucModo==='parcelado')?loc.caucParcSem||0:0;
 
-  const diasDesdeUltimoSab=(ini.getDay()-6+7)%7;
-  const sabInicio=new Date(ini);sabInicio.setDate(ini.getDate()-diasDesdeUltimoSab);
-  const sexInicio=new Date(sabInicio);sexInicio.setDate(sabInicio.getDate()+6);
-  const fmt=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  const diaVencNum = Number(loc.diaVenc ?? 6); // 0=Dom...6=Sáb; default sábado
+  const diasDesdeUltimoDV = (ini.getDay() - diaVencNum + 7) % 7;
 
-  const diasProp=diasDesdeUltimoSab===0?7:(7-diasDesdeUltimoSab);
-  const valProp=diasDesdeUltimoSab===0?loc.val:Math.round((loc.val/7)*diasProp*100)/100;
-  const sem1=`${fmt(sabInicio)} a ${fmt(sexInicio)}/${sexInicio.getFullYear()}`;
-  // OPÇÃO B: quando o primeiro pagamento é proporcional (contrato não começou
-  // no sábado), o vencimento vira a própria data de início — não o sábado
-  // que já passou. Assim um contrato criado hoje nunca nasce "em atraso"
-  // antes mesmo de o motorista ter tido a chance de pagar.
-  const vencPag1 = diasDesdeUltimoSab===0 ? sabInicio : ini;
+  // Início e fim do ciclo corrente (baseado no diaVenc configurado)
+  const ciclInicio = new Date(ini); ciclInicio.setDate(ini.getDate() - diasDesdeUltimoDV);
+  const ciclFim   = new Date(ciclInicio); ciclFim.setDate(ciclInicio.getDate() + 6);
 
-  const sab2=new Date(sabInicio);sab2.setDate(sabInicio.getDate()+7);
-  const sex2=new Date(sab2);sex2.setDate(sab2.getDate()+6);
-  const sem2=`${fmt(sab2)} a ${fmt(sex2)}/${sex2.getFullYear()}`;
+  // Início e fim do ciclo seguinte
+  const cicl2Inicio = new Date(ciclInicio); cicl2Inicio.setDate(ciclInicio.getDate() + 7);
+  const cicl2Fim    = new Date(cicl2Inicio); cicl2Fim.setDate(cicl2Inicio.getDate() + 6);
+
+  const ehProporcional = diasDesdeUltimoDV !== 0;
+  const diasProp = ehProporcional ? (7 - diasDesdeUltimoDV) : 7;
+  const valProp  = ehProporcional ? Math.round((loc.val / 7) * diasProp * 100) / 100 : loc.val;
+
+  const fmt    = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  const sem1   = `${fmt(ini)} a ${fmt(ciclFim)}/${ciclFim.getFullYear()}`;
+  const sem2   = `${fmt(cicl2Inicio)} a ${fmt(cicl2Fim)}/${cicl2Fim.getFullYear()}`;
+
+  // Vencimento da 1ª parcela:
+  //   - Começa no próprio diaVenc → sem proporcional, vence na data de início
+  //   - Começa depois → proporcional, vence no próximo diaVenc (sempre futuro)
+  const vencPag1 = ehProporcional ? cicl2Inicio : ini;
+  // Vencimento da 2ª parcela: sempre 7 dias após o 1º vencimento
+  const vencPag2 = new Date(vencPag1); vencPag2.setDate(vencPag1.getDate() + 7);
 
   // Grava via repositório (tabela pagamentos). DB.pags ainda é atualizado
   // localmente em seguida — a tela de Pagamentos ainda lê do array em
@@ -3412,11 +3420,11 @@ async function _gerarPagsIniciais(loc){
     contratoId:loc.id, carroId:loc.carroId, motoristaId:loc.motoId,
     sem:sem1, dataVenc:fmtISO(vencPag1),
     val:valProp+valCaucSem, valAlug:valProp, valCauc:valCaucSem,
-    temCauc:valCaucSem>0, pago:false, proporcional:diasDesdeUltimoSab!==0,
+    temCauc:valCaucSem>0, pago:false, proporcional:ehProporcional,
   });
   const p2 = await Repo.pagamentos.criar({
     contratoId:loc.id, carroId:loc.carroId, motoristaId:loc.motoId,
-    sem:sem2, dataVenc:fmtISO(sab2),
+    sem:sem2, dataVenc:fmtISO(vencPag2),
     val:loc.val+valCaucSem, valAlug:loc.val, valCauc:valCaucSem,
     temCauc:valCaucSem>0, pago:false,
   });
@@ -10391,55 +10399,52 @@ function _semanaAtualLabel(){
 
 // ── GERAÇÃO AUTOMÁTICA DE PARCELAS ────────────────────────────────────────────
 async function gerarParcelasPendentes(){
-  // REGRA: semana = sábado (inclusive) → sexta (inclusive)
-  // dataVenc = sábado início da semana (dia do pagamento antecipado)
-  // semLabel = "28/06 a 04/07/2026"
+  // REGRA: semana começa no dia de vencimento do contrato (loc.diaVenc).
+  // dataVenc = primeiro dia do ciclo = dia do pagamento.
   const hoje=new Date();hoje.setHours(0,0,0,0);
   const fmtD=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
   const fmtISO=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  const diasAteSab=(6-hoje.getDay()+7)%7;
-  const proxSabGlobal=new Date(hoje);proxSabGlobal.setDate(hoje.getDate()+diasAteSab);
   let alterou=false;
 
   for(const l of DB.locs.filter(l=>l.status==='Ativa')){
+    const diaVencNum=Number(l.diaVenc??6);
+    // Próximo diaVenc a partir de hoje (ou hoje mesmo, se hoje for diaVenc)
+    const diasAteProxDV=(diaVencNum-hoje.getDay()+7)%7;
+    const proxDVGlobal=new Date(hoje);proxDVGlobal.setDate(hoje.getDate()+diasAteProxDV);
+
     const pagLoc=DB.pags.filter(p=>p.locId===l.id&&!p.caucAvulso)
       .sort((a,b)=>(b.dataVenc||b.data||'').localeCompare(a.dataVenc||a.data||''));
-    const semPagamentoAlgum = pagLoc.length===0;
+    const semPagamentoAlgum=pagLoc.length===0;
 
-    // Dados da semana de início do contrato — usados só quando esta função
-    // precisa gerar a PRIMEIRA parcela (caso _gerarPagsIniciais não tenha
-    // rodado por algum motivo). Sem isso, a primeira semana saía com valor
-    // cheio em vez de proporcional aos dias restantes.
+    // Dados do início do contrato
     const iniContrato=new Date(l.inicio+'T12:00:00');
-    const diasDesdeUltimoSabIni=(iniContrato.getDay()-6+7)%7;
-    const sabInicioContrato=new Date(iniContrato);sabInicioContrato.setDate(iniContrato.getDate()-diasDesdeUltimoSabIni);
-    const ehProporcionalNaOrigem=diasDesdeUltimoSabIni!==0;
-    const diasPropOrigem=diasDesdeUltimoSabIni===0?7:(7-diasDesdeUltimoSabIni);
+    const diasDesdeUltimoDVIni=(iniContrato.getDay()-diaVencNum+7)%7;
+    const dvInicioContrato=new Date(iniContrato);dvInicioContrato.setDate(iniContrato.getDate()-diasDesdeUltimoDVIni);
+    const ehProporcionalNaOrigem=diasDesdeUltimoDVIni!==0;
+    const diasPropOrigem=ehProporcionalNaOrigem?(7-diasDesdeUltimoDVIni):7;
 
-    let ultimoSab=pagLoc[0]?.dataVenc?new Date(pagLoc[0].dataVenc+'T12:00:00'):null;
-    if(!ultimoSab){
-      ultimoSab=new Date(sabInicioContrato);ultimoSab.setDate(sabInicioContrato.getDate()-7);
+    let ultimoDV=pagLoc[0]?.dataVenc?new Date(pagLoc[0].dataVenc+'T12:00:00'):null;
+    if(!ultimoDV){
+      ultimoDV=new Date(dvInicioContrato);ultimoDV.setDate(dvInicioContrato.getDate()-7);
     }
-    let sab=new Date(ultimoSab);sab.setDate(sab.getDate()+7);
-    while(sab<=proxSabGlobal){
-      const sabISO=fmtISO(sab);
-      const sex=new Date(sab);sex.setDate(sab.getDate()+6);
-      const semLabel=`${fmtD(sab)} a ${fmtD(sex)}/${sex.getFullYear()}`;
-      const jaExiste=DB.pags.some(p=>p.locId===l.id&&!p.caucAvulso&&(p.dataVenc===sabISO||p.sem===semLabel));
+    let dv=new Date(ultimoDV);dv.setDate(dv.getDate()+7);
+    while(dv<=proxDVGlobal){
+      const dvISO=fmtISO(dv);
+      const dvFim=new Date(dv);dvFim.setDate(dv.getDate()+6);
+      const semLabel=`${fmtD(dv)} a ${fmtD(dvFim)}/${dvFim.getFullYear()}`;
+      const jaExiste=DB.pags.some(p=>p.locId===l.id&&!p.caucAvulso&&(p.dataVenc===dvISO||p.sem===semLabel));
       if(!jaExiste){
         const caucQuitado=l.caucModo==='parcelado'&&(l.caucPago||0)>=l.cauc;
         const valCaucSem=(!caucQuitado&&l.caucModo==='parcelado')?l.caucParcSem||0:0;
 
-        // É a primeira parcela deste contrato E o início não caiu num sábado?
-        // Então precisa ser proporcional, com vencimento na data de início
-        // (mesma regra da Opção B usada em _gerarPagsIniciais).
-        const ehPrimeiraSemanaDoContrato = semPagamentoAlgum && sab.getTime()===sabInicioContrato.getTime();
-        const usaProporcional = ehPrimeiraSemanaDoContrato && ehProporcionalNaOrigem;
+        // Primeira parcela com início não-coincidente com diaVenc → proporcional
+        const ehPrimeiraSemanaDoContrato=semPagamentoAlgum&&dv.getTime()===dvInicioContrato.getTime();
+        const usaProporcional=ehPrimeiraSemanaDoContrato&&ehProporcionalNaOrigem;
+        const valAluguel=usaProporcional?Math.round((l.val/7)*diasPropOrigem*100)/100:l.val;
+        // Vencimento: proporcional → próximo diaVenc; senão → início do ciclo
+        const vencimento=usaProporcional?fmtISO(new Date(dvInicioContrato.getTime()+7*86400000)):dvISO;
 
-        const valAluguel = usaProporcional ? Math.round((l.val/7)*diasPropOrigem*100)/100 : l.val;
-        const vencimento = usaProporcional ? fmtISO(iniContrato) : sabISO;
-
-        const r = await Repo.pagamentos.criar({
+        const r=await Repo.pagamentos.criar({
           contratoId:l.id, carroId:l.carroId, motoristaId:l.motoId,
           sem:semLabel, dataVenc:vencimento,
           val:valAluguel+valCaucSem, valAlug:valAluguel, valCauc:valCaucSem,
