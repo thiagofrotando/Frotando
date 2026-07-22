@@ -95,8 +95,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 /* MODAL */
 .mo{position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:200;display:flex;align-items:flex-end;opacity:0;transition:opacity .18s;pointer-events:none}
 .mo.on{opacity:1;pointer-events:all}
-.ms{background:var(--card);border-radius:20px 20px 0 0;width:100%;padding:16px 16px 0 16px;height:auto;max-height:92vh;min-height:0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);overscroll-behavior:contain}
-#menc .ms{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(16px + env(safe-area-inset-bottom));min-height:0}
+.ms{background:var(--card);border-radius:20px 20px 0 0;width:100%;padding:16px 16px 0 16px;height:auto;max-height:92vh;min-height:0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);overscroll-behavior:contain;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+#menc .ms{min-height:0}
 .mo.on .ms{transform:translateY(0)}
 .ms-body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:12px}
 .ms-footer{flex-shrink:0;padding:12px 0 calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--sll);background:var(--card);position:sticky;bottom:0}
@@ -142,7 +142,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.16.1</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.16.3</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -2245,14 +2245,36 @@ const _VIST_WORKER='https://frotando-vistoria.thiagofrotando.workers.dev';
 
 // Token de login atual (para autenticar no Worker)
 async function _tokenAtual(){
-  try{ const{data}=await _sb.auth.getSession(); return data?.session?.access_token||null; }
+  try{
+    const{data}=await _sb.auth.getSession();
+    let session=data?.session;
+    // Se não há sessão, ou ela está vencida/vencendo (o timer de auto-refresh do
+    // Supabase pode não ter rodado enquanto o app ficou em segundo plano — ex:
+    // usuário foi tirar foto no app de câmera nativo e voltou minutos depois),
+    // força um refresh explícito antes de desistir.
+    const expiraEm = session?.expires_at ? session.expires_at*1000 - Date.now() : -1;
+    if(!session || expiraEm < 60000){
+      const{data:refreshed,error}=await _sb.auth.refreshSession();
+      if(!error && refreshed?.session) session=refreshed.session;
+    }
+    return session?.access_token||null;
+  }
   catch(e){ return null; }
 }
 
 // Sobe uma foto (Blob) para o R2 via Worker. Retorna a chave do objeto.
 async function _r2Upload(chave, blob, contentType){
-  const token=await _tokenAtual();
-  if(!token) throw new Error('Sessão expirada');
+  let token=await _tokenAtual();
+  if(!token){
+    // Última tentativa: força refresh explícito antes de desistir. Cobre o
+    // caso do app ter ficado em segundo plano tempo suficiente para o token
+    // vencer entre a foto ser tirada na câmera nativa e o upload rodar.
+    try{
+      const{data,error}=await _sb.auth.refreshSession();
+      if(!error) token=data?.session?.access_token||null;
+    }catch(e){/* ignora, cai no erro abaixo */}
+  }
+  if(!token) throw new Error('Sessão expirada — toque em "Tirar foto" novamente');
   const r=await fetch(`${_VIST_WORKER}/${chave}`,{
     method:'PUT',
     headers:{'Authorization':`Bearer ${token}`,'Content-Type':contentType||'image/jpeg'},
@@ -2343,6 +2365,18 @@ function _initSB(){
   try{
     if(typeof supabase!=='undefined'&&supabase.createClient){
       _sb=supabase.createClient(_SB_URL,_SB_KEY);
+      // Ao voltar para o app (ex: depois de tirar foto no app de câmera nativo,
+      // que suspende o PWA em segundo plano e pode pausar o auto-refresh do
+      // token), força uma checagem/renovação de sessão em vez de esperar o
+      // próximo upload falhar com "sessão expirada".
+      document.addEventListener('visibilitychange',()=>{
+        if(document.visibilityState==='visible'&&_sb){
+          _sb.auth.getSession().then(({data})=>{
+            const exp=data?.session?.expires_at?data.session.expires_at*1000-Date.now():-1;
+            if(!data?.session||exp<60000) _sb.auth.refreshSession().catch(()=>{});
+          }).catch(()=>{});
+        }
+      });
       return true;
     }
   }catch(e){console.error('Supabase init error:',e);}
