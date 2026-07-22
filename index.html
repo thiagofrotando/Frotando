@@ -57,6 +57,9 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 .cd{background:var(--card);border-radius:13px;padding:13px 15px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:10px}
 .st{font-size:11px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.7px;margin-bottom:11px;padding-bottom:5px;border-bottom:2px solid var(--a);display:inline-block}
 .bx{display:inline-flex;align-items:center;border-radius:99px;padding:2px 9px;font-size:11px;font-weight:700;white-space:nowrap}
+.fchip{flex-shrink:0;white-space:nowrap;background:#fff;border:1.5px solid var(--sll);color:var(--txm);border-radius:99px;padding:6px 12px;font-size:11.5px;font-weight:700;font-family:inherit;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:all .12s}
+.fchip:active{transform:scale(.96)}
+.fchip.on{background:var(--p);border-color:var(--p);color:#fff}
 .kg{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:11px}
 .ki{background:var(--card);border-radius:11px;padding:11px 13px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 .ki .kl{font-size:10px;font-weight:700;color:var(--txm);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
@@ -92,8 +95,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 /* MODAL */
 .mo{position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:200;display:flex;align-items:flex-end;opacity:0;transition:opacity .18s;pointer-events:none}
 .mo.on{opacity:1;pointer-events:all}
-.ms{background:var(--card);border-radius:20px 20px 0 0;width:100%;padding:16px 16px 0 16px;height:auto;max-height:92vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1)}
-#menc .ms{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+.ms{background:var(--card);border-radius:20px 20px 0 0;width:100%;padding:16px 16px 0 16px;height:auto;max-height:92vh;min-height:0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);overscroll-behavior:contain}
+#menc .ms{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(16px + env(safe-area-inset-bottom));min-height:0}
 .mo.on .ms{transform:translateY(0)}
 .ms-body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:12px}
 .ms-footer{flex-shrink:0;padding:12px 0 calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--sll);background:var(--card);position:sticky;bottom:0}
@@ -414,7 +417,18 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 
     <!-- CARROS -->
     <div class="sc" id="sc-carros">
-      <input id="busca-carros" type="text" placeholder="🔎 Buscar por placa ou modelo…" oninput="_renderCarrosDOM()" style="width:100%;background:#fff;border:1.5px solid var(--sll);border-radius:10px;padding:8px 12px;font-size:13px;color:var(--tx);font-family:inherit;outline:none;margin-bottom:10px">
+      <input id="busca-carros" type="text" placeholder="🔎 Buscar por placa ou modelo…" oninput="_renderCarrosDOM()" style="width:100%;background:#fff;border:1.5px solid var(--sll);border-radius:10px;padding:8px 12px;font-size:13px;color:var(--tx);font-family:inherit;outline:none;margin-bottom:8px">
+      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;margin-bottom:6px;-webkit-overflow-scrolling:touch" id="carros-filtro-status">
+        <button class="fchip on" data-fst="Todos" onclick="_setFiltroCarrosStatus('Todos')">Todos</button>
+        <button class="fchip" data-fst="Disponível" onclick="_setFiltroCarrosStatus('Disponível')">🟦 Disponível</button>
+        <button class="fchip" data-fst="Alugado" onclick="_setFiltroCarrosStatus('Alugado')">🟢 Ocupado</button>
+      </div>
+      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;margin-bottom:10px;-webkit-overflow-scrolling:touch" id="carros-filtro-fin">
+        <button class="fchip on" data-ffin="Todos" onclick="_setFiltroCarrosFin('Todos')">Todos</button>
+        <button class="fchip" data-ffin="Lucrativo" onclick="_setFiltroCarrosFin('Lucrativo')">🟢 Lucro</button>
+        <button class="fchip" data-ffin="No limite" onclick="_setFiltroCarrosFin('No limite')">🟡 Margem</button>
+        <button class="fchip" data-ffin="Prejuízo" onclick="_setFiltroCarrosFin('Prejuízo')">🔴 Prejuízo</button>
+      </div>
       <div id="lista-carros"></div>
       <button class="fab" onclick="if(_podeAdicionarCarro())abrirModal('mc',{})">+</button>
     </div>
@@ -1053,7 +1067,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 
 <div id="mkm" class="mo" onclick="fecharModal('mkm')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt">Registrar KM</div><div class="fi"><label>Carro *</label><select id="mkm-carro"></select></div><div class="fi"><label>KM atual *</label><input id="mkm-km" type="number" placeholder="0"></div><div class="fi"><label>Data *</label><input id="mkm-data" type="date"></div><div class="fi"><label>Observação</label><input id="mkm-obs" type="text" placeholder="Verificação mensal..."></div><div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarKm()">Salvar</button><button class="bt btg" onclick="fecharModal('mkm')">Cancelar</button></div></div></div>
 
-<div id="mfin" class="mo" onclick="fecharModal('mfin')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt" id="mfin-t">Novo Financiamento</div><div class="fi"><label>Carro *</label><select id="mfin-carro"></select></div><div class="fi"><label>Valor total do veículo (R$)</label><input id="mfin-vtotal" type="number" placeholder="40000"></div><div class="fi"><label>Entrada dada (R$)</label><input id="mfin-entrada" type="number" placeholder="0"></div><div class="fi"><label>Valor financiado (R$) *</label><input id="mfin-vfin" type="number" placeholder="35000"></div><div class="fi"><label>Taxa de juros mensal (%)</label><input id="mfin-taxa" type="number" placeholder="2.03" step="0.01"></div><div class="fi"><label>Nº de parcelas</label><input id="mfin-np" type="number" placeholder="36"></div><div class="fi"><label>Data da 1ª parcela</label><input id="mfin-inicio" type="date"><div style="font-size:10px;color:var(--txm);margin-top:3px">A parcela só entra nos cálculos financeiros a partir deste mês</div></div><div class="fi"><label>Observações</label><input id="mfin-obs" type="text" placeholder="Ex: Financiamento banco gerente"></div><div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarFin()">Cadastrar</button><button class="bt btg" onclick="fecharModal('mfin')">Cancelar</button></div></div></div>
+<div id="mfin" class="mo" onclick="fecharModal('mfin')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt" id="mfin-t">Novo Financiamento</div><div class="fi"><label>Carro *</label><select id="mfin-carro"></select></div><div class="fi"><label>Valor total do veículo (R$)</label><input id="mfin-vtotal" type="number" placeholder="40000"></div><div class="fi"><label>Entrada dada (R$)</label><input id="mfin-entrada" type="number" placeholder="0"></div><div class="fi"><label>Valor financiado (R$) *</label><input id="mfin-vfin" type="number" placeholder="35000"></div><div class="fi"><label>Taxa de juros mensal (%)</label><input id="mfin-taxa" type="number" placeholder="2.03" step="0.01"></div><div class="fi"><label>Nº de parcelas</label><input id="mfin-np" type="number" placeholder="36"></div><div class="fi"><label>Valor da parcela (R$) — opcional</label><input id="mfin-parcela-manual" type="number" placeholder="Deixe em branco para calcular automaticamente"><div style="font-size:10px;color:var(--txm);margin-top:3px">Se você já sabe o valor exato do boleto (com seguro, taxas etc.), informe aqui. Caso contrário, calculamos pela tabela Price a partir da taxa e nº de parcelas.</div></div><div class="fi"><label>Data da 1ª parcela</label><input id="mfin-inicio" type="date"><div style="font-size:10px;color:var(--txm);margin-top:3px">A parcela só entra nos cálculos financeiros a partir deste mês</div></div><div class="fi"><label>Observações</label><input id="mfin-obs" type="text" placeholder="Ex: Financiamento banco gerente"></div><div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarFin()">Cadastrar</button><button class="bt btg" onclick="fecharModal('mfin')">Cancelar</button></div></div></div>
 
 <div id="mrecibo" class="mo" onclick="fecharModal('mrecibo')">
   <div class="ms" onclick="event.stopPropagation()">
@@ -1797,7 +1811,8 @@ const repoFinanciamentos = {
     const taxa = (Number(dados.taxa) || 2.03) / 100;
     const np = Number(dados.nparcelas) || 36;
     const vFin = Number(dados.vFin);
-    const parcela = Math.round(vFin * (taxa * Math.pow(1 + taxa, np)) / (Math.pow(1 + taxa, np) - 1) * 100) / 100;
+    const parcelaCalc = Math.round(vFin * (taxa * Math.pow(1 + taxa, np)) / (Math.pow(1 + taxa, np) - 1) * 100) / 100;
+    const parcela = (dados.parcelaManual != null && dados.parcelaManual > 0) ? Number(dados.parcelaManual) : parcelaCalc;
     const payload = {
       owner_id: _userId(),
       carro_id: dados.carroId,
@@ -1819,12 +1834,14 @@ const repoFinanciamentos = {
   },
 
   // Recalcula tudo, igual o app faz hoje ao editar (a parcela é sempre
-  // recomputada a partir dos campos atuais, não editada isoladamente).
+  // recomputada a partir dos campos atuais, salvo quando o usuário informa
+  // um valor manual, que sempre prevalece sobre o cálculo automático).
   async atualizar(id, dados) {
     const taxa = (Number(dados.taxa) || 2.03) / 100;
     const np = Number(dados.nparcelas) || 36;
     const vFin = Number(dados.vFin);
-    const parcela = Math.round(vFin * (taxa * Math.pow(1 + taxa, np)) / (Math.pow(1 + taxa, np) - 1) * 100) / 100;
+    const parcelaCalc = Math.round(vFin * (taxa * Math.pow(1 + taxa, np)) / (Math.pow(1 + taxa, np) - 1) * 100) / 100;
+    const parcela = (dados.parcelaManual != null && dados.parcelaManual > 0) ? Number(dados.parcelaManual) : parcelaCalc;
     const payload = {
       carro_id: dados.carroId,
       valor_total: Number(dados.vTotal) || vFin,
@@ -3016,11 +3033,12 @@ function abrirModal(id,dados){
       document.getElementById('mfin-vfin').value=dados.vFin||'';
       document.getElementById('mfin-taxa').value=((dados.taxa||0.0203)*100).toFixed(2);
       document.getElementById('mfin-np').value=dados.nparcelas||36;
+      document.getElementById('mfin-parcela-manual').value=dados.parcela||'';
       document.getElementById('mfin-inicio').value=dados.inicio||today();
       document.getElementById('mfin-obs').value=dados.obs||'';
     } else {
       document.getElementById('mfin-t').textContent='Novo Financiamento';
-      ['mfin-vtotal','mfin-entrada','mfin-vfin','mfin-obs'].forEach(i=>document.getElementById(i).value='');
+      ['mfin-vtotal','mfin-entrada','mfin-vfin','mfin-obs','mfin-parcela-manual'].forEach(i=>document.getElementById(i).value='');
     }
   }
   if(id==='mkm')document.getElementById('mkm-data').value=today();
@@ -3613,9 +3631,10 @@ function abrirRelInadimplencia(){
     const maiorAtraso=Math.max(...data.pags.map(p=>_diasAtraso(p)));
     const tel=(mot?.tel||'').replace(/\D/g,'');
     const msg=encodeURIComponent(`Olá ${mot?.nome?.split(' ')[0]||''}! Você possui ${data.pags.length} pagamento(s) em atraso no total de ${R(data.total)}. Por favor, entre em contato para regularizar. PIX: ${cfg.pix||''}`);
+    const telFmt=mot?.tel?mot.tel:'sem telefone';
     return `<div class="card">
       <div class="card-header">
-        <div><div class="mot">${mot?.nome||'?'}</div><div class="placa">${car?.placa||'?'} · ${car?.modelo?.split(' ').slice(0,2).join(' ')||''}</div></div>
+        <div><div class="mot">${telFmt} — ${mot?.nome||'?'}</div><div class="placa">${car?.placa||'?'} · ${car?.modelo?.split(' ').slice(0,2).join(' ')||''}</div></div>
         <div style="text-align:right"><div class="total-dev">${R(data.total)}</div><div style="font-size:10px;color:#64748b">${maiorAtraso}d de atraso (máx)</div></div>
       </div>
       <table><thead><tr><th>Semana</th><th>Vencimento</th><th>Valor</th><th>Atraso</th></tr></thead>
@@ -6089,6 +6108,18 @@ function _rentabilidadeCarro(carroId){
   return{receita,custoFin,custoSeg,custoRas,custoEv,custoTotal,lucro,margem,cor,label,emoji};
 }
 
+let _filtCarrosStatus='Todos';
+let _filtCarrosFin='Todos';
+function _setFiltroCarrosStatus(v){
+  _filtCarrosStatus=v;
+  document.querySelectorAll('#carros-filtro-status .fchip').forEach(b=>b.classList.toggle('on',b.dataset.fst===v));
+  _renderCarrosDOM();
+}
+function _setFiltroCarrosFin(v){
+  _filtCarrosFin=v;
+  document.querySelectorAll('#carros-filtro-fin .fchip').forEach(b=>b.classList.toggle('on',b.dataset.ffin===v));
+  _renderCarrosDOM();
+}
 async function renderCarros(){
   const el=document.getElementById('lista-carros');
   el.innerHTML='<div style="text-align:center;padding:24px;color:var(--txm);font-size:12px">Carregando…</div>';
@@ -6098,8 +6129,12 @@ async function renderCarros(){
 function _renderCarrosDOM(){
   const el=document.getElementById('lista-carros');el.innerHTML='';
   const busca=(document.getElementById('busca-carros')?.value||'').trim().toUpperCase();
-  const lista=busca?DB.carros.filter(c=>c.placa?.toUpperCase().includes(busca)||c.modelo?.toUpperCase().includes(busca)):DB.carros;
-  if(!lista.length){el.innerHTML=`<div style="text-align:center;padding:32px;color:var(--txm)"><div style="font-size:32px;margin-bottom:8px">🚗</div><div style="font-weight:700">${busca?'Nenhum carro encontrado':'Nenhum carro cadastrado'}</div></div>`;return;}
+  let lista=busca?DB.carros.filter(c=>c.placa?.toUpperCase().includes(busca)||c.modelo?.toUpperCase().includes(busca)):DB.carros;
+  if(_filtCarrosStatus!=='Todos') lista=lista.filter(c=>c.status===_filtCarrosStatus);
+  if(_filtCarrosFin!=='Todos') lista=lista.filter(c=>_rentabilidadeCarro(c.id).label===_filtCarrosFin);
+  if(!lista.length){
+    const semRes=_filtCarrosStatus!=='Todos'||_filtCarrosFin!=='Todos';
+    el.innerHTML=`<div style="text-align:center;padding:32px;color:var(--txm)"><div style="font-size:32px;margin-bottom:8px">🚗</div><div style="font-weight:700">${busca||semRes?'Nenhum carro encontrado para este filtro':'Nenhum carro cadastrado'}</div></div>`;return;}
   lista.forEach(c=>{
     const corKm=c.km>=200000?'var(--r)':c.km>160000?'var(--y)':'var(--g)';
     const r=_rentabilidadeCarro(c.id);
@@ -6274,10 +6309,27 @@ function _renderLocsDOM(){
     <div style="display:flex;gap:4px;margin-bottom:6px">
       <div style="flex:1;background:var(--bg);border-radius:6px;padding:4px 6px"><div style="font-size:8px;color:var(--txm);font-weight:700">INÍCIO</div><div style="font-size:11px;font-weight:700">${fD(l.inicio)}</div></div>
       <div style="flex:1;background:var(--bg);border-radius:6px;padding:4px 6px"><div style="font-size:8px;color:var(--txm);font-weight:700">SEMANAL</div><div style="font-size:11px;font-weight:700">${R(l.val)}</div></div>
-      <div style="flex:1;background:var(--bg);border-radius:6px;padding:4px 6px"><div style="font-size:8px;color:var(--txm);font-weight:700">CAUÇÃO</div><div style="font-size:11px;font-weight:700">${R(l.cauc)}${l.caucPg?' ✓':''}</div></div>
       <div style="flex:1;background:rgba(16,185,129,.1);border-radius:6px;padding:4px 6px"><div style="font-size:8px;color:var(--g);font-weight:700">RECEBIDO</div><div style="font-size:11px;font-weight:700;color:var(--g)">${R(rec)}</div></div>
       <div style="flex:1;background:${pend>0?'rgba(239,68,68,.08)':'var(--bg)'};border-radius:6px;padding:4px 6px"><div style="font-size:8px;color:${pend>0?'var(--r)':'var(--txm)'};font-weight:700">PENDENTE</div><div style="font-size:11px;font-weight:700;color:${pend>0?'var(--r)':'var(--txm)'}">${R(pend)}</div></div>
     </div>
+    ${(()=>{
+      const caucTotal=Number(l.cauc||0);
+      if(!caucTotal) return '';
+      const caucPago=Number(l.caucPago||0);
+      const quitada=caucPago>=caucTotal;
+      const parcelado=l.caucModo==='parcelado';
+      const pct=caucTotal>0?Math.min(100,Math.round(caucPago/caucTotal*100)):0;
+      const corCauc=quitada?'var(--g)':(caucPago>0?'var(--a)':'var(--r)');
+      const bgCauc=quitada?'rgba(16,185,129,.08)':(caucPago>0?'rgba(245,158,11,.08)':'rgba(239,68,68,.08)');
+      const statusTxt=quitada?'✓ Caução paga':(caucPago>0?'Parcial':'⚠️ Caução pendente');
+      return `<div style="background:${bgCauc};border:1px solid ${corCauc}33;border-radius:8px;padding:6px 8px;margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:10px;font-weight:800;color:${corCauc}">${statusTxt}${parcelado?' · parcelada':''}</span>
+          <span style="font-size:11px;font-weight:800;color:${corCauc}">${R(caucPago)} / ${R(caucTotal)}</span>
+        </div>
+        ${!quitada&&parcelado?`<div class="pb" style="margin-top:5px"><div class="pf" style="width:${pct}%;background:${corCauc}"></div></div>`:''}
+      </div>`;
+    })()}
     <div style="display:flex;gap:4px">
       ${l.status==='Encerrada'
         ? `<button class="bt bts" style="flex:1;font-size:11px;padding:5px 4px;background:rgba(245,158,11,.15);color:var(--a);border:none;border-radius:7px;cursor:pointer;font-family:inherit" onclick="reabrirEncerramento('${l.id}')">🔓 Reabrir</button>`
@@ -7834,10 +7886,11 @@ function _vistAbrirItem(idx){
         const limite=60;
         const perto=total>=limite;
         return `<div style="font-size:10px;color:${perto?'var(--r)':'var(--txm)'};text-align:right;margin-bottom:6px;font-weight:${perto?'700':'400'}">${total}/${limite} fotos na vistoria</div>
-        <div style="display:flex;gap:8px;margin-bottom:14px">
+        <div style="display:flex;gap:8px;margin-bottom:6px">
           <button ${perto?'disabled':''} onclick="document.getElementById('vist-file-input').setAttribute('capture','environment');document.getElementById('vist-file-input').click()" style="flex:1;background:${perto?'var(--sll)':'var(--p)'};color:#fff;border:none;border-radius:10px;padding:13px;font-size:13px;font-weight:700;cursor:${perto?'not-allowed':'pointer'};font-family:inherit">📷 Tirar foto</button>
           <button ${perto?'disabled':''} onclick="document.getElementById('vist-file-input').removeAttribute('capture');document.getElementById('vist-file-input').click()" style="flex:1;background:transparent;color:${perto?'var(--sll)':'var(--p)'};border:1.5px solid ${perto?'var(--sll)':'var(--p)'};border-radius:10px;padding:13px;font-size:13px;font-weight:700;cursor:${perto?'not-allowed':'pointer'};font-family:inherit">🖼️ Galeria</button>
-        </div>`;
+        </div>
+        <div style="font-size:10px;color:var(--txm);margin-bottom:14px;line-height:1.4">Se aparecer "Erro na câmera", é uma falha do app de câmera do celular — feche essa tela de erro, reabra o celular a câmera nativa uma vez para "destravar", ou use <strong>🖼️ Galeria</strong> para escolher uma foto já tirada.</div>`;
       })()}
 
       <div id="vist-fotos-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px"></div>
@@ -10165,6 +10218,7 @@ async function salvarFin(){
     nparcelas:document.getElementById('mfin-np').value||36,
     inicio:document.getElementById('mfin-inicio').value||today(),
     obs:document.getElementById('mfin-obs').value,
+    parcelaManual:document.getElementById('mfin-parcela-manual').value?Number(document.getElementById('mfin-parcela-manual').value):null,
   };
 
   toast('Salvando…');
