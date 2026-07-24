@@ -142,7 +142,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.16.3</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.16.6</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -656,6 +656,11 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
         <div class="fi"><label>Franquia do seguro (R$)</label><input id="cfg-fran" type="number"></div>
         <div class="fi"><label>Limite de KM/mês por contrato</label><input id="cfg-km" type="number"></div>
         <div class="fi"><label>Custo excedente de KM (R$/km)</label><input id="cfg-kmval" type="number" step="0.01" placeholder="0.80"></div>
+        <div style="font-size:10px;font-weight:700;color:var(--txm);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.4px">Alertas de KM elevado</div>
+        <div style="display:flex;gap:8px">
+          <div class="fi" style="flex:1"><label>⚠️ Atenção a partir de (km)</label><input id="cfg-km-alert1" type="number" placeholder="160000"></div>
+          <div class="fi" style="flex:1"><label>🔴 Crítico a partir de (km)</label><input id="cfg-km-alert2" type="number" placeholder="200000"></div>
+        </div>
         <button class="bt btp btf" onclick="salvarCfg()">💾 Salvar valores</button>
       </div>
       
@@ -668,8 +673,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
           <button class="bt btf bts" style="flex:1;background:transparent;border:1px solid var(--sll);color:var(--txm);font-size:11px" onclick="abrirPrivacidade()">Privacidade</button>
         </div>
         <button id="btn-notif" class="bt btf bts" style="margin-top:7px;border:1.5px solid var(--sll);background:transparent;color:var(--txm)" onclick="ativarNotificacoes()">🔔 Ativar notificações de sábado</button>
-        <button class="bt btf bts" style="margin-top:7px;background:rgba(52,211,153,.12);color:var(--g);border:1px solid rgba(52,211,153,.3)" onclick="migrarDadosReaisFase1()">🔄 Migrar meus dados do sistema antigo</button>
-        <div style="font-size:10px;color:var(--txm);text-align:center;margin-top:4px;opacity:.75">Copia dados do sistema antigo para o banco relacional — não apaga nada</div>
+        
         <button class="bt btd btf bts" style="margin-top:7px" onclick="resetarDados()">🗑 Resetar todos os dados</button>
         <div style="font-size:10px;color:var(--txm);text-align:center;margin-top:4px;opacity:.75">Pede confirmação antes de apagar</div>
         <button class="bt btf bts" style="margin-top:14px;background:transparent;border:1.5px solid var(--sll);color:var(--txm)" onclick="_confirmarLogout()">🚪 Sair da conta</button>
@@ -1022,7 +1026,12 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
   </div>
 </div>
 <div id="ml-cauc-resumo" style="background:rgba(42,106,154,.08);border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:12px;display:none"></div>
-<div class="fi"><label>KM inicial</label><input id="ml-km" type="number" placeholder="0"></div><div class="fi"><label>Dia de vencimento semanal</label><select id="ml-diavenc"><option value="0">Domingo</option><option value="1">Segunda-feira</option><option value="2">Terca-feira</option><option value="3">Quarta-feira</option><option value="4">Quinta-fera</option><option value="5">Sexta-feira</option><option value="6" selected>Sabado</option></select></div><div class="fi"><label>Caução (R$)</label><input id="ml-cauc" type="number" placeholder="1400"></div>
+<div class="fi"><label>KM inicial</label><input id="ml-km" type="number" placeholder="0"></div>
+<div style="display:flex;gap:8px">
+  <div class="fi" style="flex:1"><label>Limite KM/mês</label><input id="ml-kmlim" type="number" placeholder="7000"></div>
+  <div class="fi" style="flex:1"><label>R$/km excedente</label><input id="ml-kmval" type="number" step="0.01" placeholder="0.80"></div>
+</div>
+<div class="fi"><label>Dia de vencimento semanal</label><select id="ml-diavenc"><option value="0">Domingo</option><option value="1">Segunda-feira</option><option value="2">Terca-feira</option><option value="3">Quarta-feira</option><option value="4">Quinta-fera</option><option value="5">Sexta-feira</option><option value="6" selected>Sabado</option></select></div><div class="fi"><label>Caução (R$)</label><input id="ml-cauc" type="number" placeholder="1400"></div>
 <div class="fi"><label>Comarca (foro do contrato)</label><input id="ml-comarca" type="text" placeholder="Ex: Belo Horizonte"></div>
 <div class="fi"><label>Uso do veículo</label><select id="ml-uso"><option value="exclusivo">Exclusivo para transporte de passageiros por aplicativo</option><option value="misto">Transporte de passageiros por aplicativo e uso particular</option></select></div>
 <div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarLoc()">Criar contrato</button><button class="bt btg" onclick="fecharModal('ml')">Cancelar</button></div></div></div>
@@ -1272,6 +1281,7 @@ const repoConfig = {
       end: 'endereco', tel: 'telefone', pix: 'pix', comarca: 'comarca',
       alug: 'aluguel_padrao', cauc: 'caucao_padrao', kmLim: 'km_lim_padrao',
       kmVal: 'km_val_excedente', fran: 'franquia_seguro',
+      kmAlert1: 'km_alerta_atencao', kmAlert2: 'km_alerta_critico',
       ie: 'ie', fantasia: 'fantasia', razao: 'razao', regime: 'regime',
       contNome: 'cont_nome', contTel: 'cont_tel',
       segNome: 'seg_nome', segPol: 'seg_pol', segVal: 'seg_val', segVenc: 'seg_venc', segTel: 'seg_tel',
@@ -1279,7 +1289,7 @@ const repoConfig = {
     };
     for (const [chaveApp, colunaDB] of Object.entries(mapa)) {
       if (dados[chaveApp] === undefined) continue;
-      const num = ['alug','cauc','kmLim','kmVal','fran','segVal','rasVal'].includes(chaveApp);
+      const num = ['alug','cauc','kmLim','kmVal','fran','segVal','rasVal','kmAlert1','kmAlert2'].includes(chaveApp);
       const dataField = chaveApp === 'segVenc';
       payload[colunaDB] = num ? (Number(dados[chaveApp]) || 0)
         : dataField ? (dados[chaveApp] || null)
@@ -1489,6 +1499,7 @@ const repoContratos = {
       caucao_pago: dados.caucModo === 'integral' ? (Number(dados.cauc) || 1400) : 0,
       km_inicial: Number(dados.km) || 0,
       km_limite: Number(dados.kmLim) || 7000,
+      km_val_excedente: Number(dados.kmVal) || 0.80,
       uso: dados.uso || 'exclusivo',
       comarca: dados.comarca || null,
       status: 'Ativa',
@@ -1521,6 +1532,7 @@ const repoContratos = {
     if (dados.caucSemanas !== undefined) payload.caucao_semanas = Number(dados.caucSemanas) || 0;
     if (dados.caucPago !== undefined) payload.caucao_pago = Number(dados.caucPago) || 0;
     if (dados.kmLim !== undefined) payload.km_limite = Number(dados.kmLim) || 0;
+    if (dados.kmVal !== undefined) payload.km_val_excedente = Number(dados.kmVal) || 0.80;
     if (dados.diaVenc !== undefined) payload.dia_vencimento = Number(dados.diaVenc) || 6;
     if (dados.comarca !== undefined) payload.comarca = dados.comarca || null;
     if (dados.uso !== undefined) payload.uso = dados.uso;
@@ -2476,6 +2488,7 @@ function _mapConfigRelacional(row){
     rg: row.rg||'', end: row.endereco||'', tel: row.telefone||'', pix: row.pix||'', comarca: row.comarca||'',
     alug: row.aluguel_padrao??600, cauc: row.caucao_padrao??1400, kmLim: row.km_lim_padrao??7000,
     kmVal: row.km_val_excedente??0.80, fran: row.franquia_seguro??4800,
+    kmAlert1: row.km_alerta_atencao??160000, kmAlert2: row.km_alerta_critico??200000,
     ie: row.ie||'', fantasia: row.fantasia||'', razao: row.razao||'', regime: row.regime||'',
     contNome: row.cont_nome||'', contTel: row.cont_tel||'',
     segNome: row.seg_nome||'', segPol: row.seg_pol||'', segVal: row.seg_val||0, segVenc: row.seg_venc||'', segTel: row.seg_tel||'',
@@ -3341,6 +3354,7 @@ function _mapContratoRelacional(row){
     caucPago: row.caucao_pago,
     kmIni: row.km_inicial,
     kmLim: row.km_limite,
+    kmVal: row.km_val_excedente??0.80,
     uso: row.uso,
     comarca: row.comarca,
     status: row.status,
@@ -3409,6 +3423,7 @@ async function salvarLoc(){
     cauc:caucValTotal,caucModo,caucParcSem,caucSemanas,
     km:Number(document.getElementById('ml-km').value)||0,
     kmLim:Number(document.getElementById('ml-kmlim')?.value)||DB.config.kmLim||7000,
+    kmVal:Number(document.getElementById('ml-kmval')?.value)||DB.config.kmVal||0.80,
     comarca:document.getElementById('ml-comarca')?.value?.trim()||'',
     uso:document.getElementById('ml-uso')?.value||'exclusivo',
     diaVenc,
@@ -5774,6 +5789,8 @@ function renderCfg(){
   document.getElementById('cfg-fran').value=c.fran||4800;
   document.getElementById('cfg-km').value=c.kmLim||7000;
   document.getElementById('cfg-kmval').value=c.kmVal||0.80;
+  document.getElementById('cfg-km-alert1').value=c.kmAlert1||160000;
+  document.getElementById('cfg-km-alert2').value=c.kmAlert2||200000;
 }
 async function salvarCfg(){
   const dados={
@@ -5788,6 +5805,8 @@ async function salvarCfg(){
     fran:Number(document.getElementById('cfg-fran').value),
     kmLim:Number(document.getElementById('cfg-km').value),
     kmVal:Number(document.getElementById('cfg-kmval').value)||0.80,
+    kmAlert1:Number(document.getElementById('cfg-km-alert1').value)||160000,
+    kmAlert2:Number(document.getElementById('cfg-km-alert2').value)||200000,
   };
   toast('Salvando…');
   const r=await Repo.config.salvar(dados);
@@ -6053,7 +6072,7 @@ function renderGrafico(){
 
 // ── SEMÁFORO DE RENTABILIDADE POR CARRO ──────────────────────────────────────
 // Calcula o resultado líquido MENSAL de um veículo:
-// Receita do mês - parcela financiamento - seguro rateado - rastreador rateado - manutenções do mês
+// Receita do mês - parcela financiamento - seguro do veículo - rastreador do veículo - manutenções do mês
 
 // Receita de ALUGUEL de um pagamento (exclui caução, que é garantia/passivo)
 function _recAluguel(p){ return Number(p.valAlug ?? (p.caucAvulso ? 0 : p.val) ?? 0); }
@@ -6063,7 +6082,7 @@ function _recCaucao(p){ return Number(p.valCauc||0) + (p.caucAvulso ? Number(p.v
 
 // ── CUSTOS FIXOS: SEGURO E RASTREADOR ────────────────────────────────────────
 // Seguro e rastreador são cadastrados individualmente em cada veículo.
-// Não há mais valor global rateado — cada carro carrega o próprio custo.
+// Sem rateio: o seguro é sempre individual, cadastrado por veículo.
 
 function _segMensalCarro(carroId){
   const car=cCar(carroId);
@@ -6120,7 +6139,7 @@ function _rentabilidadeCarro(carroId){
   const fin=DB.fins.find(f=>f.carroId===carroId&&f.status!=='Quitado');
   const custoFin=fin?Number(fin.parcela||0):0;
 
-  // Custo: seguro e rastreador — próprios do veículo ou rateio global
+  // Custo: seguro e rastreador — sempre individuais, cadastrados no próprio veículo
   const custoSeg=_segMensalCarro(carroId);
   const custoRas=_rasMensalCarro(carroId);
 
@@ -6170,7 +6189,8 @@ function _renderCarrosDOM(){
     const semRes=_filtCarrosStatus!=='Todos'||_filtCarrosFin!=='Todos';
     el.innerHTML=`<div style="text-align:center;padding:32px;color:var(--txm)"><div style="font-size:32px;margin-bottom:8px">🚗</div><div style="font-weight:700">${busca||semRes?'Nenhum carro encontrado para este filtro':'Nenhum carro cadastrado'}</div></div>`;return;}
   lista.forEach(c=>{
-    const corKm=c.km>=200000?'var(--r)':c.km>160000?'var(--y)':'var(--g)';
+    const kmA1c=Number(DB.config.kmAlert1||160000);const kmA2c=Number(DB.config.kmAlert2||200000);
+    const corKm=c.km>=kmA2c?'var(--r)':c.km>kmA1c?'var(--y)':'var(--g)';
     const r=_rentabilidadeCarro(c.id);
     // Alerta de seguro — só aparece na linha se for urgente (vencida/vence em breve/ausente)
     const custoSeg=Number(c.segVal||0)+Number(c.rasVal||0);
@@ -6231,8 +6251,8 @@ function _abrirDetalheRent(carroId){
 
     <div style="font-size:11px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 4px">Saídas</div>
     ${r.custoFin>0?linha('Parcela do financiamento',r.custoFin,'var(--r)','-'):''}
-    ${r.custoSeg>0?linha('Seguro (rateado)',r.custoSeg,'var(--r)','-'):''}
-    ${r.custoRas>0?linha('Rastreador (rateado)',r.custoRas,'var(--r)','-'):''}
+    ${r.custoSeg>0?linha('Seguro do veículo',r.custoSeg,'var(--r)','-'):''}
+    ${r.custoRas>0?linha('Rastreador do veículo',r.custoRas,'var(--r)','-'):''}
     ${r.custoEv>0?linha('Manutenções do mês',r.custoEv,'var(--r)','-'):''}
     ${r.custoTotal===0?'<div style="font-size:12px;color:var(--txm);padding:8px 0">Nenhum custo registrado neste mês</div>':''}
 
@@ -6453,7 +6473,15 @@ function renderHistPag(){
   const ateEl=document.getElementById('fpag-ate');
   const de=deEl?.value?new Date(deEl.value+'T00:00:00'):null;
   const ate=ateEl?.value?new Date(ateEl.value+'T23:59:59'):null;
-  let pags=[...DB.pags].sort((a,b)=>(b.data||b.dataVenc||'').localeCompare(a.data||a.dataVenc||''));
+  // Ordenação: pendente → atrasado → pago; dentro de cada grupo por data de vencimento; depois por nome do motorista.
+  // Isso evita que ao marcar um pagamento como pago ele "suma" da tela — ele apenas desce para a seção Pago.
+  const _ordemStatus=p=>{if(p.pago) return 2; if(_diasAtraso(p)>0) return 1; return 0;};
+  let pags=[...DB.pags].sort((a,b)=>{
+    const so=_ordemStatus(a)-_ordemStatus(b); if(so!==0) return so;
+    const dc=(a.dataVenc||a.sem||'').localeCompare(b.dataVenc||b.sem||''); if(dc!==0) return dc;
+    const ma=cMot(a.motoId),mb=cMot(b.motoId);
+    return (ma?.nome||'').localeCompare(mb?.nome||'');
+  });
   if(de||ate){pags=pags.filter(p=>{if(!p.data&&!p.dataVenc) return true;const d=new Date((p.data||p.dataVenc)+'T12:00:00');if(de&&d<de)return false;if(ate&&d>ate)return false;return true;});}
   if(_filtPag==='pago')   pags=pags.filter(p=>p.pago);
   if(_filtPag==='pend')   pags=pags.filter(p=>!p.pago&&_diasAtraso(p)===0);
@@ -8777,8 +8805,8 @@ function gerarTextoContrato(){
   if(dataAss){const d=new Date(dataAss+'T12:00:00');dataExtenso=`${d.getDate()} de ${meses[d.getMonth()]} de ${d.getFullYear()}`;}
   const multa1sem=R(Number(l.val));
   const multa2sem=R(Number(l.val)*2);
-  const kmLim=(cfg.kmLim||7000).toLocaleString('pt-BR');
-  const kmExc='R$ 0,80';
+  const kmLim=(l.kmLim||cfg.kmLim||7000).toLocaleString('pt-BR');
+  const kmExc=`R$ ${(l.kmVal??cfg.kmVal??0.80).toFixed(2).replace('.',',')}`;
 
 return `CONTRATO PARTICULAR DE LOCAÇÃO DE VEÍCULO AUTOMOTOR PARA TRANSPORTE POR APLICATIVO
 
@@ -9352,7 +9380,7 @@ function gerarPDF(){
   if(dataAss){const d=new Date(dataAss+'T12:00:00');dataExt=d.getDate()+' de '+meses[d.getMonth()]+' de '+d.getFullYear();}
 
   const kmLim=(l.kmLim||cfg.kmLim||7000).toLocaleString('pt-BR');
-  const kmVal=(cfg.kmVal||0.80).toFixed(2).replace('.',',');
+  const kmVal=(l.kmVal??cfg.kmVal??0.80).toFixed(2).replace('.',',');
   const diaVencNome=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'][l.diaVenc||6];
 
   // Caução
@@ -9700,6 +9728,7 @@ function editarLoc(id){
     setV('ml-cauc',   l.cauc);
     setV('ml-km',     l.kmIni||'');
     setV('ml-kmlim',  l.kmLim||DB.config.kmLim||7000);
+    setV('ml-kmval',  l.kmVal??DB.config.kmVal??0.80);
     // Dia de vencimento
     const mcd=document.getElementById('ml-diavenc');if(mcd) mcd.value=String(l.diaVenc??6);
     // Caução modo
@@ -9736,6 +9765,7 @@ async function salvarEditLoc(id){
     cauc:caucValTotal,
     caucModo,caucParcSem,caucSemanas,
     kmLim:Number(document.getElementById('ml-kmlim')?.value)||DB.config.kmLim||7000,
+    kmVal:Number(document.getElementById('ml-kmval')?.value)||DB.config.kmVal||0.80,
     diaVenc:Number(document.getElementById('ml-diavenc')?.value??6),
     comarca:document.getElementById('ml-comarca')?.value?.trim()||'',
     uso:document.getElementById('ml-uso')?.value||'exclusivo',
@@ -10386,12 +10416,14 @@ function renderAlertas(){
     });
   }
 
-  // KM alto
+  // KM alto — limiares configuráveis em Configurações (padrão: 160k atenção, 200k crítico)
+  const kmA1=Number(DB.config.kmAlert1||160000);
+  const kmA2=Number(DB.config.kmAlert2||200000);
   DB.carros.filter(c=>c.status==='Alugado').forEach(c=>{
     const km=Number(c.km||0);
-    if(km>=160000){
-      const cor=km>=200000?'var(--r)':'var(--a)';
-      alertas.push({nivel:km>=200000?'critico':'alto',cor,icone:'📍',titulo:`KM elevado — ${c.placa}`,desc:`${km.toLocaleString('pt-BR')} km — ${km>=200000?'Acima do limite máximo!':'Atenção: acima de 160.000 km'}`,link:'km'});
+    if(km>=kmA1){
+      const cor=km>=kmA2?'var(--r)':'var(--a)';
+      alertas.push({nivel:km>=kmA2?'critico':'alto',cor,icone:'📍',titulo:`KM elevado — ${c.placa}`,desc:`${km.toLocaleString('pt-BR')} km — ${km>=kmA2?'Acima do limite crítico ('+kmA2.toLocaleString('pt-BR')+' km)!':'Atenção: acima de '+kmA1.toLocaleString('pt-BR')+' km'}`,link:'km'});
     }
   });
 
@@ -10438,15 +10470,17 @@ function renderAlertas(){
   alertas.sort((a,b)=>(ordem[a.nivel]||9)-(ordem[b.nivel]||9));
 
   alertas.forEach(a=>{
+    const chave='alerta_ciente_'+btoa(unescape(encodeURIComponent(a.titulo+a.desc))).slice(0,32);
+    if(localStorage.getItem(chave)) return; // já marcado como ciente
     const d=document.createElement('div');
-    d.style.cssText=`display:flex;gap:9px;align-items:flex-start;padding:9px 11px;border-radius:10px;margin-bottom:6px;background:${a.cor}12;border-left:3px solid ${a.cor};cursor:pointer`;
-    d.onclick=()=>goTo(a.link,document.querySelector('[data-s="'+a.link+'"]'));
-    d.innerHTML=`<span style="font-size:16px;flex-shrink:0;margin-top:1px">${a.icone}</span>
-    <div style="flex:1">
+    d.style.cssText=`display:flex;gap:9px;align-items:flex-start;padding:9px 11px;border-radius:10px;margin-bottom:6px;background:${a.cor}12;border-left:3px solid ${a.cor}`;
+    d.innerHTML=`<span style="font-size:16px;flex-shrink:0;margin-top:1px;cursor:pointer" onclick="goTo('${a.link}',document.querySelector('[data-s=\\'${a.link}\\']'))">${a.icone}</span>
+    <div style="flex:1;cursor:pointer" onclick="goTo('${a.link}',document.querySelector('[data-s=\\'${a.link}\\']'))">
       <div style="font-size:12px;font-weight:700;color:${a.cor}">${a.titulo}</div>
       <div style="font-size:11px;color:var(--txm);margin-top:2px">${a.desc}</div>
     </div>
-    <span style="font-size:11px;color:${a.cor};flex-shrink:0">→</span>`;
+    <button onclick="event.stopPropagation();localStorage.setItem('${chave}','1');this.closest('div').remove();const cnt=document.getElementById('cd-alertas').querySelectorAll('[data-alerta]').length||document.getElementById('cd-alertas').children.length-1;if(!document.getElementById('cd-alertas').querySelector('[data-alerta]')){document.getElementById('cd-alertas').innerHTML+='<div style=\\'display:flex;align-items:center;gap:8px;padding:8px 0;font-size:13px;color:var(--g)\\'><span style=\\'font-size:18px\\'>✅</span><span>Nenhum alerta — tudo em ordem!</span></div>';}" title="Marcar como ciente" style="flex-shrink:0;background:transparent;border:1px solid ${a.cor}55;color:${a.cor};border-radius:7px;padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">Ciente</button>`;
+    d.setAttribute('data-alerta','1');
     el.appendChild(d);
   });
 }
