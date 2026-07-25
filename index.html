@@ -142,7 +142,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.16.6</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.16.8</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -4247,7 +4247,11 @@ function _renderSemaforoDash(){
   if(!el) return;
   if(!DB.carros.length){el.style.display='none';return;}
 
-  const rents=DB.carros.map(c=>({c,r:_rentabilidadeCarro(c.id)}));
+  // Só carros alugados entram no semáforo — carro disponível tem receita zero
+  // por definição e sempre cairia em "prejuízo", o que distorce o painel.
+  const alugados=DB.carros.filter(c=>c.status==='Alugado');
+  const disponiveis=DB.carros.filter(c=>c.status==='Disponível');
+  const rents=alugados.map(c=>({c,r:_rentabilidadeCarro(c.id)}));
   const verdes=rents.filter(x=>x.r.lucro>=0&&x.r.margem>=20).length;
   const amarelos=rents.filter(x=>x.r.lucro>=0&&x.r.margem<20).length;
   const vermelhos=rents.filter(x=>x.r.lucro<0).length;
@@ -4257,7 +4261,8 @@ function _renderSemaforoDash(){
   el.style.display='block';
   el.innerHTML=`<div class="cd" style="margin-bottom:0">
     <div class="st">Rentabilidade da frota</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin:10px 0">
+    <div style="font-size:10px;color:var(--txm);margin-bottom:8px">${alugados.length} carro${alugados.length===1?'':'s'} alugado${alugados.length===1?'':'s'}${disponiveis.length>0?` · ${disponiveis.length} disponível${disponiveis.length===1?'':'is'} (não computado${disponiveis.length===1?'':'s'})`:''}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin:0 0 10px">
       <div style="background:rgba(16,163,74,.1);border:1px solid rgba(16,163,74,.2);border-radius:9px;padding:9px;text-align:center">
         <div style="font-size:19px">🟢</div>
         <div style="font-size:17px;font-weight:900;color:var(--g)">${verdes}</div>
@@ -6122,7 +6127,7 @@ function _apolicesVencendo(){
 }
 
 function _rentabilidadeCarro(carroId){
-  const hoje=new Date();
+  const hoje=new Date();hoje.setHours(0,0,0,0);
   const mes=hoje.getMonth(), ano=hoje.getFullYear();
   const noMes=iso=>{
     if(!iso) return false;
@@ -6130,10 +6135,54 @@ function _rentabilidadeCarro(carroId){
     return d.getMonth()===mes&&d.getFullYear()===ano;
   };
 
-  // Receita: aluguel recebido no mês (sem caução, que é garantia não receita)
-  const receita=DB.pags
-    .filter(p=>p.carroId===carroId&&p.pago&&noMes(p.data||p.dataVenc))
-    .reduce((s,p)=>s+_recAluguel(p),0);
+  // Contrato ativo do carro (fonte da projeção)
+  const loc=DB.locs.find(l=>l.carroId===carroId&&l.status==='Ativa');
+
+  // Pagamentos de aluguel do carro neste mês (exclui caução avulsa e cancelados)
+  const pagsMes=DB.pags.filter(p=>
+    p.carroId===carroId&&!p.cancelado&&!p.caucAvulso&&noMes(p.dataVenc)
+  );
+
+  // Última data de vencimento programada no mês corrente (do que está em DB.pags)
+  const ultimaVencISO=pagsMes.length>0
+    ?pagsMes.reduce((max,p)=>(!max||p.dataVenc>max)?p.dataVenc:max,null)
+    :null;
+  const ultimaVencDate=ultimaVencISO?new Date(ultimaVencISO+'T12:00:00'):null;
+  if(ultimaVencDate) ultimaVencDate.setHours(0,0,0,0);
+
+  // Inadimplência no mês: algum pagamento de aluguel vencido e não pago?
+  const temInadimplencia=pagsMes.some(p=>
+    !p.pago&&!p.cancelado&&p.dataVenc&&new Date(p.dataVenc+'T12:00:00')<=hoje
+  );
+
+  // Usa receita real apenas quando: já passou o último vencimento do mês E há inadimplência.
+  // Em qualquer outro momento do mês usa projeção → semáforo estável intra-mês.
+  const usarReceitaReal=!!(ultimaVencDate&&hoje>ultimaVencDate&&temInadimplencia);
+
+  let receita,usandoProjecao;
+  if(usarReceitaReal){
+    // Receita real: soma do aluguel efetivamente recebido no mês
+    receita=pagsMes.filter(p=>p.pago).reduce((s,p)=>s+_recAluguel(p),0);
+    usandoProjecao=false;
+  } else if(loc){
+    // Projeção: aluguel semanal × 4,33 (mês cheio)
+    // Para contratos iniciados NESTE mês, prorratea pelos dias restantes do mês
+    // a partir do início (evita projetar 4 semanas num contrato com 2 semanas no mês).
+    const iniLoc=new Date(loc.inicio+'T12:00:00');iniLoc.setHours(0,0,0,0);
+    const inicioMes=new Date(ano,mes,1);
+    if(iniLoc>=inicioMes){
+      const fimMes=new Date(ano,mes+1,0);
+      const diasNoMes=Math.max(1,Math.round((fimMes-iniLoc)/86400000)+1);
+      receita=Number(loc.val||0)*(diasNoMes/7);
+    } else {
+      receita=Number(loc.val||0)*4.33;
+    }
+    usandoProjecao=true;
+  } else {
+    // Sem contrato ativo (encerrado no meio do mês) → usa o realizado
+    receita=pagsMes.filter(p=>p.pago).reduce((s,p)=>s+_recAluguel(p),0);
+    usandoProjecao=false;
+  }
 
   // Custo: parcela do financiamento ativo
   const fin=DB.fins.find(f=>f.carroId===carroId&&f.status!=='Quitado');
@@ -6158,7 +6207,7 @@ function _rentabilidadeCarro(carroId){
   else if(margem<20){cor='var(--y)';label='No limite';emoji='🟡';}
   else{cor='var(--g)';label='Lucrativo';emoji='🟢';}
 
-  return{receita,custoFin,custoSeg,custoRas,custoEv,custoTotal,lucro,margem,cor,label,emoji};
+  return{receita,custoFin,custoSeg,custoRas,custoEv,custoTotal,lucro,margem,cor,label,emoji,usandoProjecao,usarReceitaReal};
 }
 
 let _filtCarrosStatus='Todos';
@@ -6247,7 +6296,9 @@ function _abrirDetalheRent(carroId){
     </div>
 
     <div style="font-size:11px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Entradas</div>
-    ${linha('Aluguel recebido',r.receita,'var(--g)','+')}
+    ${linha(r.usandoProjecao?'Aluguel (projeção do mês)':'Aluguel recebido no mês',r.receita,'var(--g)','+')}
+    ${r.usandoProjecao?`<div style="font-size:10px;color:var(--txm);padding:4px 0 8px;line-height:1.4">Projeção = aluguel semanal × 4,33 semanas. O semáforo só muda para valores reais se houver inadimplência após o último vencimento do mês.</div>`:''}
+    ${r.usarReceitaReal?`<div style="font-size:10px;color:var(--a);padding:4px 0 8px;line-height:1.4">⚠️ Usando receita real: detectada inadimplência após o último vencimento do mês.</div>`:''}
 
     <div style="font-size:11px;font-weight:800;color:var(--p);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 4px">Saídas</div>
     ${r.custoFin>0?linha('Parcela do financiamento',r.custoFin,'var(--r)','-'):''}
