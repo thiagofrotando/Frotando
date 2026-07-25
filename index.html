@@ -95,7 +95,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 /* MODAL */
 .mo{position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:200;display:flex;align-items:flex-end;opacity:0;transition:opacity .18s;pointer-events:none}
 .mo.on{opacity:1;pointer-events:all}
-.ms{background:var(--card);border-radius:20px 20px 0 0;width:100%;padding:0;height:auto;max-height:92vh;max-height:92dvh;min-height:0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);overscroll-behavior:contain;overflow:hidden}
+.ms{background:var(--card);border-radius:20px 20px 0 0;width:100%;padding:0;max-height:92vh;max-height:92dvh;min-height:0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);overscroll-behavior:contain;overflow:hidden}
 .mo.on .ms{transform:translateY(0)}
 .ms-body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:16px 16px 8px;min-height:0}
 .ms-footer{flex-shrink:0;padding:10px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--sll);background:var(--card)}
@@ -142,7 +142,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.17.3</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.17.4</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -2380,14 +2380,19 @@ function _initSB(){
       function _vpFix(){
         if(!window.visualViewport) return;
         const vp=window.visualViewport;
-        const top=Math.round(vp.offsetTop);
-        const h=Math.round(vp.height);
+        const vh=Math.round(vp.height);
+        // Limita cada modal aberto à viewport visual exata.
+        // CRÍTICO: setar 'height' (não só max-height) no .ms para que flex:1 funcione
+        // corretamente no WebKit iOS — sem height definido, o flex:1 do scroll-body não
+        // recebe o espaço correto e o footer é empurrado para fora e cortado pelo overflow:hidden.
         document.querySelectorAll('.mo.on').forEach(mo=>{
-          mo.style.top=top+'px';
-          mo.style.height=h+'px';
-          // Limita a altura do modal sheet à viewport visível real
+          mo.style.top='0';mo.style.left='0';mo.style.right='0';
+          mo.style.bottom='0';mo.style.height=vh+'px';
           const ms=mo.querySelector('.ms');
-          if(ms) ms.style.maxHeight=Math.round(h*0.94)+'px';
+          if(!ms) return;
+          const msH=Math.round(vh*0.94);
+          ms.style.height=msH+'px';
+          ms.style.maxHeight=msH+'px';
         });
       }
       if(window.visualViewport){
@@ -3145,7 +3150,7 @@ function fecharModal(id){
   const el=document.getElementById(id);
   el.classList.remove('on');
   el.style.top='';el.style.height='';
-  const ms=el.querySelector('.ms');if(ms) ms.style.maxHeight='';
+  const ms=el.querySelector('.ms');if(ms){ms.style.height='';ms.style.maxHeight='';}
   setTimeout(()=>{el.style.display='none';},260);
 }
 
@@ -7922,7 +7927,7 @@ function _vistFechar(){
     const menc=document.getElementById('menc');
     if(menc){
       menc.style.display='flex';
-      requestAnimationFrame(()=>menc.classList.add('on'));
+      requestAnimationFrame(()=>{menc.classList.add('on');requestAnimationFrame(_vpFix);});
       _encRenderBlocoVistoria();  // atualiza o status "X/Y itens"
       return;
     }
