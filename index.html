@@ -142,7 +142,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.17.6</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.17.7</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -4972,7 +4972,8 @@ function _gerarTermoDivida(loc,mot,car,cfg,saldoDevedor){
   const dataGer=new Date().toLocaleDateString('pt-BR');
   const dataExtenso=(()=>{
     const m=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-    const d=new Date();
+    // Usa a data do encerramento do contrato (não a data de hoje)
+    const d=loc.encData?new Date(loc.encData+'T12:00:00'):new Date();
     return `${d.getDate()} de ${m[d.getMonth()]} de ${d.getFullYear()}`;
   })();
   const kmRodado=(loc.encKmFinal||0)-(loc.kmIni||0);
@@ -5148,6 +5149,12 @@ function _gerarPDFEncerramento(loc){
   const nomeEmp=cfg.razao||cfg.nome||'---';
   const docEmp=cfg.tipoPessoa==='pj'?('CNPJ: '+(cfg.cnpj||'---')):('CPF: '+(cfg.cpf||'---'));
   const dataGer=new Date().toLocaleDateString('pt-BR');
+  const comarcaEnc=loc.comarca||cfg.comarca||'';
+  const dataEncExtenso=(()=>{
+    const m=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+    const d=loc.encData?new Date(loc.encData+'T12:00:00'):new Date();
+    return `${d.getDate()} de ${m[d.getMonth()]} de ${d.getFullYear()}`;
+  })();
   const pagsLoc=DB.pags.filter(p=>p.locId===loc.id);
   const totalRec=pagsLoc.filter(p=>p.pago&&!p.caucAvulso).reduce((s,p)=>s+Number(p.valAlug||p.val||0),0);
   const totalCaucRec=pagsLoc.filter(p=>p.pago).reduce((s,p)=>s+Number(p.valCauc||0),0)+(loc.caucModo==='integral'?loc.cauc:0);
@@ -5277,7 +5284,7 @@ function _gerarPDFEncerramento(loc){
         <div>${loc.encAssinaturaLocador?`<img src="${loc.encAssinaturaLocador}" style="display:block;height:56px;margin:0 auto;object-fit:contain">`:''}<div class="assin">${nomeEmp}</div><div style="text-align:center;font-size:9px;color:#94a3b8;margin-top:2px">Locador</div></div>
         <div>${loc.encAssinaturaLocatario?`<img src="${loc.encAssinaturaLocatario}" style="display:block;height:56px;margin:0 auto;object-fit:contain">`:''}<div class="assin">${mot?.nome||'---'}</div><div style="text-align:center;font-size:9px;color:#94a3b8;margin-top:2px">Locatário</div></div>
       </div>
-      <div style="text-align:center;margin-top:14px;font-size:10px;color:#94a3b8">Local e data: _________________________, ${dataGer}</div>
+      <div style="text-align:center;margin-top:14px;font-size:10px;color:#94a3b8">${comarcaEnc?comarcaEnc+', ':''} ${dataEncExtenso}.</div>
     </div>
   </div>
   <div class="footer">
