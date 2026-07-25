@@ -95,12 +95,13 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 /* MODAL */
 .mo{position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:200;display:flex;align-items:flex-end;opacity:0;transition:opacity .18s;pointer-events:none}
 .mo.on{opacity:1;pointer-events:all}
-.ms{background:var(--card);border-radius:20px 20px 0 0;width:100%;padding:0;height:auto;max-height:92vh;max-height:92dvh;min-height:0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);overscroll-behavior:contain;overflow:hidden}
-#menc .ms{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px}
+.ms{background:var(--card);border-radius:20px 20px 0 0;width:100%;padding:16px 16px 0;height:auto;max-height:92vh;max-height:92dvh;min-height:0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);overscroll-behavior:contain;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+#menc .ms{min-height:0;padding:0 16px}
 .mo.on .ms{transform:translateY(0)}
-.ms-body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:16px 16px 8px;min-height:0}
-.ms-footer{flex-shrink:0;padding:10px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--sll);background:var(--card)}
-.mh{width:38px;height:4px;background:var(--sll);border-radius:99px;margin:12px auto 10px}
+.ms-body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:0 0 8px;min-height:0}
+.ms-footer{flex-shrink:0;position:sticky;bottom:0;padding:10px 0 calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--sll);background:var(--card);z-index:2}
+.ms-btn-sticky{position:sticky;bottom:0;background:var(--card);padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom));z-index:2;border-top:1px solid var(--sll)}
+.mh{width:38px;height:4px;background:var(--sll);border-radius:99px;margin:0 auto 14px}
 .mt{font-size:16px;font-weight:800;color:var(--p);margin-bottom:14px}
 /* TOAST */
 #ts{position:fixed;bottom:calc(var(--nh) + var(--sb) + 10px);left:50%;transform:translateX(-50%) translateY(18px);background:var(--p);color:#fff;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:700;white-space:nowrap;z-index:999;opacity:0;transition:all .22s;pointer-events:none}
@@ -142,7 +143,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.17.0</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.17.1</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -3023,48 +3024,20 @@ function toast(msg,t='ok'){
 // ── MODAIS ────────────────────────────────────────────────────────────────────
 let _curModal='',_curId='';
 function _fixModalForIOS(modalId){
-  // Garante que todo modal use o padrão flex correto para iOS Safari:
-  // [header fixo] + [ms-body scrollável] + [ms-footer com botões, nunca scrollável]
-  // Sem esse padrão, botões na base da folha some sob o teclado ou a barra do browser.
+  // Torna o último elemento de botões de cada modal sticky no fundo da sheet.
+  // Abordagem simples e sem risco: não reestrutura o DOM, apenas adiciona CSS.
+  // Com overflow-y:auto no .ms, o usuário pode scrollar até o botão; com
+  // position:sticky ele permanece visível sempre que há espaço no viewport.
   const ms=document.querySelector('#'+modalId+' .ms');
-  if(!ms||ms.querySelector('.ms-body')) return; // já reestruturado
+  if(!ms) return;
+  // Não repete em modais com ms-body/ms-footer (já corretos)
+  if(ms.querySelector('.ms-footer')) return;
   const children=Array.from(ms.children);
   if(children.length<2) return;
-
-  // Identifica o último filho como footer se contiver botão de ação
   const lastEl=children[children.length-1];
-  const temBotao=lastEl.querySelector&&lastEl.querySelector('button');
-  if(!temBotao) return;
-
-  // Separa: handle (mh) e título (mt) ficam fora do scroll (fixos no topo)
-  const headerEls=[];
-  const bodyEls=[];
-  children.slice(0,-1).forEach(c=>{
-    if(c.classList&&(c.classList.contains('mh')||c.classList.contains('mt')))
-      headerEls.push(c);
-    else
-      bodyEls.push(c);
-  });
-
-  // Monta o header estático
-  const header=document.createElement('div');
-  header.style.cssText='flex-shrink:0;padding:0 16px';
-  headerEls.forEach(c=>header.appendChild(c));
-
-  // Monta o body scrollável
-  const body=document.createElement('div');
-  body.className='ms-body';
-  bodyEls.forEach(c=>body.appendChild(c));
-
-  // Monta o footer com botões (nunca sai da tela)
-  const footer=document.createElement('div');
-  footer.className='ms-footer';
-  footer.appendChild(lastEl);
-
-  ms.innerHTML='';
-  ms.appendChild(header);
-  ms.appendChild(body);
-  ms.appendChild(footer);
+  if(!lastEl.querySelector||!lastEl.querySelector('button')) return;
+  if(lastEl.classList.contains('ms-btn-sticky')) return; // já aplicado
+  lastEl.classList.add('ms-btn-sticky');
 }
 
 function abrirModal(id,dados){
