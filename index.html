@@ -95,12 +95,12 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 /* MODAL */
 .mo{position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:200;display:flex;align-items:flex-end;opacity:0;transition:opacity .18s;pointer-events:none}
 .mo.on{opacity:1;pointer-events:all}
-.ms{background:var(--card);border-radius:20px 20px 0 0;width:100%;padding:16px 16px 0 16px;height:auto;max-height:92vh;min-height:0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);overscroll-behavior:contain;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(16px + env(safe-area-inset-bottom))}
-#menc .ms{min-height:0}
+.ms{background:var(--card);border-radius:20px 20px 0 0;width:100%;padding:0;height:auto;max-height:92vh;max-height:92dvh;min-height:0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);overscroll-behavior:contain;overflow:hidden}
+#menc .ms{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px}
 .mo.on .ms{transform:translateY(0)}
-.ms-body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:12px}
-.ms-footer{flex-shrink:0;padding:12px 0 calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--sll);background:var(--card);position:sticky;bottom:0}
-.mh{width:38px;height:4px;background:var(--sll);border-radius:99px;margin:0 auto 14px}
+.ms-body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:16px 16px 8px;min-height:0}
+.ms-footer{flex-shrink:0;padding:10px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--sll);background:var(--card)}
+.mh{width:38px;height:4px;background:var(--sll);border-radius:99px;margin:12px auto 10px}
 .mt{font-size:16px;font-weight:800;color:var(--p);margin-bottom:14px}
 /* TOAST */
 #ts{position:fixed;bottom:calc(var(--nh) + var(--sb) + 10px);left:50%;transform:translateX(-50%) translateY(18px);background:var(--p);color:#fff;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:700;white-space:nowrap;z-index:999;opacity:0;transition:all .22s;pointer-events:none}
@@ -142,7 +142,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.16.9</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.17.0</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -869,7 +869,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
           </div>
         </label>
       </div>
-      <div style="display:flex;gap:8px;margin-top:4px">
+      <div style="display:flex;gap:8px;margin-top:4px;position:sticky;bottom:0;background:var(--card);padding:10px 0 calc(10px + env(safe-area-inset-bottom));z-index:2;margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px">
         <button class="bt btp" style="flex:1" onclick="_encProximo(2)">Proximo →</button>
         <button class="bt btg" onclick="_encCancelar()">Cancelar</button>
       </div>
@@ -888,7 +888,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
         </div>
         <div class="fi" style="margin-bottom:0"><label>Desconto adicional (R$)</label><input id="enc-desc-extra" type="number" step="0.01" placeholder="0" oninput="_encAtualizarDesc()"></div>
       </div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;position:sticky;bottom:0;background:var(--card);padding:10px 0 calc(10px + env(safe-area-inset-bottom));z-index:2;margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px">
         <button class="bt btg" onclick="_encProximo(1)">← Voltar</button>
         <button class="bt btp" style="flex:1" onclick="_encProximo(3)">Proximo →</button>
       </div>
@@ -919,7 +919,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
         <div style="font-size:12px;font-weight:700;color:var(--r);margin-bottom:4px">⚠️ Ação irreversível</div>
         <div style="font-size:11px;color:var(--txm)" id="enc-aviso-texto">O contrato será marcado como Encerrado. O veículo voltará a Disponível.</div>
       </div>
-      <div style="display:flex;gap:8px;margin-top:14px">
+      <div style="display:flex;gap:8px;margin-top:14px;position:sticky;bottom:0;background:var(--card);padding:10px 0 calc(10px + env(safe-area-inset-bottom));z-index:2;margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px">
         <button class="bt btg" onclick="_encProximo(2)">← Voltar</button>
         <button class="bt btd" style="flex:1" onclick="_encConfirmar()">✓ Confirmar encerramento</button>
       </div>
@@ -2377,7 +2377,29 @@ function _initSB(){
   try{
     if(typeof supabase!=='undefined'&&supabase.createClient){
       _sb=supabase.createClient(_SB_URL,_SB_KEY);
-      // Ao voltar para o app (ex: depois de tirar foto no app de câmera nativo,
+      // VisualViewport API — ajusta a altura dos modais em tempo real no iOS Safari.
+  // Quando o teclado abre, o visualViewport.height diminui mas o layout fixo não
+  // se atualiza automaticamente, causando o botão "sumir" abaixo do teclado.
+  if(window.visualViewport){
+    let _vpTimer=null;
+    window.visualViewport.addEventListener('resize',()=>{
+      clearTimeout(_vpTimer);
+      _vpTimer=setTimeout(()=>{
+        const vh=window.visualViewport.height;
+        document.querySelectorAll('.mo.on .ms').forEach(ms=>{
+          ms.style.maxHeight=Math.round(vh*0.94)+'px';
+        });
+      },50);
+    });
+    window.visualViewport.addEventListener('scroll',()=>{
+      // No iOS, o viewport pode "scrollar" quando o teclado abre.
+      // Reposiciona os overlays fixos para compensar.
+      document.querySelectorAll('.mo.on').forEach(mo=>{
+        mo.style.top=window.visualViewport.offsetTop+'px';
+        mo.style.height=window.visualViewport.height+'px';
+      });
+    });
+  }
       // que suspende o PWA em segundo plano e pode pausar o auto-refresh do
       // token), força uma checagem/renovação de sessão em vez de esperar o
       // próximo upload falhar com "sessão expirada".
@@ -3001,21 +3023,46 @@ function toast(msg,t='ok'){
 // ── MODAIS ────────────────────────────────────────────────────────────────────
 let _curModal='',_curId='';
 function _fixModalForIOS(modalId){
-  // Wrap modal content: scrollable body + sticky footer with buttons
+  // Garante que todo modal use o padrão flex correto para iOS Safari:
+  // [header fixo] + [ms-body scrollável] + [ms-footer com botões, nunca scrollável]
+  // Sem esse padrão, botões na base da folha some sob o teclado ou a barra do browser.
   const ms=document.querySelector('#'+modalId+' .ms');
-  if(!ms||ms.querySelector('.ms-body')) return;
+  if(!ms||ms.querySelector('.ms-body')) return; // já reestruturado
   const children=Array.from(ms.children);
   if(children.length<2) return;
+
+  // Identifica o último filho como footer se contiver botão de ação
   const lastEl=children[children.length-1];
-  // Only restructure if last element contains action buttons
-  if(!lastEl.querySelector||!lastEl.querySelector('button.btp,button.btd')) return;
+  const temBotao=lastEl.querySelector&&lastEl.querySelector('button');
+  if(!temBotao) return;
+
+  // Separa: handle (mh) e título (mt) ficam fora do scroll (fixos no topo)
+  const headerEls=[];
+  const bodyEls=[];
+  children.slice(0,-1).forEach(c=>{
+    if(c.classList&&(c.classList.contains('mh')||c.classList.contains('mt')))
+      headerEls.push(c);
+    else
+      bodyEls.push(c);
+  });
+
+  // Monta o header estático
+  const header=document.createElement('div');
+  header.style.cssText='flex-shrink:0;padding:0 16px';
+  headerEls.forEach(c=>header.appendChild(c));
+
+  // Monta o body scrollável
   const body=document.createElement('div');
   body.className='ms-body';
-  children.slice(0,-1).forEach(c=>body.appendChild(c));
+  bodyEls.forEach(c=>body.appendChild(c));
+
+  // Monta o footer com botões (nunca sai da tela)
   const footer=document.createElement('div');
   footer.className='ms-footer';
   footer.appendChild(lastEl);
+
   ms.innerHTML='';
+  ms.appendChild(header);
   ms.appendChild(body);
   ms.appendChild(footer);
 }
@@ -3125,7 +3172,13 @@ function abrirModal(id,dados){
   _aplicarMascaras();
   const el=document.getElementById(id);el.style.pointerEvents='all';el.style.display='flex';requestAnimationFrame(()=>el.classList.add('on'));
 }
-function fecharModal(id){const el=document.getElementById(id);el.classList.remove('on');setTimeout(()=>{el.style.display='none';},260);}
+function fecharModal(id){
+  const el=document.getElementById(id);
+  el.classList.remove('on');
+  // Limpa offset do visualViewport aplicado durante teclado aberto
+  el.style.top='';el.style.height='';
+  setTimeout(()=>{el.style.display='none';},260);
+}
 
 // ── CRUD CARROS ───────────────────────────────────────────────────────────────
 
