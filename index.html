@@ -93,7 +93,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 .lrow{display:flex;align-items:center;gap:9px;padding:9px 11px;background:var(--card);border-radius:10px;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,.06);cursor:pointer}
 .lrow:active{opacity:.8}
 /* MODAL */
-.mo{position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:200;display:flex;align-items:flex-end;opacity:0;transition:opacity .18s;pointer-events:none}
+.mo{position:fixed;inset:0;height:100vh;height:100dvh;background:rgba(0,0,0,.52);z-index:200;display:flex;align-items:flex-end;opacity:0;transition:opacity .18s;pointer-events:none}
 .mo.on{opacity:1;pointer-events:all}
 .ms{background:var(--card);border-radius:20px 20px 0 0;width:100%;padding:0;max-height:92vh;max-height:92dvh;min-height:0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);overscroll-behavior:contain;overflow:hidden}
 .mo.on .ms{transform:translateY(0)}
@@ -142,7 +142,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.17.5</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.17.6</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -3005,15 +3005,25 @@ let _curModal='',_curId='';
 // Setar 'height' concreto no .ms é o que faz o flex:1 do corpo scrollável funcionar
 // no WebKit, garantindo que o footer com botões nunca seja cortado.
 function _vpFix(){
-  const vh=window.visualViewport?Math.round(window.visualViewport.height):window.innerHeight;
+  const vv=window.visualViewport;
+  const vh=vv?Math.round(vv.height):window.innerHeight;
+  const offTop=vv?Math.round(vv.offsetTop):0;
+  // Desconta a altura da barra de navegação inferior do app (#nav), que é
+  // position:fixed e fica sobre a base da tela. Sem isso, o footer do modal
+  // (com os botões) fica renderizado ATRÁS da barra de navegação e some.
+  const nav=document.getElementById('nav');
+  const navH=(nav&&getComputedStyle(nav).display!=='none')?nav.offsetHeight:0;
+  const dispo=vh-navH; // altura realmente livre acima da nav
   document.querySelectorAll('.mo.on').forEach(mo=>{
-    mo.style.top='0';mo.style.left='0';mo.style.right='0';mo.style.bottom='0';
-    mo.style.height=vh+'px';
+    mo.style.top=offTop+'px';
+    mo.style.left='0';
+    mo.style.right='0';
+    mo.style.bottom='auto';
+    mo.style.height=dispo+'px';       // overlay ocupa só a área acima da nav
     const ms=mo.querySelector('.ms');
     if(!ms) return;
-    const msH=Math.round(vh*0.94);
-    ms.style.height=msH+'px';
-    ms.style.maxHeight=msH+'px';
+    ms.style.height='auto';
+    ms.style.maxHeight=Math.round(dispo*0.98)+'px';
   });
 }
 
@@ -3143,7 +3153,7 @@ function abrirModal(id,dados){
 function fecharModal(id){
   const el=document.getElementById(id);
   el.classList.remove('on');
-  el.style.top='';el.style.height='';
+  el.style.top='';el.style.height='';el.style.bottom='';
   const ms=el.querySelector('.ms');if(ms){ms.style.height='';ms.style.maxHeight='';}
   setTimeout(()=>{el.style.display='none';},260);
 }
