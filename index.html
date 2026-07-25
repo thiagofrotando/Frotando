@@ -142,7 +142,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.17.2</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.17.3</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -2371,29 +2371,31 @@ function _initSB(){
   try{
     if(typeof supabase!=='undefined'&&supabase.createClient){
       _sb=supabase.createClient(_SB_URL,_SB_KEY);
-      // VisualViewport API — ajusta a altura dos modais em tempo real no iOS Safari.
-  // Quando o teclado abre, o visualViewport.height diminui mas o layout fixo não
-  // se atualiza automaticamente, causando o botão "sumir" abaixo do teclado.
-  if(window.visualViewport){
-    let _vpTimer=null;
-    window.visualViewport.addEventListener('resize',()=>{
-      clearTimeout(_vpTimer);
-      _vpTimer=setTimeout(()=>{
-        const vh=window.visualViewport.height;
-        document.querySelectorAll('.mo.on .ms').forEach(ms=>{
-          ms.style.maxHeight=Math.round(vh*0.94)+'px';
+      // VisualViewport API — Chrome iOS e Safari iOS usam a viewport de LAYOUT
+      // para position:fixed (incluindo a área atrás da barra de nav do Chrome),
+      // não a viewport VISUAL. Resultado: o footer dos modais fica atrás da barra
+      // de navegação do browser e é invisível. A correção: ao abrir qualquer modal,
+      // e a cada mudança de viewport, forçamos o overlay (.mo) a usar as dimensões
+      // exatas da viewport visual — sem depender só do CSS.
+      function _vpFix(){
+        if(!window.visualViewport) return;
+        const vp=window.visualViewport;
+        const top=Math.round(vp.offsetTop);
+        const h=Math.round(vp.height);
+        document.querySelectorAll('.mo.on').forEach(mo=>{
+          mo.style.top=top+'px';
+          mo.style.height=h+'px';
+          // Limita a altura do modal sheet à viewport visível real
+          const ms=mo.querySelector('.ms');
+          if(ms) ms.style.maxHeight=Math.round(h*0.94)+'px';
         });
-      },50);
-    });
-    window.visualViewport.addEventListener('scroll',()=>{
-      // No iOS, o viewport pode "scrollar" quando o teclado abre.
-      // Reposiciona os overlays fixos para compensar.
-      document.querySelectorAll('.mo.on').forEach(mo=>{
-        mo.style.top=window.visualViewport.offsetTop+'px';
-        mo.style.height=window.visualViewport.height+'px';
-      });
-    });
-  }
+      }
+      if(window.visualViewport){
+        let _vpTimer=null;
+        const _vpThrottle=()=>{clearTimeout(_vpTimer);_vpTimer=setTimeout(_vpFix,30);};
+        window.visualViewport.addEventListener('resize',_vpThrottle);
+        window.visualViewport.addEventListener('scroll',_vpThrottle);
+      }
       // que suspende o PWA em segundo plano e pode pausar o auto-refresh do
       // token), força uma checagem/renovação de sessão em vez de esperar o
       // próximo upload falhar com "sessão expirada".
@@ -3136,13 +3138,14 @@ function abrirModal(id,dados){
   }
   _fixModalForIOS(id);
   _aplicarMascaras();
-  const el=document.getElementById(id);el.style.pointerEvents='all';el.style.display='flex';requestAnimationFrame(()=>el.classList.add('on'));
+  const el=document.getElementById(id);el.style.pointerEvents='all';el.style.display='flex';
+  requestAnimationFrame(()=>{el.classList.add('on');requestAnimationFrame(_vpFix);});
 }
 function fecharModal(id){
   const el=document.getElementById(id);
   el.classList.remove('on');
-  // Limpa offset do visualViewport aplicado durante teclado aberto
   el.style.top='';el.style.height='';
+  const ms=el.querySelector('.ms');if(ms) ms.style.maxHeight='';
   setTimeout(()=>{el.style.display='none';},260);
 }
 
@@ -4557,7 +4560,7 @@ function abrirEncerramento(locId){
   const el=document.getElementById('menc');
   el.style.pointerEvents='all';
   el.style.display='flex';
-  requestAnimationFrame(()=>el.classList.add('on'));
+  requestAnimationFrame(()=>{el.classList.add('on');requestAnimationFrame(_vpFix);});
 }
 
 function _encAtualizarOptPend(){
