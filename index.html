@@ -142,7 +142,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.17.4</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.17.5</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -2371,30 +2371,7 @@ function _initSB(){
   try{
     if(typeof supabase!=='undefined'&&supabase.createClient){
       _sb=supabase.createClient(_SB_URL,_SB_KEY);
-      // VisualViewport API — Chrome iOS e Safari iOS usam a viewport de LAYOUT
-      // para position:fixed (incluindo a área atrás da barra de nav do Chrome),
-      // não a viewport VISUAL. Resultado: o footer dos modais fica atrás da barra
-      // de navegação do browser e é invisível. A correção: ao abrir qualquer modal,
-      // e a cada mudança de viewport, forçamos o overlay (.mo) a usar as dimensões
-      // exatas da viewport visual — sem depender só do CSS.
-      function _vpFix(){
-        if(!window.visualViewport) return;
-        const vp=window.visualViewport;
-        const vh=Math.round(vp.height);
-        // Limita cada modal aberto à viewport visual exata.
-        // CRÍTICO: setar 'height' (não só max-height) no .ms para que flex:1 funcione
-        // corretamente no WebKit iOS — sem height definido, o flex:1 do scroll-body não
-        // recebe o espaço correto e o footer é empurrado para fora e cortado pelo overflow:hidden.
-        document.querySelectorAll('.mo.on').forEach(mo=>{
-          mo.style.top='0';mo.style.left='0';mo.style.right='0';
-          mo.style.bottom='0';mo.style.height=vh+'px';
-          const ms=mo.querySelector('.ms');
-          if(!ms) return;
-          const msH=Math.round(vh*0.94);
-          ms.style.height=msH+'px';
-          ms.style.maxHeight=msH+'px';
-        });
-      }
+      // VisualViewport listeners — a função _vpFix está no escopo global (abaixo).
       if(window.visualViewport){
         let _vpTimer=null;
         const _vpThrottle=()=>{clearTimeout(_vpTimer);_vpTimer=setTimeout(_vpFix,30);};
@@ -3023,6 +3000,23 @@ function toast(msg,t='ok'){
 
 // ── MODAIS ────────────────────────────────────────────────────────────────────
 let _curModal='',_curId='';
+// VisualViewport fix — força os modais abertos a usarem a altura da viewport VISUAL
+// (a área realmente visível), não a de layout que fica atrás da barra do Chrome iOS.
+// Setar 'height' concreto no .ms é o que faz o flex:1 do corpo scrollável funcionar
+// no WebKit, garantindo que o footer com botões nunca seja cortado.
+function _vpFix(){
+  const vh=window.visualViewport?Math.round(window.visualViewport.height):window.innerHeight;
+  document.querySelectorAll('.mo.on').forEach(mo=>{
+    mo.style.top='0';mo.style.left='0';mo.style.right='0';mo.style.bottom='0';
+    mo.style.height=vh+'px';
+    const ms=mo.querySelector('.ms');
+    if(!ms) return;
+    const msH=Math.round(vh*0.94);
+    ms.style.height=msH+'px';
+    ms.style.maxHeight=msH+'px';
+  });
+}
+
 function _fixModalForIOS(modalId){
   // Torna o último elemento de botões de cada modal sticky no fundo da sheet.
   // Abordagem simples e sem risco: não reestrutura o DOM, apenas adiciona CSS.
