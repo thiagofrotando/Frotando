@@ -142,7 +142,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.16.8</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.16.9</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -2412,7 +2412,6 @@ async function _carregarPlano(){
       _isAdminDB = data.is_admin === true;   // fonte da verdade: banco
       _vistoriaAtiva = data.vistoria_ativa === true;  // add-on de vistoria
       _atualizarBadgePlano();
-      _renderSemaforoDash();
       _renderPlanoBadge();
     }
   }catch(e){
@@ -6031,6 +6030,9 @@ function _renderDashExtras(){
     cfd.innerHTML+=`<div style="display:flex;justify-content:space-between;font-size:11px;padding:7px 0;border-top:1px solid rgba(203,213,225,.25);color:var(--txm)"><span>+ ${restantes} outro${restantes===1?'':'s'} financiamento${restantes===1?'':'s'}</span><span style="font-weight:700">${R(saldoResto)}</span></div>`;
   }
   if(!finsAtivos.length)cfd.innerHTML+=`<div style="font-size:12px;color:var(--txm);font-style:italic">Nenhum financiamento ativo</div>`;
+  // Semáforo de rentabilidade — chamado aqui, após todos os dados estarem carregados,
+  // para garantir que DB.carros, DB.locs, DB.pags e DB.fins já estejam disponíveis.
+  _renderSemaforoDash();
 }
 
 
