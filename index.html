@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Frotando">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,interactive-widget=resizes-content">
 <meta name="theme-color" content="#0D2B3E">
 <meta name="mobile-web-app-capable" content="yes">
@@ -142,7 +143,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.17.7</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.0</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -610,8 +611,6 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
         <div id="rel-barras" style="display:flex;align-items:flex-end;gap:6px;height:70px;margin-top:8px"></div>
         <div id="rel-labels" style="display:flex;gap:6px;margin-top:4px"></div>
       </div>
-      <!-- Resultado por carro -->
-      <div class="cd" id="cd-rel-carros"></div>
       <!-- Fluxo de caixa -->
       <div class="cd" id="cd-rel-fluxo"></div>
       <!-- Indicadores -->
@@ -625,6 +624,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       <div class="cd" id="cd-cauc-rel" style="margin-top:10px"></div>
       <!-- Despesas por tipo (gráfico de rosca) -->
       <div class="cd" id="cd-despesas-rel" style="margin-top:10px"></div>
+      <!-- Resultado por carro — no final para não atrapalhar os indicadores principais -->
+      <div class="cd" id="cd-rel-carros" style="margin-top:10px"></div>
       <!-- Relatórios especiais -->
       <div class="cd" style="margin-top:10px">
         <div class="st">Relatórios especiais</div>
@@ -666,8 +667,21 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       
       
       <div class="cd">
+        <div class="st">Modelo de Contrato</div>
+        <div style="font-size:11px;color:var(--txm);line-height:1.5;margin-bottom:10px">Cole aqui seu próprio modelo de contrato. Se preenchido, ele será usado ao imprimir — caso contrário, será usado o modelo padrão do Frotando. Use as variáveis abaixo (com chaves duplas) onde os dados devem ser preenchidos automaticamente.</div>
+        <div id="cfg-tpl-vars" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px"></div>
+        <textarea id="cfg-contrato-tpl" rows="10" placeholder="Cole o texto do seu contrato aqui. Ex:&#10;&#10;CONTRATO DE LOCAÇÃO&#10;&#10;Locador: {{locador_nome}}, {{locador_doc}}.&#10;Locatário: {{motorista_nome}}, CPF {{motorista_cpf}}.&#10;Veículo: {{modelo}}, placa {{placa}}.&#10;Aluguel semanal: {{aluguel_semanal}}." style="width:100%;background:#fff;border:1.5px solid var(--sll);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--tx);font-family:'Courier New',monospace;outline:none;resize:vertical;line-height:1.5"></textarea>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button class="bt btp btf bts" style="flex:1" onclick="salvarTemplateContrato()">💾 Salvar modelo</button>
+          <button class="bt btf bts" style="background:transparent;border:1px solid var(--sll);color:var(--txm)" onclick="limparTemplateContrato()">Limpar</button>
+        </div>
+        <div id="cfg-tpl-status" style="font-size:10px;color:var(--txm);text-align:center;margin-top:6px"></div>
+      </div>
+      <div class="cd">
         <div class="st">Dados e Backup</div>
         <button class="bt bto btf bts" onclick="exportarCSV()">⬇️ Exportar dados CSV</button>
+        <button class="bt btf bts" style="background:rgba(16,185,129,.1);color:var(--g);border:1px solid rgba(16,185,129,.3);margin-top:6px" onclick="exportarBackupXLSX()">🗂️ Backup completo (Excel)</button>
+        <div style="font-size:10px;color:var(--txm);margin-top:4px;line-height:1.4">Exporta todas as tabelas do sistema em um único arquivo Excel (.xlsx), uma aba por tabela — carros, motoristas, contratos, pagamentos, eventos, financiamentos e KM.</div>
         <div style="display:flex;gap:6px;margin-top:7px">
           <button class="bt btf bts" style="flex:1;background:transparent;border:1px solid var(--sll);color:var(--txm);font-size:11px" onclick="abrirTermos()">Termos de Uso</button>
           <button class="bt btf bts" style="flex:1;background:transparent;border:1px solid var(--sll);color:var(--txm);font-size:11px" onclick="abrirPrivacidade()">Privacidade</button>
@@ -940,7 +954,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
   <div class="ms-body">
     <div class="mh"></div>
     <div class="mt" id="mc-t">Carro</div>
-    <div class="fi"><label>Placa *</label><input id="mc-placa" type="text" placeholder="ABC-1234" style="text-transform:uppercase"></div>
+    <div class="fi"><label>Placa *</label><input id="mc-placa" type="text" placeholder="ABC-1234" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
     <div class="fi"><label>Modelo *</label><input id="mc-modelo" type="text" placeholder="VW Gol 1.0 2023"></div>
     <div class="fi"><label>Ano</label><input id="mc-ano" type="number" placeholder="2023"></div>
     <div class="fi"><label>Cor</label><input id="mc-cor" type="text" placeholder="Branco"></div>
@@ -975,7 +989,11 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div class="mh"></div>
     <div class="mt" id="mm-t">Motorista</div>
     <div class="fi"><label>Nome *</label><input id="mm-nome" type="text"></div>
-    <div class="fi"><label>CPF *</label><input id="mm-cpf" type="text" placeholder="000.000.000-00"></div>
+    <div class="fi">
+      <label>CPF *</label>
+      <input id="mm-cpf" type="text" placeholder="000.000.000-00" onblur="_validarCPFVisual(this)">
+      <div id="mm-cpf-status" style="display:none;font-size:11px;margin-top:4px"></div>
+    </div>
     <div class="fi"><label>RG</label><input id="mm-rg" type="text"></div>
     <div class="fi"><label>CNH</label><input id="mm-cnh" type="text"></div>
     <div class="fi"><label>Validade CNH</label><input id="mm-vcnh" type="date"></div>
@@ -1276,6 +1294,7 @@ const repoConfig = {
       alug: 'aluguel_padrao', cauc: 'caucao_padrao', kmLim: 'km_lim_padrao',
       kmVal: 'km_val_excedente', fran: 'franquia_seguro',
       kmAlert1: 'km_alerta_atencao', kmAlert2: 'km_alerta_critico',
+      contratoTemplate: 'contrato_template',
       ie: 'ie', fantasia: 'fantasia', razao: 'razao', regime: 'regime',
       contNome: 'cont_nome', contTel: 'cont_tel',
       segNome: 'seg_nome', segPol: 'seg_pol', segVal: 'seg_val', segVenc: 'seg_venc', segTel: 'seg_tel',
@@ -2488,6 +2507,7 @@ function _mapConfigRelacional(row){
     alug: row.aluguel_padrao??600, cauc: row.caucao_padrao??1400, kmLim: row.km_lim_padrao??7000,
     kmVal: row.km_val_excedente??0.80, fran: row.franquia_seguro??4800,
     kmAlert1: row.km_alerta_atencao??160000, kmAlert2: row.km_alerta_critico??200000,
+    contratoTemplate: row.contrato_template||'',
     ie: row.ie||'', fantasia: row.fantasia||'', razao: row.razao||'', regime: row.regime||'',
     contNome: row.cont_nome||'', contTel: row.cont_tel||'',
     segNome: row.seg_nome||'', segPol: row.seg_pol||'', segVal: row.seg_val||0, segVenc: row.seg_venc||'', segTel: row.seg_tel||'',
@@ -3312,6 +3332,7 @@ async function salvarMoto(){
   const nome=document.getElementById('mm-nome').value.trim();
   const cpf=document.getElementById('mm-cpf').value.trim();
   if(!nome||!cpf){toast('Nome e CPF obrigatórios','er');return;}
+  if(!_cpfValido(cpf)){toast('CPF inválido — verifique os dígitos','er');return;}
   const fotoAtual=_curId?DB.motos.find(m=>m.id===_curId)?.foto||'':'';
   const foto=_mmFotoBase64||fotoAtual;
   const notaVal=document.getElementById('mm-nota').value||'';
@@ -4608,6 +4629,11 @@ function _encMontarChecklist(){
     chk.addEventListener('change',()=>{ campos.style.display=chk.checked?'block':'none'; });
     el.appendChild(d);
   });
+  // Zera o desconto adicional e o totalizador ao montar um novo checklist,
+  // garantindo que valores de um encerramento anterior não persistam.
+  const extraEl=document.getElementById('enc-desc-extra');
+  if(extraEl) extraEl.value='';
+  _encAtualizarDesc();
 }
 
 function _encAtualizarDesc(){
@@ -5844,6 +5870,9 @@ function renderCfg(){
   document.getElementById('cfg-kmval').value=c.kmVal||0.80;
   document.getElementById('cfg-km-alert1').value=c.kmAlert1||160000;
   document.getElementById('cfg-km-alert2').value=c.kmAlert2||200000;
+  const tplEl=document.getElementById('cfg-contrato-tpl');
+  if(tplEl) tplEl.value=c.contratoTemplate||'';
+  _renderTemplateVars();
 }
 async function salvarCfg(){
   const dados={
@@ -6580,7 +6609,7 @@ function renderHistPag(){
   const _ordemStatus=p=>{if(p.pago) return 2; if(_diasAtraso(p)>0) return 1; return 0;};
   let pags=[...DB.pags].sort((a,b)=>{
     const so=_ordemStatus(a)-_ordemStatus(b); if(so!==0) return so;
-    const dc=(a.dataVenc||a.sem||'').localeCompare(b.dataVenc||b.sem||''); if(dc!==0) return dc;
+    const dc=(b.dataVenc||b.sem||'').localeCompare(a.dataVenc||a.sem||''); if(dc!==0) return dc;
     const ma=cMot(a.motoId),mb=cMot(b.motoId);
     return (ma?.nome||'').localeCompare(mb?.nome||'');
   });
@@ -7426,6 +7455,146 @@ function exportarCSV(){
   URL.revokeObjectURL(url);toast('CSV exportado! ✓');
 }
 
+function exportarBackupXLSX(){
+  if(typeof XLSX==='undefined'){toast('Biblioteca de exportação não carregada. Verifique sua conexão.','er');return;}
+  toast('Gerando backup...');
+  const wb=XLSX.utils.book_new();
+  const hoje=new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
+
+  // Função auxiliar: converte array de objetos em sheet
+  const sheet=(dados)=>XLSX.utils.json_to_sheet(dados,{skipHeader:false});
+
+  // ── 1. VEÍCULOS ──────────────────────────────────────────────────────────────
+  const veiculos=DB.carros.map(c=>({
+    'Placa':c.placa||'',
+    'Modelo':c.modelo||'',
+    'Ano':c.ano||'',
+    'Cor':c.cor||'',
+    'RENAVAM':c.renavam||'',
+    'KM Atual':c.km||0,
+    'Valor do Veículo (R$)':c.valor||0,
+    'Status':c.status||'',
+    'Seguradora':c.segNome||'',
+    'Nº da Apólice':c.segApolice||'',
+    'Valor Mensal Seguro (R$)':c.segVal||0,
+    'Início Cobrança Seguro':c.segInicio||'',
+    'Vencimento Apólice':c.segVenc||'',
+    'Empresa Rastreador':c.rasNome||'',
+    'Valor Mensal Rastreador (R$)':c.rasVal||0,
+  }));
+  XLSX.utils.book_append_sheet(wb, sheet(veiculos.length?veiculos:[{'Info':'Nenhum veículo cadastrado'}]), 'Veículos');
+
+  // ── 2. MOTORISTAS ────────────────────────────────────────────────────────────
+  const motoristas=DB.motos.map(m=>({
+    'Nome':m.nome||'',
+    'CPF':m.cpf||'',
+    'RG':m.rg||'',
+    'CNH':m.cnh||'',
+    'Validade CNH':m.cnhVenc||'',
+    'Telefone':m.tel||'',
+    'Endereço':m.end||'',
+    'Plataformas':m.plat||'',
+    'Avaliação':m.nota||'',
+  }));
+  XLSX.utils.book_append_sheet(wb, sheet(motoristas.length?motoristas:[{'Info':'Nenhum motorista cadastrado'}]), 'Motoristas');
+
+  // ── 3. CONTRATOS ─────────────────────────────────────────────────────────────
+  const contratos=DB.locs.map(l=>{
+    const m=cMot(l.motoId),c=cCar(l.carroId);
+    return {
+      'Placa':c?.placa||'',
+      'Modelo':c?.modelo||'',
+      'Motorista':m?.nome||'',
+      'CPF Motorista':m?.cpf||'',
+      'Data de Início':l.inicio||'',
+      'Aluguel Semanal (R$)':l.val||0,
+      'Caução (R$)':l.cauc||0,
+      'Caução Pago (R$)':l.caucPago||0,
+      'Modo Caução':l.caucModo||'',
+      'KM Inicial':l.kmIni||0,
+      'Limite KM/mês':l.kmLim||0,
+      'R$/km Excedente':l.kmVal||0,
+      'Dia de Vencimento':l.diaVenc||'',
+      'Comarca':l.comarca||'',
+      'Status':l.status||'',
+      'Data Encerramento':l.encData||'',
+      'Motivo Encerramento':l.encMotivo||'',
+    };
+  });
+  XLSX.utils.book_append_sheet(wb, sheet(contratos.length?contratos:[{'Info':'Nenhum contrato cadastrado'}]), 'Contratos');
+
+  // ── 4. PAGAMENTOS ────────────────────────────────────────────────────────────
+  const pagamentos=DB.pags.map(p=>{
+    const m=cMot(p.motoId),c=cCar(p.carroId);
+    return {
+      'Data Pagamento':p.data||'',
+      'Data Vencimento':p.dataVenc||'',
+      'Motorista':m?.nome||'',
+      'Placa':c?.placa||'',
+      'Semana':p.sem||'',
+      'Valor Total (R$)':p.val||0,
+      'Valor Aluguel (R$)':p.valAlug||p.val||0,
+      'Valor Caução (R$)':p.valCauc||0,
+      'Pago':p.pago?'Sim':'Não',
+      'Dias de Atraso':p.atr||0,
+      'Cancelado':p.cancelado?'Sim':'Não',
+    };
+  });
+  XLSX.utils.book_append_sheet(wb, sheet(pagamentos.length?pagamentos:[{'Info':'Nenhum pagamento registrado'}]), 'Pagamentos');
+
+  // ── 5. EVENTOS E MANUTENÇÕES ─────────────────────────────────────────────────
+  const eventos=DB.evs.map(e=>{
+    const c=cCar(e.carroId);
+    return {
+      'Data':e.data||'',
+      'Placa':c?.placa||'',
+      'Modelo':c?.modelo||'',
+      'Tipo':e.tipo||'',
+      'Descrição':e.desc||'',
+      'Custo (R$)':e.custo||0,
+      'Status':e.status||'',
+    };
+  });
+  XLSX.utils.book_append_sheet(wb, sheet(eventos.length?eventos:[{'Info':'Nenhum evento registrado'}]), 'Eventos e Manutenções');
+
+  // ── 6. FINANCIAMENTOS ────────────────────────────────────────────────────────
+  const financiamentos=DB.fins.map(f=>{
+    const c=cCar(f.carroId);
+    return {
+      'Placa':c?.placa||'',
+      'Modelo':c?.modelo||'',
+      'Valor Total do Veículo (R$)':f.vTotal||0,
+      'Entrada (R$)':f.entrada||0,
+      'Valor Financiado (R$)':f.vFin||0,
+      'Taxa Mensal (%)':((f.taxa||0)*100).toFixed(2),
+      'Nº de Parcelas':f.nparcelas||0,
+      'Parcelas Pagas':f.npg||0,
+      'Valor da Parcela (R$)':f.parcela||0,
+      'Data Início':f.inicio||'',
+      'Status':f.status||'',
+      'Observações':f.obs||'',
+    };
+  });
+  XLSX.utils.book_append_sheet(wb, sheet(financiamentos.length?financiamentos:[{'Info':'Nenhum financiamento cadastrado'}]), 'Financiamentos');
+
+  // ── 7. QUILOMETRAGEM ─────────────────────────────────────────────────────────
+  const km=(DB.kms||[]).map(k=>{
+    const c=cCar(k.carroId);
+    return {
+      'Data':k.data||'',
+      'Placa':c?.placa||'',
+      'Modelo':c?.modelo||'',
+      'KM Registrado':k.km||0,
+      'Observações':k.obs||'',
+    };
+  });
+  XLSX.utils.book_append_sheet(wb, sheet(km.length?km:[{'Info':'Nenhum registro de KM'}]), 'Quilometragem');
+
+  // ── Download ─────────────────────────────────────────────────────────────────
+  XLSX.writeFile(wb, `frotando_backup_${hoje}.xlsx`);
+  toast(`Backup gerado com ${wb.SheetNames.length} abas ✓`);
+}
+
 // ── EXTRATO OFX/CSV ───────────────────────────────────────────────────────────
 const OFX_EX=`<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><STMTTRN><TRNTYPE>CREDIT</TRNTYPE><DTPOSTED>20260623</DTPOSTED><TRNAMT>600.00</TRNAMT><FITID>001</FITID><MEMO>PIX RECEBIDO - ERLON CARLOS OLIVEIRA</MEMO></STMTTRN><STMTTRN><TRNTYPE>CREDIT</TRNTYPE><DTPOSTED>20260622</DTPOSTED><TRNAMT>45.00</TRNAMT><FITID>002</FITID><MEMO>PIX RECEBIDO - SUPERMERCADO</MEMO></STMTTRN></STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>`;
 function normN(n){return n.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,'').split(' ').filter(p=>p.length>2);}
@@ -8051,8 +8220,8 @@ function _vistAbrirItem(idx){
         const perto=total>=limite;
         return `<div style="font-size:10px;color:${perto?'var(--r)':'var(--txm)'};text-align:right;margin-bottom:6px;font-weight:${perto?'700':'400'}">${total}/${limite} fotos na vistoria</div>
         <div style="display:flex;gap:8px;margin-bottom:6px">
-          <button ${perto?'disabled':''} onclick="document.getElementById('vist-file-input').setAttribute('capture','environment');document.getElementById('vist-file-input').click()" style="flex:1;background:${perto?'var(--sll)':'var(--p)'};color:#fff;border:none;border-radius:10px;padding:13px;font-size:13px;font-weight:700;cursor:${perto?'not-allowed':'pointer'};font-family:inherit">📷 Tirar foto</button>
-          <button ${perto?'disabled':''} onclick="document.getElementById('vist-file-input').removeAttribute('capture');document.getElementById('vist-file-input').click()" style="flex:1;background:transparent;color:${perto?'var(--sll)':'var(--p)'};border:1.5px solid ${perto?'var(--sll)':'var(--p)'};border-radius:10px;padding:13px;font-size:13px;font-weight:700;cursor:${perto?'not-allowed':'pointer'};font-family:inherit">🖼️ Galeria</button>
+          <button ${perto?'disabled':''} onclick="const i=document.getElementById('vist-file-input');i.setAttribute('capture','environment');i.removeAttribute('multiple');i.click()" style="flex:1;background:${perto?'var(--sll)':'var(--p)'};color:#fff;border:none;border-radius:10px;padding:13px;font-size:13px;font-weight:700;cursor:${perto?'not-allowed':'pointer'};font-family:inherit">📷 Tirar foto</button>
+          <button ${perto?'disabled':''} onclick="const i=document.getElementById('vist-file-input');i.removeAttribute('capture');i.setAttribute('multiple','');i.click()" style="flex:1;background:transparent;color:${perto?'var(--sll)':'var(--p)'};border:1.5px solid ${perto?'var(--sll)':'var(--p)'};border-radius:10px;padding:13px;font-size:13px;font-weight:700;cursor:${perto?'not-allowed':'pointer'};font-family:inherit">🖼️ Galeria</button>
         </div>
         <div style="font-size:10px;color:var(--txm);margin-bottom:14px;line-height:1.4">Se aparecer "Erro na câmera", é uma falha do app de câmera do celular — feche essa tela de erro, reabra o celular a câmera nativa uma vez para "destravar", ou use <strong>🖼️ Galeria</strong> para escolher uma foto já tirada.</div>`;
       })()}
@@ -8242,51 +8411,51 @@ function _vistTotalAvarias(vistId){
 }
 
 async function _vistFotoEscolhida(ev){
-  const file=ev.target.files?.[0];
+  const files=Array.from(ev.target.files||[]);
   ev.target.value='';
-  if(!file)return;
+  if(!files.length)return;
   const v=(DB.vist||[]).find(x=>x.id===_vistAtualId);
   if(!v||_vistItemIdx===null)return;
   if(_vistBloquearSeTravada(v))return;
   const it=v.itens[_vistItemIdx];
-
   const LIMITE_FOTOS_VISTORIA=60;
-  const totalFotosVistoria=v.itens.reduce((s,i)=>s+(i.fotos?.length||0),0);
-  if(totalFotosVistoria>=LIMITE_FOTOS_VISTORIA){
-    toast(`Limite de ${LIMITE_FOTOS_VISTORIA} fotos por vistoria atingido`,'er');
-    return;
-  }
-
   const status=document.getElementById('vist-upload-status');
-  const mostra=(txt)=>{if(status){status.style.display='block';status.textContent=txt;}};
+  const mostra=(txt)=>{if(status){status.style.display=txt?'block':'none';status.textContent=txt||'';}};
 
-  try{
-    mostra('Comprimindo foto…');
-    const blob=await _comprimirImagem(file);
-
-    // Geolocalização: reaproveita a da vistoria (capturada ao abrir).
-    // Pedir GPS a cada foto travava o fluxo e consumia bateria sem ganho real —
-    // a vistoria acontece toda no mesmo lugar.
-    const geo=v.geo||null;
-
-    const fotoId='f'+uid();
-    const chave=`vist/${v.id}/${it.parteId}_${fotoId}.jpg`;
-
-    mostra('Enviando para a nuvem…');
-    await _r2Upload(chave, blob, 'image/jpeg');
-
-    mostra('Registrando no banco…');
-    const r=await Repo.vistoriaFotos.criar({vistoriaItemId:it.id,chave,geo,ordem:it.fotos.length});
-    if(r.error){ throw new Error(r.mensagem||'falha ao registrar a foto'); }
-    it.fotos.push({id:r.data.id,chave,geo,ts:r.data.capturada_em,pins:[]});
-
-    if(status)status.style.display='none';
-    _vistRenderFotos();
-    toast('Foto salva ✓');
-  }catch(e){
-    mostra('');
-    if(status)status.style.display='none';
-    toast('Erro ao salvar foto: '+e.message,'er');
+  let enviadas=0;
+  let erros=0;
+  for(let fi=0;fi<files.length;fi++){
+    const file=files[fi];
+    const totalAtual=v.itens.reduce((s,i)=>s+(i.fotos?.length||0),0);
+    if(totalAtual>=LIMITE_FOTOS_VISTORIA){
+      toast(`Limite de ${LIMITE_FOTOS_VISTORIA} fotos atingido — ${fi} de ${files.length} enviadas`,'er');
+      break;
+    }
+    const label=files.length>1?` (${fi+1}/${files.length})`:'';
+    try{
+      mostra(`Comprimindo foto${label}…`);
+      const blob=await _comprimirImagem(file);
+      const geo=v.geo||null;
+      const fotoId='f'+uid();
+      const chave=`vist/${v.id}/${it.parteId}_${fotoId}.jpg`;
+      mostra(`Enviando foto${label}…`);
+      await _r2Upload(chave,blob,'image/jpeg');
+      mostra(`Registrando${label}…`);
+      const r=await Repo.vistoriaFotos.criar({vistoriaItemId:it.id,chave,geo,ordem:it.fotos.length});
+      if(r.error) throw new Error(r.mensagem||'falha ao registrar');
+      it.fotos.push({id:r.data.id,chave,geo,ts:r.data.capturada_em,pins:[]});
+      enviadas++;
+      _vistRenderFotos();
+    }catch(e){
+      erros++;
+      console.error('Erro foto',fi,e);
+    }
+  }
+  mostra('');
+  if(erros===0&&enviadas>0){
+    toast(enviadas>1?`${enviadas} fotos salvas ✓`:'Foto salva ✓');
+  } else if(erros>0){
+    toast(`${enviadas} foto(s) salva(s), ${erros} erro(s)`,'er');
   }
 }
 
@@ -9514,6 +9683,37 @@ function gerarPDF(){
   const veiPlaca=car?.placa||'___';
   const veiRen=car?.ren||'___';
 
+  // ── Mapa de variáveis para template personalizado ──────────────────────────
+  const _cvars={
+    locador_nome:locNome, locador_cpf:cfg.cpf||'___', locador_cnpj:cfg.cnpj||'___',
+    locador_doc:locDoc, locador_rg:cfg.rg||'___', locador_end:locEnd,
+    locador_tel:cfg.tel||'___', locador_pix:locPix,
+    motorista_nome:motNome, motorista_cpf:motCpf, motorista_rg:mot?.rg||'___',
+    motorista_cnh:mot?.cnh||'___', motorista_tel:mot?.tel||'___', motorista_end:motEnd,
+    placa:veiPlaca, modelo:veiMod, cor:veiCor, renavam:veiRen,
+    km_entrega:kmFmt, combustivel:comb, data_assinatura:dataExt,
+    aluguel_semanal:R(l.val), caucao:R(l.cauc), km_limite:kmLim,
+    km_excedente:'R$ '+kmVal, comarca:l.comarca||cfg.comarca||'___',
+    inicio:fD(l.inicio)||'___', franquia_seguro:R(fran),
+    dia_vencimento:diaVencNome,
+  };
+  const _tplCustom=(cfg.contratoTemplate||'').trim();
+  if(_tplCustom){
+    let corpo=_tplCustom.replace(/\{\{\s*(\w+)\s*\}\}/g,(mm,ch)=>_cvars[ch]!==undefined?_cvars[ch]:mm);
+    corpo=corpo.split('\n').map(x=>x.trim()?'<p>'+x+'</p>':'<br>').join('\n');
+    const htmlC='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Contrato — '+veiPlaca+'</title>'
+      +'<style>*{margin:0;padding:0;box-sizing:border-box}'
+      +'body{font-family:\'Times New Roman\',Times,serif;font-size:12pt;line-height:1.8;color:#1a1a1a;background:#fff;padding:28mm 30mm 24mm 30mm}'
+      +'p{margin-bottom:8pt;text-align:justify}'
+      +'@media print{body{padding:18mm 22mm 16mm 22mm}}</style></head><body>'+corpo+'</body></html>';
+    fecharModal('mcontrato');
+    const winC=window.open('','_blank');
+    if(!winC){toast('Permita popups para gerar o contrato','er');return;}
+    winC.document.write(htmlC);winC.document.close();winC.focus();
+    setTimeout(()=>winC.print(),500);
+    return;
+  }
+
   const html=`<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -10051,12 +10251,23 @@ const _NM=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto
 function abrirInsights(){
   _insMes=new Date().getMonth();
   _insAno=new Date().getFullYear();
-  document.getElementById('mins').style.display='block';
+  const mins=document.getElementById('mins');
+  mins.style.display='block';
+  // Garante que o header do Insights não fique atrás do topbar do app (#tb).
+  // Medimos a altura real do #tb (que varia conforme safe-area do iPhone)
+  // e aplicamos como padding-top no container interno.
+  const tb=document.getElementById('tb');
+  const tbH=tb?tb.getBoundingClientRect().height:0;
+  const inner=mins.querySelector('div');
+  if(inner) inner.style.paddingTop=tbH+'px';
   document.body.style.overflow='hidden';
   _renderInsights();
 }
 function fecharInsights(){
-  document.getElementById('mins').style.display='none';
+  const mins=document.getElementById('mins');
+  mins.style.display='none';
+  const inner=mins.querySelector('div');
+  if(inner) inner.style.paddingTop='';
   document.body.style.overflow='';
 }
 function _insightsMesAnterior(){
@@ -10587,7 +10798,71 @@ function renderAlertas(){
   });
 }
 
-// ── FILTROS DE PAGAMENTO ──────────────────────────────────────────────────────
+const _CONTRATO_VARS=[
+  'locador_nome','locador_doc','locador_cpf','locador_cnpj','locador_rg','locador_end','locador_tel','locador_pix',
+  'motorista_nome','motorista_cpf','motorista_rg','motorista_cnh','motorista_tel','motorista_end',
+  'placa','modelo','cor','renavam',
+  'km_entrega','combustivel','data_assinatura','inicio',
+  'aluguel_semanal','caucao','km_limite','km_excedente','franquia_seguro','comarca','dia_vencimento',
+];
+function _renderTemplateVars(){
+  const box=document.getElementById('cfg-tpl-vars');
+  if(!box) return;
+  box.innerHTML=_CONTRATO_VARS.map(v=>
+    `<span onclick="_inserirVar('${v}')" style="cursor:pointer;background:var(--bg);border:1px solid var(--sll);border-radius:6px;padding:2px 7px;font-size:10px;font-family:monospace;color:var(--p)">{{${v}}}</span>`
+  ).join('');
+}
+function _inserirVar(v){
+  const ta=document.getElementById('cfg-contrato-tpl');
+  if(!ta) return;
+  const ins='{{'+v+'}}';
+  const s=ta.selectionStart||ta.value.length;
+  ta.value=ta.value.slice(0,s)+ins+ta.value.slice(ta.selectionEnd||s);
+  ta.focus();
+  ta.selectionStart=ta.selectionEnd=s+ins.length;
+}
+async function salvarTemplateContrato(){
+  const tpl=document.getElementById('cfg-contrato-tpl').value;
+  DB.config.contratoTemplate=tpl;
+  const st=document.getElementById('cfg-tpl-status');
+  try{
+    await Repo.config.salvar({...DB.config, contratoTemplate:tpl});
+    if(st){st.style.color='var(--g)';st.textContent=tpl.trim()?'✓ Modelo personalizado salvo — será usado na impressão':'✓ Modelo removido — será usado o padrão';}
+    toast('Modelo de contrato salvo ✓');
+  }catch(e){
+    if(st){st.style.color='var(--r)';st.textContent='Erro ao salvar: '+e.message;}
+  }
+}
+function limparTemplateContrato(){
+  if(!confirm('Remover o modelo personalizado? A impressão voltará a usar o modelo padrão do Frotando.')) return;
+  document.getElementById('cfg-contrato-tpl').value='';
+  salvarTemplateContrato();
+}
+
+function _cpfValido(cpf){
+  const n=cpf.replace(/\D/g,'');
+  if(n.length!==11||/^(\d)\1{10}$/.test(n)) return false;
+  let s=0;
+  for(let i=0;i<9;i++) s+=+n[i]*(10-i);
+  let r=s%11;const d1=r<2?0:11-r;
+  if(+n[9]!==d1) return false;
+  s=0;
+  for(let i=0;i<10;i++) s+=+n[i]*(11-i);
+  r=s%11;const d2=r<2?0:11-r;
+  return +n[10]===d2;
+}
+function _validarCPFVisual(input){
+  const st=document.getElementById('mm-cpf-status');
+  if(!st) return;
+  const v=input.value.trim();
+  if(!v){st.style.display='none';input.style.borderColor='';return;}
+  const ok=_cpfValido(v);
+  st.style.display='block';
+  st.style.color=ok?'var(--g)':'var(--r)';
+  st.textContent=ok?'✓ CPF válido':'✗ CPF inválido — verifique os dígitos';
+  input.style.borderColor=ok?'var(--g)':'var(--r)';
+}
+
 let _filtPag='todos';
 function setFiltPag(f,el){
   _filtPag=f;
