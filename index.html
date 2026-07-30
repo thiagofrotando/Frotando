@@ -143,7 +143,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.23</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.24</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -373,8 +373,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
   <div id="tb">
     <div style="width:26px;height:26px;background:var(--a);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">🚗</div>
     <div class="logo">Frota<span>ndo</span></div>
-    <span id="badge-plano" onclick="abrirUpgrade()" style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44;cursor:pointer">Trial</span>
-    <span id="badge-plano-topo" style="display:none;font-size:9px;font-weight:700;padding:2px 8px;border-radius:99px;cursor:pointer" onclick="abrirUpgrade()"></span>
+    <span id="badge-plano-topo" onclick="abrirUpgrade()" style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:99px;background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44;cursor:pointer">Trial</span>
     <div class="pt" id="pt"></div>
     <div id="nb" class="nb" style="display:none;margin-left:auto"></div>
   </div>
@@ -2252,31 +2251,30 @@ async function _carregarPlano(){
 function _atualizarBadgePlano(){
   const labels={trial:'Trial',solo:'Mensal',frota:'Mensal',pro:'Mensal',cortesia:'Cortesia',enterprise:'Cortesia',mensal:'Mensal',trimestral:'Trimestral',semestral:'Semestral',anual:'Anual',ativo:'Ativo'};
   const cores={trial:'#f59e0b',solo:'#3b82f6',frota:'#3b82f6',pro:'#3b82f6',cortesia:'#ec4899',enterprise:'#ec4899',mensal:'#3b82f6',trimestral:'#8b5cf6',semestral:'#16a34a',anual:'#f59e0b',ativo:'#16a34a'};
-  const el=document.getElementById('badge-plano');
-  if(!el) return;
   const label=labels[_plano.plano]||'Trial';
   const cor=cores[_plano.plano]||'#f59e0b';
   const dias=_plano.trial_ate?Math.max(0,Math.round((new Date(_plano.trial_ate)-new Date())/86400000)):null;
-  el.textContent=label+(dias!==null&&_plano.plano==='trial'?` (${dias}d)`:'');
-  el.style.background=cor+'22';
-  el.style.color=cor;
-  el.style.border=`1px solid ${cor}44`;
-  // Badge no topo (ao lado da logo)
   const isPago=['mensal','trimestral','semestral','anual','ativo'].includes(_plano.plano);
+  // Badge unificado no topo
   const elTopo=document.getElementById('badge-plano-topo');
   if(elTopo&&!_isAdmin()){
-    elTopo.style.display='inline-block';
     elTopo.textContent=isPago?`✓ ${label}`:dias!==null?`Trial · ${dias}d`:'Trial';
     elTopo.style.background=cor+'22';
     elTopo.style.color=cor;
     elTopo.style.border=`1px solid ${cor}44`;
   }
+  // Compatibilidade: badge-plano na configuração (pode existir)
+  const el=document.getElementById('badge-plano');
+  if(el){
+    el.textContent=label+(dias!==null&&_plano.plano==='trial'?` (${dias}d)`:'');
+    el.style.background=cor+'22';el.style.color=cor;el.style.border=`1px solid ${cor}44`;
+  }
   // Avisar se trial expirando
   if(_plano.plano==='trial'&&dias!==null&&dias<=5&&dias>0){
-    setTimeout(()=>toast(`Trial expira em ${dias} dia(s). Entre em contato para assinar.`,'info'),2000);
+    setTimeout(()=>toast(`Trial expira em ${dias} dia(s). Assine para continuar.`,'info'),2000);
   }
   if(_plano.plano==='trial'&&dias===0){
-    setTimeout(()=>toast('Trial expirado! Entre em contato para continuar usando.','er'),2000);
+    setTimeout(()=>toast('Trial expirado! Assine para continuar usando.','er'),2000);
   }
 }
 
