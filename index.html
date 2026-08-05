@@ -143,7 +143,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.32</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.33</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -477,9 +477,9 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
           <button id="fpag-pago"  class="fpag"    onclick="setFiltPag('pago',this)">Pago</button>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
-          <input id="fpag-de"  type="date" style="flex:1;border:1px solid var(--sll);border-radius:7px;padding:5px 8px;font-size:12px;background:var(--bg);color:var(--tx)">
+          <input id="fpag-de"  type="date" onchange="renderHistPag()" style="flex:1;border:1px solid var(--sll);border-radius:7px;padding:5px 8px;font-size:12px;background:var(--bg);color:var(--tx)">
           <span style="font-size:11px;color:var(--txm)">ate</span>
-          <input id="fpag-ate" type="date" style="flex:1;border:1px solid var(--sll);border-radius:7px;padding:5px 8px;font-size:12px;background:var(--bg);color:var(--tx)">
+          <input id="fpag-ate" type="date" onchange="renderHistPag()" style="flex:1;border:1px solid var(--sll);border-radius:7px;padding:5px 8px;font-size:12px;background:var(--bg);color:var(--tx)">
           <button style="background:var(--pl);color:#fff;border:none;border-radius:7px;padding:5px 9px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:700" onclick="renderPags()">R</button>
         </div>
       </div>
@@ -6433,19 +6433,13 @@ function _renderPagsDOM(){
   const deEl=document.getElementById('fpag-de');
   const ateEl=document.getElementById('fpag-ate');
   if(deEl&&!deEl.value){const{de,ate}=_defaultPeriod();deEl.value=de;ateEl.value=ate;}
-  const rec=DB.pags.filter(p=>p.pago).reduce((s,p)=>s+_recAluguel(p),0);
-  const pend=DB.pags.filter(p=>!p.pago).reduce((s,p)=>s+p.val,0);
-  const atr=DB.pags.filter(p=>!p.pago&&_diasAtraso(p)>0).length;
-  document.getElementById('kpi-rec').textContent=R(rec);
-  document.getElementById('kpi-pend2').textContent=R(pend);
-  document.getElementById('kpi-pend2').style.color=pend>0?'var(--r)':'var(--g)';
-  document.getElementById('kpi-atr').textContent=atr;
   renderHistPag();
 }
 
 let _pagPage=0;
 const _PAG_PER_PAGE=30;
 let _pagsFiltrados=[];
+let _pagsBase=[];
 
 function renderHistPag(){
   const h=document.getElementById('hist-pag');
@@ -6465,19 +6459,38 @@ function renderHistPag(){
     return (ma?.nome||'').localeCompare(mb?.nome||'');
   });
   if(de||ate){pags=pags.filter(p=>{if(!p.data&&!p.dataVenc) return true;const d=new Date((p.data||p.dataVenc)+'T12:00:00');if(de&&d<de)return false;if(ate&&d>ate)return false;return true;});}
-  if(_filtPag==='pago')   pags=pags.filter(p=>p.pago);
-  if(_filtPag==='pend')   pags=pags.filter(p=>!p.pago&&_diasAtraso(p)===0);
-  if(_filtPag==='atr')    pags=pags.filter(p=>!p.pago&&_diasAtraso(p)>0);
   const buscaPag=(document.getElementById('busca-pag')?.value||'').trim().toUpperCase();
   if(buscaPag) pags=pags.filter(p=>{
     const m=cMot(p.motoId),c=cCar(p.carroId);
     return m?.nome?.toUpperCase().includes(buscaPag)||c?.placa?.toUpperCase().includes(buscaPag);
   });
+  // Base já filtrada por período + busca (mas ANTES do filtro de status/abas).
+  // Os KPIs Recebido/Pendente/Atrasado usam esta base para refletir o período
+  // selecionado, sem serem zerados ao clicar numa aba de status específica.
+  _pagsBase=pags;
+  _atualizarKpisPag();
+  // Filtro de status (abas) — afeta só a listagem, não os KPIs de resumo.
+  if(_filtPag==='pago')   pags=pags.filter(p=>p.pago);
+  if(_filtPag==='pend')   pags=pags.filter(p=>!p.pago&&_diasAtraso(p)===0);
+  if(_filtPag==='atr')    pags=pags.filter(p=>!p.pago&&_diasAtraso(p)>0);
   _pagsFiltrados=pags;
   const totEl=document.getElementById('kpi-tot');
   if(totEl) totEl.textContent=_pagsFiltrados.length;
   _pagPage=0;
   _renderHistPagPage(h);
+}
+
+// Calcula os totalizadores Recebido/Pendente/Atrasado sobre _pagsBase — ou seja,
+// respeitando o período e a busca filtrados, e não o histórico completo do app.
+function _atualizarKpisPag(){
+  const base=_pagsBase||[];
+  const rec=base.filter(p=>p.pago).reduce((s,p)=>s+_recAluguel(p),0);
+  const pend=base.filter(p=>!p.pago).reduce((s,p)=>s+p.val,0);
+  const atr=base.filter(p=>!p.pago&&_diasAtraso(p)>0).length;
+  const recEl=document.getElementById('kpi-rec'); if(recEl) recEl.textContent=R(rec);
+  const pendEl=document.getElementById('kpi-pend2');
+  if(pendEl){pendEl.textContent=R(pend);pendEl.style.color=pend>0?'var(--r)':'var(--g)';}
+  const atrEl=document.getElementById('kpi-atr'); if(atrEl) atrEl.textContent=atr;
 }
 
 function _detalharPag(pagId){
