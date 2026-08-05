@@ -143,7 +143,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.30</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.32</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -4766,7 +4766,7 @@ async function _encConfirmar(){
     const pendOrd=[...pend].sort((a,b)=>String(a.dataVenc||'').localeCompare(String(b.dataVenc||'')));
     for(const p of pendOrd){
       const campo = primeira
-        ? {debitoEncerramento:true, val:_calcPend.proporcional, valAlug:_calcPend.proporcional}
+        ? {debitoEncerramento:true, val:_calcPend.proporcional, valAlug:_calcPend.proporcional, valCauc:0, temCauc:false, proporcional:true}
         : {cancelado:true};
       const r=await Repo.pagamentos.atualizar(p.id,campo);
       if(!r.error) DB.pags=DB.pags.map(x=>x.id===p.id?{...x,...campo}:x);
@@ -6485,9 +6485,18 @@ function _detalharPag(pagId){
   if(!p) return;
   const m=cMot(p.motoId), car=cCar(p.carroId);
   const total=Number(p.val||0);
-  const aluguel=Number(p.valAlug??p.val??0);
-  const caucao=Number(p.valCauc||0);
+  let aluguel=Number(p.valAlug??p.val??0);
+  let caucao=Number(p.valCauc||0);
   const abono=Number(p.descAbono||0);
+
+  // Reconciliação defensiva: em pagamentos proporcionais (encerramento por
+  // inadimplência), a regra é "só aluguel, sem caução". Registros gravados antes
+  // dessa regra podem ter valAlug/valCauc antigos que não somam o total. Nesses
+  // casos, exibe o total como aluguel puro e caução zero, refletindo a regra real.
+  if(p.proporcional && Math.abs((aluguel+caucao)-total)>0.01){
+    aluguel=total;
+    caucao=0;
+  }
 
   const linha=(label,valor,cor)=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--sll);font-size:13px">
     <span style="color:var(--txm)">${label}</span>
@@ -6499,7 +6508,7 @@ function _detalharPag(pagId){
   if(p.manual){
     explicacao=`<div style="background:rgba(99,102,241,.1);border-radius:9px;padding:10px 12px;margin-top:12px;font-size:12px;color:var(--tx)">✏️ <strong>Lançamento manual</strong> — criado manualmente, fora do ciclo automático de parcelas.</div>`;
   } else if(p.proporcional){
-    explicacao=`<div style="background:rgba(245,158,11,.1);border-radius:9px;padding:10px 12px;margin-top:12px;font-size:12px;color:var(--tx)">⚖️ Valor <strong>proporcional</strong> — cobrado por dias parciais (encerramento por inadimplência), não a semana cheia.</div>`;
+    explicacao=`<div style="background:rgba(245,158,11,.1);border-radius:9px;padding:10px 12px;margin-top:12px;font-size:12px;color:var(--tx)">⚖️ Valor <strong>proporcional</strong> — cobrado por dias parciais, não a semana cheia. Ocorre na primeira semana do contrato (quando começa fora do dia de vencimento) ou no encerramento por inadimplência (dias rodados até a devolução).</div>`;
   } else if(caucao>0){
     explicacao=`<div style="background:rgba(42,106,154,.1);border-radius:9px;padding:10px 12px;margin-top:12px;font-size:12px;color:var(--tx)">🔒 Este valor inclui <strong>parcela da caução</strong> (garantia), somada ao aluguel da semana.</div>`;
   }
