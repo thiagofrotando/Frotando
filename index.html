@@ -143,7 +143,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.27</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.29</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -10874,8 +10874,7 @@ async function gerarParcelasPendentes(){
     const diasAteProxDV=(diaVencNum-hoje.getDay()+7)%7;
     const proxDVGlobal=new Date(hoje);proxDVGlobal.setDate(hoje.getDate()+diasAteProxDV);
 
-    const pagLoc=DB.pags.filter(p=>p.locId===l.id&&!p.caucAvulso)
-      .sort((a,b)=>(b.dataVenc||b.data||'').localeCompare(a.dataVenc||a.data||''));
+    const pagLoc=DB.pags.filter(p=>p.locId===l.id&&!p.caucAvulso&&!p.manual);
     const semPagamentoAlgum=pagLoc.length===0;
 
     // Dados do início do contrato
@@ -10885,20 +10884,22 @@ async function gerarParcelasPendentes(){
     const ehProporcionalNaOrigem=diasDesdeUltimoDVIni!==0;
     const diasPropOrigem=ehProporcionalNaOrigem?(7-diasDesdeUltimoDVIni):7;
 
-    let ultimoDV=pagLoc[0]?.dataVenc?new Date(pagLoc[0].dataVenc+'T12:00:00'):null;
-    if(!ultimoDV){
-      ultimoDV=new Date(dvInicioContrato);ultimoDV.setDate(dvInicioContrato.getDate()-7);
-    }
-    let dv=new Date(ultimoDV);dv.setDate(dv.getDate()+7);
+    // Percorre TODAS as semanas desde o início do contrato até a próxima data de
+    // vencimento, semana a semana. Não usa a data do último pagamento existente como
+    // atalho — se usasse, um lançamento manual com vencimento futuro (ex: daqui a 3
+    // semanas) faria o loop pular direto pra lá e nunca voltar pra conferir semanas
+    // intermediárias ainda sem pagamento (jaExiste continua garantindo que nada seja
+    // duplicado).
+    let dv=new Date(dvInicioContrato);
     while(dv<=proxDVGlobal){
       const dvISO=fmtISO(dv);
       const dvFim=new Date(dv);dvFim.setDate(dv.getDate()+6);
       const semLabel=`${fmtD(dv)} a ${fmtD(dvFim)}/${dvFim.getFullYear()}`;
-      const jaExiste=DB.pags.some(p=>p.locId===l.id&&!p.caucAvulso&&(p.dataVenc===dvISO||p.sem===semLabel));
+      const jaExiste=DB.pags.some(p=>p.locId===l.id&&!p.caucAvulso&&!p.manual&&(p.dataVenc===dvISO||p.sem===semLabel));
       if(!jaExiste){
         const caucQuitado=l.caucModo==='parcelado'&&(l.caucPago||0)>=l.cauc;
         // Calcular número da parcela atual (1-based)
-        const numParcelaAtual=DB.pags.filter(p=>p.locId===l.id&&!p.caucAvulso).length+1;
+        const numParcelaAtual=DB.pags.filter(p=>p.locId===l.id&&!p.caucAvulso&&!p.manual).length+1;
         const caucIniParcela=Number(l.caucIniParcela)||1;
         const caucAtivo=!caucQuitado&&l.caucModo==='parcelado'&&numParcelaAtual>=caucIniParcela;
         const valCaucSem=caucAtivo?l.caucParcSem||0:0;
