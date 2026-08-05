@@ -143,7 +143,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.25</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.27</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -3953,6 +3953,8 @@ const _PLANOS={
   frota:      {label:'Mensal',     limite:999, preco:89},
   pro:        {label:'Mensal',     limite:999, preco:89},
   enterprise: {label:'Cortesia',   limite:10,  preco:0},
+  trial:      {label:'Trial',      limite:2,   preco:0},
+  cortesia:   {label:'Cortesia',   limite:10,  preco:0},
 };
 function _mrrDoCliente(u){
   if(!u.ativo) return 0;
@@ -4023,7 +4025,7 @@ function renderAdmin(){
           <div style="font-size:10px;color:#64748b;margin-top:2px">Desde ${u.criado_em?new Date(u.criado_em).toLocaleDateString('pt-BR'):'—'}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
-          <span style="background:${cor}22;color:${cor};border:1px solid ${cor}44;border-radius:99px;padding:2px 9px;font-size:11px;font-weight:700">${u.plano}</span>
+          <span style="background:${cor}22;color:${cor};border:1px solid ${cor}44;border-radius:99px;padding:2px 9px;font-size:11px;font-weight:700">${_PLANOS[u.plano]?.label||u.plano}</span>
           <span style="background:${u.ativo?'rgba(16,185,129,.2)':'rgba(239,68,68,.2)'};color:${u.ativo?'#34d399':'#f87171'};border-radius:99px;padding:2px 9px;font-size:11px;font-weight:700">${u.ativo?'Ativo':'Inativo'}</span>
         </div>
       </div>
@@ -10843,7 +10845,7 @@ function _defaultPeriod(){
 function _diasAtraso(p){
   if(p.pago) return 0;
   const hoje=new Date();hoje.setHours(0,0,0,0);
-  const venc=p.dataVenc?new Date(p.dataVenc+'T12:00:00'):null;
+  const venc=p.dataVenc?new Date(p.dataVenc+'T00:00:00'):null;
   if(!venc) return 0;
   return Math.max(0,Math.floor((hoje-venc)/86400000));
 }
@@ -11402,7 +11404,7 @@ function _gerarMsgCobranca(p){
   const car=cCar(p.carroId);
   const loc=DB.locs.find(l=>l.id===p.locId);
   const cfg=DB.config;
-  const atraso=p.atr||Math.max(0,Math.floor((new Date()-new Date(p.dataVenc+'T12:00:00'))/86400000));
+  const atraso=p.atr||_diasAtraso(p);
   const multa=atraso>0?Math.round(p.val*0.02*100)/100:0;
   const juros=atraso>0?Math.round(p.val*0.01*(atraso/30)*100)/100:0;
   const total=Math.round((p.val+multa+juros)*100)/100;
