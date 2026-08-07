@@ -143,7 +143,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.34</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.35</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -745,6 +745,135 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       </select>
     </div>
     <div id="admin-lista"></div>
+  </div>
+</div>
+
+<div id="menc" class="mo" onclick="if(event.target===this)_encCancelar()">
+  <div class="ms" onclick="event.stopPropagation()">
+    <!-- Header fixo: handle + step indicators (nunca scrolla) -->
+    <div style="flex-shrink:0;padding:0 16px">
+      <div class="mh"></div>
+      <div class="mt" id="enc-titulo">Encerrar Contrato</div>
+      <div style="display:flex;gap:4px;margin-top:10px" id="enc-steps">
+        <div id="enc-s1" style="flex:1;height:3px;border-radius:99px;background:var(--a)"></div>
+        <div id="enc-s2" style="flex:1;height:3px;border-radius:99px;background:var(--sll)"></div>
+        <div id="enc-s3" style="flex:1;height:3px;border-radius:99px;background:var(--sll)"></div>
+      </div>
+      <div style="font-size:10px;color:var(--txm);margin-top:4px;margin-bottom:12px" id="enc-step-label">Etapa 1 de 3 — Dados da devolução</div>
+    </div>
+    <!-- Corpo scrollável: etapas sem botões de navegação -->
+    <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;min-height:0;padding:0 16px" id="enc-scroll-body">
+      <!-- ETAPA 1: Dados da devolução -->
+      <div id="enc-etapa1">
+        <div id="enc-info-contrato" style="background:var(--bg);border-radius:10px;padding:11px 13px;margin-bottom:14px;font-size:12px"></div>
+        <div class="fi"><label>Data de devolução *</label><input id="enc-data" type="date"></div>
+        <div class="fi"><label>KM na devolução *</label><input id="enc-km" type="number" placeholder="Ex: 52.400"></div>
+        <div class="fi"><label>Nível de combustível</label>
+          <select id="enc-comb">
+            <option value="Cheio">Cheio</option>
+            <option value="3/4">3/4</option>
+            <option value="1/2" selected>1/2</option>
+            <option value="1/4">1/4</option>
+            <option value="Reserva">Reserva</option>
+            <option value="Vazio">Vazio</option>
+          </select>
+        </div>
+        <div class="fi"><label>Motivo do encerramento</label>
+          <select id="enc-motivo">
+            <option value="Devolução voluntária">Devolução voluntária</option>
+            <option value="Fim de contrato">Fim de contrato</option>
+            <option value="Inadimplência">Inadimplência</option>
+            <option value="Infração de contrato">Infração de contrato</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        <div class="fi"><label>Observações gerais</label><textarea id="enc-obs" placeholder="Detalhes sobre a devolução..." rows="2"></textarea></div>
+        <div id="enc-bloco-vistoria" style="display:none;margin-bottom:14px"></div>
+        <div id="enc-bloco-pend" style="display:none;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:12px 13px;margin-bottom:16px">
+          <div style="font-size:12px;font-weight:800;color:var(--p);margin-bottom:8px">⏳ Parcelas pendentes</div>
+          <div id="enc-pend-info" style="font-size:12px;color:var(--txm);margin-bottom:10px"></div>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:var(--card);border-radius:8px;padding:10px 12px;margin-bottom:6px;border:2px solid transparent" id="enc-opt-cancelar-label">
+            <input type="radio" name="enc-pend-opt" id="enc-opt-cancelar" value="cancelar" checked onchange="_encAtualizarOptPend()" style="accent-color:var(--a);width:16px;height:16px;flex-shrink:0">
+            <div>
+              <div style="font-weight:700;font-size:13px">Cancelar as parcelas</div>
+              <div style="font-size:11px;color:var(--txm)">O motorista fica quite — débito não é cobrado</div>
+            </div>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;background:var(--card);border-radius:8px;padding:10px 12px;border:2px solid transparent" id="enc-opt-cobrar-label">
+            <input type="radio" name="enc-pend-opt" id="enc-opt-cobrar" value="cobrar" onchange="_encAtualizarOptPend()" style="accent-color:var(--a);width:16px;height:16px;flex-shrink:0">
+            <div>
+              <div style="font-weight:700;font-size:13px">Cobrar do motorista</div>
+              <div style="font-size:11px;color:var(--txm)">Valor entra no acerto financeiro e no documento</div>
+            </div>
+          </label>
+        </div>
+      </div>
+      <!-- ETAPA 2: Vistoria e descontos -->
+      <div id="enc-etapa2" style="display:none">
+        <div id="enc-checklist-hint" style="font-size:12px;color:var(--txm);margin-bottom:12px">Marque os itens com <strong>avaria</strong> e informe o desconto no caução quando aplicável.</div>
+        <div id="enc-vistoria-resumo" style="display:none;margin-bottom:12px"></div>
+        <div id="enc-checklist"></div>
+        <div style="background:var(--bg);border-radius:10px;padding:11px 13px;margin-top:12px;margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+            <span style="color:var(--txm)">Total de descontos</span>
+            <span id="enc-total-desc" style="font-weight:800;color:var(--r)">R$ 0,00</span>
+          </div>
+          <div class="fi" style="margin-bottom:0"><label>Desconto adicional (R$)</label><input id="enc-desc-extra" type="number" step="0.01" placeholder="0" oninput="_encAtualizarDesc()"></div>
+        </div>
+      </div>
+      <!-- ETAPA 3: Resumo e confirmação -->
+      <div id="enc-etapa3" style="display:none">
+        <div id="enc-resumo"></div>
+        <div id="enc-prazo-wrap" style="margin-top:14px;background:rgba(239,68,68,.06);border-radius:10px;padding:12px 13px;border:1px solid rgba(239,68,68,.2);display:none">
+          <div style="font-size:12px;font-weight:800;color:var(--r);margin-bottom:3px">📆 Prazo para pagamento do saldo devedor</div>
+          <div style="font-size:11px;color:var(--txm);margin-bottom:9px">Em quantos dias o motorista se compromete a quitar o saldo? Vai no Termo de Reconhecimento de Dívida.</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input id="enc-prazo-dias" type="number" min="1" step="1" placeholder="Ex: 30" style="width:90px;background:var(--bg);border:1.5px solid var(--sll);border-radius:8px;padding:9px 11px;font-size:14px;color:var(--tx);font-family:inherit;outline:none">
+            <span style="font-size:13px;color:var(--txm)">dias a contar da assinatura</span>
+          </div>
+        </div>
+        <div style="margin-top:14px;background:var(--card);border-radius:10px;padding:12px 13px">
+          <div style="font-size:12px;font-weight:800;color:var(--p);margin-bottom:3px">✍️ Assinaturas (opcional)</div>
+          <div style="font-size:11px;color:var(--txm);margin-bottom:10px">Assine na tela agora ou deixe em branco para assinar no papel depois.</div>
+          <div style="display:flex;gap:8px">
+            <button type="button" onclick="_encAssinar('locador')" style="flex:1;background:transparent;border:1.5px solid var(--pl);color:var(--pl);border-radius:9px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" id="enc-btn-sig-locador">Assinar (Locador)</button>
+            <button type="button" onclick="_encAssinar('locatario')" style="flex:1;background:transparent;border:1.5px solid var(--pl);color:var(--pl);border-radius:9px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" id="enc-btn-sig-locatario">Assinar (Motorista)</button>
+          </div>
+        </div>
+        <div style="margin-top:14px;background:rgba(239,68,68,.06);border-radius:10px;padding:12px 13px;border:1px solid rgba(239,68,68,.2);margin-bottom:4px">
+          <div style="font-size:12px;font-weight:700;color:var(--r);margin-bottom:4px">⚠️ Ação irreversível</div>
+          <div style="font-size:11px;color:var(--txm)" id="enc-aviso-texto">O contrato será marcado como Encerrado. O veículo voltará a Disponível.</div>
+        </div>
+      </div>
+    </div>
+    <!-- Footer fixo: botões de navegação (nunca scrolla, sempre visível) -->
+    <div class="ms-footer" id="enc-footer">
+      <div style="display:flex;gap:8px">
+        <button class="bt btp" style="flex:1" onclick="_encProximo(2)">Próximo →</button>
+        <button class="bt btg" onclick="_encCancelar()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="mins" style="display:none;position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.6);overflow-y:auto" onclick="if(event.target===this)fecharInsights()">
+  <div style="background:var(--bg);min-height:100%;padding:0 0 32px">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#0d2b3e 0%,#1e4d6b 100%);padding:16px 16px 20px;position:sticky;top:0;z-index:2">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:11px;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.5px">Análise mensal</div>
+          <div style="font-size:18px;font-weight:900;color:#fff;margin-top:2px">💡 Insights</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button onclick="_insightsMesAnterior()" style="background:rgba(255,255,255,.12);border:none;color:#fff;border-radius:8px;padding:6px 10px;font-size:16px;cursor:pointer;font-family:inherit">‹</button>
+          <div id="ins-mes-label" style="font-size:13px;font-weight:700;color:#fff;min-width:80px;text-align:center"></div>
+          <button onclick="_insightsMesProximo()" style="background:rgba(255,255,255,.12);border:none;color:#fff;border-radius:8px;padding:6px 10px;font-size:16px;cursor:pointer;font-family:inherit">›</button>
+        </div>
+        <button onclick="fecharInsights()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 11px;font-size:16px;cursor:pointer;font-family:inherit">✕</button>
+      </div>
+    </div>
+    <div id="ins-body" style="padding:14px 14px 0"></div>
   </div>
 </div>
 
