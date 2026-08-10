@@ -131,6 +131,52 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 .tli{display:flex;gap:10px;margin-bottom:12px;position:relative}
 .tld{width:10px;height:10px;border-radius:99px;position:absolute;left:-17px;top:5px;border:2px solid #fff;box-shadow:0 0 0 1px currentColor}
 ::-webkit-scrollbar{display:none}
+
+/* ===== LANDING RESPONSIVA — DESKTOP (mobile permanece intacto) ===== */
+@media (min-width:900px){
+  /* Alarga os containers internos que no mobile eram estreitos (max-width 300–440px) */
+  #lp section > div[style*="max-width:440px"],
+  #lp section > div[style*="max-width:420px"],
+  #lp section > div[style*="max-width:400px"]{
+    max-width:1140px !important;
+  }
+  /* Cabeçalhos de seção com respiro maior */
+  #lp section > h2{ font-size:30px !important; }
+  #lp section > p{ font-size:15px !important; max-width:640px !important; margin-left:auto !important; margin-right:auto !important; }
+  /* Padding vertical mais generoso nas seções */
+  #lp > section{ padding-top:64px !important; padding-bottom:64px !important; }
+
+  /* DORES: 3 cards lado a lado */
+  #lp .lp-grid-dores{ display:grid !important; grid-template-columns:repeat(3,1fr) !important; gap:18px !important; align-items:stretch !important; }
+  #lp .lp-grid-dores > div{ flex-direction:column !important; }
+
+  /* GRID DE FEATURES: de 2 para 3 colunas, com cards maiores */
+  #lp .lp-grid-features{ grid-template-columns:repeat(3,1fr) !important; gap:16px !important; }
+  #lp .lp-grid-features > div{ padding:20px !important; }
+  #lp .lp-grid-features > div > div:first-child{ font-size:28px !important; }
+  #lp .lp-grid-features > div > div:nth-child(2){ font-size:14px !important; }
+  #lp .lp-grid-features > div > div:nth-child(3){ font-size:12px !important; }
+
+  /* COMO FUNCIONA: 3 passos em colunas */
+  #lp .lp-grid-passos{ display:grid !important; grid-template-columns:repeat(3,1fr) !important; gap:28px !important; }
+
+  /* PREÇOS: 4 planos lado a lado */
+  #lp .lp-grid-precos{ display:grid !important; grid-template-columns:repeat(4,1fr) !important; gap:16px !important; align-items:stretch !important; }
+  #lp .lp-grid-precos > div{ display:flex !important; flex-direction:column !important; }
+  #lp .lp-grid-precos > div > div:first-child{ flex-direction:column !important; align-items:flex-start !important; gap:8px !important; }
+  #lp .lp-grid-precos button{ margin-top:auto !important; }
+
+  /* HERO: título maior e mais respiro */
+  #lp section h1{ font-size:44px !important; }
+  #lp section h1 + p{ font-size:17px !important; max-width:560px !important; }
+}
+@media (min-width:900px) and (max-width:1200px){
+  #lp .lp-grid-precos{ grid-template-columns:repeat(2,1fr) !important; }
+  #lp .lp-grid-features{ grid-template-columns:repeat(2,1fr) !important; }
+  #lp section > div[style*="max-width:440px"],
+  #lp section > div[style*="max-width:420px"],
+  #lp section > div[style*="max-width:400px"]{ max-width:860px !important; }
+}
 </style>
 </head>
 <body>
@@ -143,7 +189,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.35</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.39</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -166,7 +212,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
   <section style="padding:38px 20px;background:#fff">
     <h2 style="font-size:21px;font-weight:900;color:#0d2b3e;text-align:center;margin-bottom:6px">Sua locadora ainda funciona assim?</h2>
     <p style="text-align:center;color:#64748b;font-size:13px;margin-bottom:24px;max-width:400px;margin-left:auto;margin-right:auto">A maioria das locadoras pequenas perde parte do lucro só por falta de controle. Veja onde o dinheiro escapa:</p>
-    <div style="max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:10px">
+    <div class="lp-grid-dores" style="max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:10px">
       <div style="display:flex;gap:12px;align-items:flex-start;background:#fef2f2;border-left:3px solid #ef4444;border-radius:10px;padding:13px 15px">
         <span style="font-size:20px;flex-shrink:0">📉</span>
         <div><div style="font-size:13px;font-weight:800;color:#0d2b3e;margin-bottom:2px">Motorista atrasa e você só descobre depois</div><div style="font-size:12px;color:#64748b;line-height:1.4">Sem alerta e sem cobrança automática, quando vê já são duas semanas em atraso.</div></div>
@@ -226,7 +272,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
   <section style="padding:40px 20px;background:#0d2b3e">
     <h2 style="font-size:21px;font-weight:900;color:#fff;text-align:center;margin-bottom:6px">Tudo que sua locadora precisa</h2>
     <p style="text-align:center;color:rgba(255,255,255,.5);font-size:13px;margin-bottom:24px">Do cadastro do carro até o lucro do mês, em um só lugar</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:440px;margin:0 auto">
+    <div class="lp-grid-features" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:440px;margin:0 auto">
       <div style="background:#1e293b;border-radius:12px;padding:13px"><div style="font-size:22px;margin-bottom:6px">📋</div><div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:3px">Contrato em 1 minuto</div><div style="font-size:10px;color:#94a3b8;line-height:1.4">Documento jurídico completo — ou use seu próprio modelo</div></div>
       <div style="background:#1e293b;border-radius:12px;padding:13px"><div style="font-size:22px;margin-bottom:6px">💰</div><div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:3px">Caução controlado</div><div style="font-size:10px;color:#94a3b8;line-height:1.4">Integral ou parcelado com ajuste automático</div></div>
       <div style="background:#1e293b;border-radius:12px;padding:13px"><div style="font-size:22px;margin-bottom:6px">💬</div><div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:3px">Cobrança no WhatsApp</div><div style="font-size:10px;color:#94a3b8;line-height:1.4">Mensagem pronta para o inadimplente com um toque</div></div>
@@ -240,7 +286,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
   <section style="padding:44px 20px;background:#f8fafc">
     <h2 style="font-size:22px;font-weight:900;color:#0d2b3e;text-align:center;margin-bottom:6px">Como começar</h2>
     <p style="text-align:center;color:#64748b;font-size:13px;margin-bottom:28px">3 passos simples para começar a gerenciar sua frota</p>
-    <div style="max-width:420px;margin:0 auto;display:flex;flex-direction:column;gap:0">
+    <div class="lp-grid-passos" style="max-width:420px;margin:0 auto;display:flex;flex-direction:column;gap:0">
       <!-- Passo 1 -->
       <div style="display:flex;gap:16px;align-items:flex-start">
         <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
@@ -284,7 +330,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <h2 style="font-size:22px;font-weight:900;color:#0d2b3e;text-align:center;margin-bottom:6px">Plano único. Frota ilimitada.</h2>
     <p style="text-align:center;color:#64748b;font-size:13px;margin-bottom:8px">Todas as funcionalidades inclusas. Quanto mais tempo, mais barato.</p>
     <p style="text-align:center;color:#16a34a;font-size:12px;font-weight:700;margin-bottom:24px">✓ Cadastre quantos carros quiser, sem cobrança por veículo</p>
-    <div style="max-width:420px;margin:0 auto;display:flex;flex-direction:column;gap:10px">
+    <div class="lp-grid-precos" style="max-width:420px;margin:0 auto;display:flex;flex-direction:column;gap:10px">
       <!-- MENSAL -->
       <div style="border:1px solid #e2e8f0;border-radius:14px;padding:16px;background:#fff">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -1110,6 +1156,15 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       </div>
       <div class="fi"><label>Data de assinatura</label><input id="mct-data" type="date"></div>
       <div class="fi"><label>Franquia do seguro (R$)</label><input id="mct-fran" type="number" placeholder="4800"></div>
+      <div style="margin-top:6px">
+        <div style="font-size:12px;font-weight:800;color:var(--p);margin-bottom:3px">✍️ Assinaturas (opcional)</div>
+        <div style="font-size:11px;color:var(--txm);margin-bottom:10px">Assine na tela agora, deixe em branco para assinar no papel, ou limpe para assinar depois pelo gov.br.</div>
+        <div style="display:flex;gap:8px">
+          <button type="button" onclick="_ctAssinar('locador')" style="flex:1;background:transparent;border:1.5px solid var(--pl);color:var(--pl);border-radius:9px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" id="mct-btn-sig-locador">Assinar (Locador)</button>
+          <button type="button" onclick="_ctAssinar('locatario')" style="flex:1;background:transparent;border:1.5px solid var(--pl);color:var(--pl);border-radius:9px;padding:10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" id="mct-btn-sig-locatario">Assinar (Motorista)</button>
+        </div>
+        <button type="button" onclick="_ctLimparAssinaturas()" id="mct-btn-sig-limpar" style="display:none;width:100%;margin-top:8px;background:transparent;border:1.5px solid var(--sll);color:var(--txm);border-radius:9px;padding:9px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">🗑️ Limpar assinaturas (assinar pelo gov.br)</button>
+      </div>
     </div>
     <div class="ms-footer">
       <div style="display:flex;gap:8px">
@@ -1484,6 +1539,8 @@ const repoContratos = {
     if (dados.diaVenc !== undefined) payload.dia_vencimento = Number(dados.diaVenc) || 6;
     if (dados.comarca !== undefined) payload.comarca = dados.comarca || null;
     if (dados.uso !== undefined) payload.uso = dados.uso;
+    if (dados.assinaturaLocador !== undefined) payload.assinatura_locador_url = dados.assinaturaLocador || null;
+    if (dados.assinaturaLocatario !== undefined) payload.assinatura_locatario_url = dados.assinaturaLocatario || null;
     return _repoExec(
       _sb.from('contratos').update(payload).eq('id', id).eq('owner_id', _userId()).select().single(),
       'atualizar contrato'
@@ -3350,6 +3407,9 @@ function _mapContratoRelacional(row){
     uso: row.uso,
     comarca: row.comarca,
     status: row.status,
+    // Assinaturas digitais do contrato de locação (assinadas na tela do celular)
+    assinaturaLocador: row.assinatura_locador_url||null,
+    assinaturaLocatario: row.assinatura_locatario_url||null,
     // Campos de encerramento — só relevantes quando status='Encerrada'.
     // Encerramento AINDA NÃO foi migrado nesta build de teste (ver aviso em
     // abrirEncerramento). encAvarias fica vazio aqui porque mora na tabela
@@ -4822,6 +4882,62 @@ function _encAssinar(quem){
   });
 }
 
+// ── Assinatura do CONTRATO na tela (locador/locatário) ──────────────────────
+let _ctSigLocador=null, _ctSigLocatario=null;
+
+// Atualiza o visual de um botão de assinatura (assinado x pendente)
+function _ctSetBtnSig(quem, assinou){
+  const lbl=quem==='locador'?'Locador':'Motorista';
+  const btn=document.getElementById(quem==='locador'?'mct-btn-sig-locador':'mct-btn-sig-locatario');
+  if(!btn) return;
+  if(assinou){
+    btn.textContent=`✓ ${lbl} assinou`;
+    btn.style.background='rgba(16,163,74,.12)';btn.style.borderColor='var(--g)';btn.style.color='var(--g)';
+  } else {
+    btn.textContent=`Assinar (${lbl})`;
+    btn.style.background='transparent';btn.style.borderColor='var(--pl)';btn.style.color='var(--pl)';
+  }
+}
+
+// Mostra o botão "Limpar" só quando há ao menos uma assinatura
+function _ctAtualizarBtnLimpar(){
+  const b=document.getElementById('mct-btn-sig-limpar');
+  if(b) b.style.display=(_ctSigLocador||_ctSigLocatario)?'block':'none';
+}
+
+function _ctAssinar(quem){
+  const loc=DB.locs.find(l=>l.id===_pdfLocId);
+  const mot=loc?cMot(loc.motoId):null;
+  const titulo=quem==='locador'?'Assinatura do Locador':`Assinatura de ${mot?.nome?.split(' ').slice(0,2).join(' ')||'Motorista'}`;
+  _abrirAssinatura(titulo,(dataURL)=>{
+    if(quem==='locador') _ctSigLocador=dataURL; else _ctSigLocatario=dataURL;
+    _ctSetBtnSig(quem,true);
+    _ctAtualizarBtnLimpar();
+    toast('Assinatura registrada ✓');
+  });
+}
+
+// Limpa as assinaturas (sessão atual + banco) — usado quando o cliente prefere
+// assinar pelo gov.br ou em outro meio.
+async function _ctLimparAssinaturas(){
+  if(!_ctSigLocador&&!_ctSigLocatario){toast('Não há assinaturas para limpar','info');return;}
+  if(!confirm('Limpar as assinaturas deste contrato?\n\nElas serão removidas da tela e do banco. O contrato poderá ser assinado pelo gov.br ou no papel.')) return;
+  _ctSigLocador=null;_ctSigLocatario=null;
+  _ctSetBtnSig('locador',false);
+  _ctSetBtnSig('locatario',false);
+  _ctAtualizarBtnLimpar();
+  const l=DB.locs.find(x=>x.id===_pdfLocId);
+  if(l){
+    l.assinaturaLocador=null;l.assinaturaLocatario=null;
+    DB.locs=DB.locs.map(x=>x.id===l.id?{...x,assinaturaLocador:null,assinaturaLocatario:null}:x);
+    if(typeof repoContratos!=='undefined'&&repoContratos.atualizar){
+      const r=await repoContratos.atualizar(l.id,{assinaturaLocador:null,assinaturaLocatario:null});
+      if(r&&r.error){toast('Assinaturas limpas na tela, mas houve erro ao salvar no banco','er');return;}
+    }
+  }
+  toast('Assinaturas removidas ✓');
+}
+
 async function _encConfirmar(){
   const loc=DB.locs.find(l=>l.id===_encLocId);
   if(!loc){toast('Contrato não encontrado','er');return;}
@@ -5002,7 +5118,7 @@ function _gerarTermoDivida(loc,mot,car,cfg,saldoDevedor){
   .assinaturas{margin-top:48pt}
   .ass-grid{display:grid;grid-template-columns:1fr 1fr;gap:48pt;margin-top:36pt}
   .ass-linha{border-top:1px solid #000;padding-top:4pt;font-size:10pt;text-align:center}
-  .testemunhas{display:grid;grid-template-columns:1fr 1fr;gap:48pt;margin-top:36pt}
+  .testemunhas{display:none}
   .rodape{margin-top:36pt;border-top:1px solid #ccc;padding-top:6pt;font-size:9pt;color:#555;text-align:center}
   .btn-print{display:inline-block;margin-bottom:16pt;padding:8pt 18pt;background:#222;color:#fff;border:none;font-family:Arial,sans-serif;font-size:11pt;cursor:pointer;border-radius:4px}
   .no-print{margin-bottom:12pt}
@@ -9281,7 +9397,7 @@ Este contrato é exclusivamente de locação de bem móvel. Não gera vínculo t
 
 Ao final da locação ou após rescisão, o LOCATÁRIO devolverá imediatamente o veículo ao LOCADOR, em Belo Horizonte/MG ou local indicado, com chaves, documentos, acessórios e itens recebidos. A não devolução autoriza cobrança de aluguel até a restituição e multa não compensatória de 2 (duas) semanas de aluguel (${multa2sem}).
 
-Comunicações por WhatsApp, e-mail ou meio eletrônico informado serão válidas se comprovado o envio. A tolerância não gera novação nem renúncia. Alterações só valerão por escrito. Assinado por 2 (duas) testemunhas, este contrato constitui título executivo extrajudicial. Fica eleito o foro da Comarca de ${loc.comarca||cfg.comarca||'Belo Horizonte/MG'}.
+Comunicações por WhatsApp, e-mail ou meio eletrônico informado serão válidas se comprovado o envio. A tolerância não gera novação nem renúncia. Alterações só valerão por escrito. Este contrato constitui título executivo extrajudicial. Fica eleito o foro da Comarca de ${loc.comarca||cfg.comarca||'Belo Horizonte/MG'}.
 
 
 ${loc.comarca||cfg.comarca||'Belo Horizonte/MG'}, ${dataExtenso}.
@@ -9290,10 +9406,6 @@ ${loc.comarca||cfg.comarca||'Belo Horizonte/MG'}, ${dataExtenso}.
 ________________________________________    ________________________________________
 ${(cfg.nome||'LOCADOR').toUpperCase()} - LOCADOR        ${(m?.nome||'LOCATÁRIO').toUpperCase()} - LOCATÁRIO
 CPF: ${cfg.cpf||'___'}                         CPF: ${m?.cpf||'___'}
-
-
-________________________________________    ________________________________________
-TESTEMUNHA 1 - Nome/CPF                     TESTEMUNHA 2 - Nome/CPF
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -9737,6 +9849,12 @@ function abrirModalContrato(locId){
   const ke=document.getElementById('mct-km');if(ke) ke.value=l?.kmIni||car?.km||'';
   const fe=document.getElementById('mct-fran');if(fe) fe.value=DB.config.fran||4800;
   const de=document.getElementById('mct-data');if(de) de.value=today();
+  // Carrega assinaturas já salvas neste contrato (se houver) e ajusta os botões
+  _ctSigLocador=l?.assinaturaLocador||null;
+  _ctSigLocatario=l?.assinaturaLocatario||null;
+  _ctSetBtnSig('locador',!!_ctSigLocador);
+  _ctSetBtnSig('locatario',!!_ctSigLocatario);
+  _ctAtualizarBtnLimpar();
   abrirModal('mcontrato',{});
 }
 
@@ -9746,6 +9864,17 @@ function gerarPDF(){
   if(!ke?.value){toast('Informe o KM na entrega','er');return;}
   const l=DB.locs.find(x=>x.id===_pdfLocId);
   const car=cCar(l?.carroId),mot=cMot(l?.motoId),cfg=DB.config;
+  // Persiste assinaturas se foram feitas/alteradas nesta sessão do modal
+  if(l && (_ctSigLocador!==(l.assinaturaLocador||null) || _ctSigLocatario!==(l.assinaturaLocatario||null))){
+    l.assinaturaLocador=_ctSigLocador||null;
+    l.assinaturaLocatario=_ctSigLocatario||null;
+    DB.locs=DB.locs.map(x=>x.id===l.id?{...x,assinaturaLocador:l.assinaturaLocador,assinaturaLocatario:l.assinaturaLocatario}:x);
+    // Salva no banco em background (não bloqueia a geração do PDF)
+    if(typeof repoContratos!=='undefined'&&repoContratos.atualizar){
+      repoContratos.atualizar(l.id,{assinaturaLocador:l.assinaturaLocador,assinaturaLocatario:l.assinaturaLocatario})
+        .then(r=>{if(r&&r.error) console.warn('Falha ao salvar assinatura do contrato',r);});
+    }
+  }
   const kmNum=Number(ke.value||0);
   const kmFmt=kmNum.toLocaleString('pt-BR');
   const comb=document.getElementById('mct-comb').value;
@@ -10063,35 +10192,23 @@ function gerarPDF(){
   <p>Quaisquer alterações ao presente contrato somente serão válidas se realizadas por escrito e assinadas por ambas as partes. As partes elegem o foro da Comarca de <b>${l.comarca||cfg.comarca||'Belo Horizonte/MG'}</b> para dirimir eventuais controvérsias. Este instrumento constitui <b>título executivo extrajudicial</b>, nos termos do art. 784 do CPC.</p>
 </div>
 
-<p style="text-align:justify;margin-bottom:20pt">E, por estarem justas e contratadas, as partes assinam o presente instrumento em 2 (duas) vias de igual teor e forma, juntamente com as 2 (duas) testemunhas abaixo.</p>
+<p style="text-align:justify;margin-bottom:20pt">E, por estarem justas e contratadas, as partes assinam o presente instrumento em 2 (duas) vias de igual teor e forma.</p>
 
 <div class="local-data">${l.comarca||cfg.comarca||'Belo Horizonte/MG'}, ${dataExt}.</div>
 
 <div class="assinaturas">
   <div class="assin-par">
     <div class="assin-bloco">
+      ${l.assinaturaLocador?`<img src="${l.assinaturaLocador}" style="max-height:56pt;max-width:90%;display:block;margin:0 auto -6pt" alt="">`:''}
       <div class="assin-linha"></div>
       <div class="assin-nome">${locNome}</div>
       <div class="assin-doc">Locador — ${locDoc}</div>
     </div>
     <div class="assin-bloco">
+      ${l.assinaturaLocatario?`<img src="${l.assinaturaLocatario}" style="max-height:56pt;max-width:90%;display:block;margin:0 auto -6pt" alt="">`:''}
       <div class="assin-linha"></div>
       <div class="assin-nome">${motNome}</div>
       <div class="assin-doc">Locatário — CPF ${motCpf}</div>
-    </div>
-  </div>
-  <div class="assin-par">
-    <div class="assin-bloco">
-      <div class="assin-linha"></div>
-      <div class="assin-nome">Testemunha 1</div>
-      <div class="assin-doc">Nome: ________________________________</div>
-      <div class="assin-doc">CPF: _________________________________</div>
-    </div>
-    <div class="assin-bloco">
-      <div class="assin-linha"></div>
-      <div class="assin-nome">Testemunha 2</div>
-      <div class="assin-doc">Nome: ________________________________</div>
-      <div class="assin-doc">CPF: _________________________________</div>
     </div>
   </div>
 </div>
