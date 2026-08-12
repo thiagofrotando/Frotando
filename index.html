@@ -189,7 +189,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.39</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.42</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -6495,9 +6495,153 @@ function _abrirDetalheRent(carroId){
       <button onclick="this.closest('div[style*=fixed]').remove();abrirModal('mc',${JSON.stringify(c).replace(/"/g,"'")})" style="flex:1;background:transparent;color:var(--pl);border:1.5px solid var(--pl);border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Editar</button>
       <button onclick="this.closest('div[style*=fixed]').remove();excluirCarro('${c.id}')" style="background:var(--r);color:#fff;border:none;border-radius:10px;padding:12px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🗑</button>
     </div>
+    <button onclick="this.closest('div[style*=fixed]').remove();_relatorioHistoricoCarro('${c.id}')" style="width:100%;background:var(--p);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;margin-top:8px">📄 Relatório histórico completo</button>
     <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;background:var(--bg);color:var(--txm);border:1px solid var(--sll);border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px">Fechar</button>
   </div>`;
   document.body.appendChild(overlay);
+}
+
+// ── RELATÓRIO HISTÓRICO COMPLETO DE UM CARRO ─────────────────────────────────
+function _relatorioHistoricoCarro(carroId){
+  const c=cCar(carroId);
+  if(!c){toast('Carro não encontrado','er');return;}
+  const cfg=DB.config||{};
+
+  const contratos=DB.locs.filter(l=>l.carroId===carroId)
+    .sort((a,b)=>(b.inicio||'').localeCompare(a.inicio||''));
+  const pagsCarro=DB.pags.filter(p=>{
+    if(p.carroId===carroId) return true;
+    const l=DB.locs.find(x=>x.id===p.locId); return l&&l.carroId===carroId;
+  });
+  const _dEvKey=e=>{const p=(e.data||'').split('/');return p.length===3?`${p[2]}-${p[1]}-${p[0]}`:'';};
+  const eventos=DB.evs.filter(e=>e.carroId===carroId)
+    .sort((a,b)=>_dEvKey(b).localeCompare(_dEvKey(a)));
+  const fin=DB.fins.find(f=>f.carroId===carroId);
+
+  const pagos=pagsCarro.filter(p=>p.pago&&!p.cancelado);
+  const totalRecebido=pagos.reduce((s,p)=>s+Number(p.val||0),0);
+  const totalAluguel=pagos.reduce((s,p)=>s+Number(p.valAlug??(p.caucAvulso?0:p.val)??0),0);
+  const totalCaucao=pagos.reduce((s,p)=>s+Number(p.valCauc||0),0);
+  const emAberto=pagsCarro.filter(p=>!p.pago&&!p.cancelado).reduce((s,p)=>s+Number(p.val||0),0);
+  const totalManut=eventos.reduce((s,e)=>s+Number(e.custo||0),0);
+  const saldoDevedorFin=fin?(typeof calcSaldo==='function'?calcSaldo(fin):Math.max(0,(Number(fin.nparcelas||0)-Number(fin.npg||0))*Number(fin.parcela||0))):0;
+  const parcelasPagasFin=fin?Math.max(0,Number(fin.vFin||0)-saldoDevedorFin):0;
+  const totalPagoFin=fin?Number(fin.npg||0)*Number(fin.parcela||0):0;
+
+  const dataGer=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  const linhasContratos=contratos.map(l=>{
+    const mot=cMot(l.motoId);
+    const ativo=l.status==='Ativa';
+    const encerrado=l.status==='Encerrada';
+    const pagsDoContrato=pagsCarro.filter(p=>p.locId===l.id&&p.pago&&!p.cancelado);
+    const recContrato=pagsDoContrato.reduce((s,p)=>s+Number(p.val||0),0);
+    const statusBadge=ativo?'<span style="color:#16a34a;font-weight:700">● Ativo</span>'
+      :encerrado?`<span style="color:#64748b;font-weight:700">✓ Encerrado${l.encMotivo?' ('+l.encMotivo+')':''}</span>`
+      :`<span style="color:#94a3b8">${l.status||'—'}</span>`;
+    return `<tr>
+      <td>${mot?.nome||'—'}<div style="font-size:9pt;color:#64748b">${mot?.cpf||''}</div></td>
+      <td>${fD(l.inicio)}${l.fim?' → '+fD(l.fim):(ativo?' → hoje':'')}</td>
+      <td style="text-align:right">${R(l.val)}/sem</td>
+      <td style="text-align:right;font-weight:700">${R(recContrato)}</td>
+      <td>${statusBadge}</td>
+    </tr>`;
+  }).join('');
+
+  const linhasEventos=eventos.length?eventos.map(e=>`<tr>
+      <td>${e.data||'—'}</td>
+      <td>${e.tipo||'—'}</td>
+      <td>${(e.desc||'').slice(0,60)}</td>
+      <td style="text-align:right;font-weight:700">${e.custo>0?R(e.custo):'—'}</td>
+      <td>${e.resolvido?'✓':'⏳ Aberto'}</td>
+    </tr>`).join(''):'<tr><td colspan="5" style="text-align:center;color:#64748b">Nenhuma manutenção registrada</td></tr>';
+
+  const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
+<title>Relatório — ${c.placa}</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#0f172a;padding:28px 32px;font-size:11pt;line-height:1.5}
+  h1{font-size:19pt;color:#0d2b3e;margin-bottom:2pt}
+  h2{font-size:12pt;color:#0d2b3e;margin:20pt 0 8pt;padding-bottom:4pt;border-bottom:2px solid #f59e0b}
+  .sub{color:#64748b;font-size:10pt;margin-bottom:4pt}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:6pt 24pt;margin-top:6pt}
+  .kv{display:flex;justify-content:space-between;padding:4pt 0;border-bottom:1px solid #f1f5f9;font-size:10.5pt}
+  .kv span:first-child{color:#64748b}
+  .kv span:last-child{font-weight:700}
+  table{width:100%;border-collapse:collapse;margin-top:6pt;font-size:10pt}
+  th{background:#0d2b3e;color:#fff;text-align:left;padding:6pt 8pt;font-size:9pt;text-transform:uppercase;letter-spacing:.3px}
+  td{padding:6pt 8pt;border-bottom:1px solid #e2e8f0;vertical-align:top}
+  tr:nth-child(even) td{background:#f8fafc}
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10pt;margin-top:8pt}
+  .card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10pt}
+  .card .lbl{font-size:8.5pt;color:#64748b;text-transform:uppercase;letter-spacing:.3px}
+  .card .vl{font-size:14pt;font-weight:800;color:#0d2b3e;margin-top:2pt}
+  .rodape{margin-top:24pt;padding-top:10pt;border-top:1px solid #e2e8f0;font-size:8.5pt;color:#94a3b8;text-align:center}
+  @media print{body{padding:12mm 14mm}h2{page-break-after:avoid}tr{page-break-inside:avoid}}
+</style></head><body>
+  <h1>Relatório Histórico do Veículo</h1>
+  <div class="sub">${c.placa} — ${c.modelo||''}${c.ano?' ('+c.ano+')':''} · Gerado em ${dataGer} pelo Frotando</div>
+
+  <h2>Identificação</h2>
+  <div class="grid">
+    <div class="kv"><span>Placa</span><span>${c.placa||'—'}</span></div>
+    <div class="kv"><span>Modelo</span><span>${c.modelo||'—'}</span></div>
+    <div class="kv"><span>Ano</span><span>${c.ano||'—'}</span></div>
+    <div class="kv"><span>Cor</span><span>${c.cor||'—'}</span></div>
+    <div class="kv"><span>Renavam</span><span>${c.renavam||c.ren||'—'}</span></div>
+    <div class="kv"><span>KM atual</span><span>${Number(c.km||0).toLocaleString('pt-BR')} km</span></div>
+    <div class="kv"><span>Valor de aquisição</span><span>${c.valor?R(c.valor):'—'}</span></div>
+    <div class="kv"><span>Situação</span><span>${c.status||'—'}</span></div>
+    <div class="kv"><span>Seguradora</span><span>${c.segNome||'—'}${c.segVal>0?' ('+R(c.segVal)+')':''}</span></div>
+    <div class="kv"><span>Rastreador</span><span>${c.rasNome||'—'}${c.rasVal>0?' ('+R(c.rasVal)+')':''}</span></div>
+  </div>
+
+  <h2>Resumo Financeiro (toda a vida do veículo)</h2>
+  <div class="cards">
+    <div class="card"><div class="lbl">Total recebido</div><div class="vl" style="color:#16a34a">${R(totalRecebido)}</div></div>
+    <div class="card"><div class="lbl">Manutenções</div><div class="vl" style="color:#dc2626">${R(totalManut)}</div></div>
+    <div class="card"><div class="lbl">Em aberto</div><div class="vl" style="color:#d97706">${R(emAberto)}</div></div>
+    <div class="card"><div class="lbl">Contratos</div><div class="vl">${contratos.length}</div></div>
+  </div>
+  <div class="grid" style="margin-top:12pt">
+    <div class="kv"><span>Aluguel recebido</span><span>${R(totalAluguel)}</span></div>
+    <div class="kv"><span>Caução recebida</span><span>${R(totalCaucao)}</span></div>
+    <div class="kv"><span>Pagamentos quitados</span><span>${pagos.length}</span></div>
+    <div class="kv"><span>Resultado bruto (rec. − manut.)</span><span style="color:${totalRecebido-totalManut>=0?'#16a34a':'#dc2626'}">${R(totalRecebido-totalManut)}</span></div>
+  </div>
+
+  ${fin?`<h2>Financiamento</h2>
+  <div class="grid">
+    <div class="kv"><span>Valor financiado</span><span>${R(fin.vFin||fin.vTotal)}</span></div>
+    <div class="kv"><span>Entrada</span><span>${R(fin.entrada||0)}</span></div>
+    <div class="kv"><span>Taxa</span><span>${fin.taxa?(fin.taxa*100).toFixed(2).replace('.',',')+'% a.m.':'—'}</span></div>
+    <div class="kv"><span>Parcela</span><span>${R(fin.parcela)}</span></div>
+    <div class="kv"><span>Progresso</span><span>${fin.npg||0} de ${fin.nparcelas||0} parcelas</span></div>
+    <div class="kv"><span>Total pago em parcelas</span><span>${R(totalPagoFin)}</span></div>
+    <div class="kv"><span>Principal amortizado (aprox.)</span><span>${R(parcelasPagasFin)}</span></div>
+    <div class="kv"><span>Saldo devedor (aprox.)</span><span style="color:#dc2626">${R(saldoDevedorFin)}</span></div>
+    <div class="kv"><span>Situação</span><span>${fin.status||'—'}</span></div>
+  </div>`:'<h2>Financiamento</h2><div class="sub">Nenhum financiamento cadastrado para este veículo.</div>'}
+
+  <h2>Contratos e Motoristas (${contratos.length})</h2>
+  ${contratos.length?`<table>
+    <thead><tr><th>Motorista</th><th>Período</th><th>Valor</th><th>Recebido</th><th>Status</th></tr></thead>
+    <tbody>${linhasContratos}</tbody>
+  </table>`:'<div class="sub">Nenhum contrato registrado.</div>'}
+
+  <h2>Manutenções e Eventos (${eventos.length})</h2>
+  <table>
+    <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Custo</th><th>Status</th></tr></thead>
+    <tbody>${linhasEventos}</tbody>
+  </table>
+
+  <div class="rodape">Documento gerado automaticamente pelo Frotando · ${dataGer}<br>Valores consolidados a partir dos registros do sistema.</div>
+</body></html>`;
+
+  const win=window.open('','_blank');
+  if(!win){toast('Permita popups para gerar o relatório','er');return;}
+  win.document.write(html);win.document.close();win.focus();
+  setTimeout(()=>{try{win.print();}catch(e){}},600);
 }
 
 async function renderMotos(){
@@ -6811,10 +6955,10 @@ function _renderHistPagPage(h){
   pagina.forEach(p=>{
     const m=cMot(p.motoId);const car=cCar(p.carroId);
     const dias=_diasAtraso(p);
-    const atrasado=!p.pago&&dias>0;
-    const corStatus=p.pago?'var(--g)':atrasado?'var(--r)':'var(--a)';
-    const labelStatus=p.pago?'Pago':atrasado?(dias+'d atraso'):'Pendente';
-    const bgStatus=p.pago?'rgba(16,185,129,.12)':atrasado?'rgba(239,68,68,.1)':'rgba(245,158,11,.12)';
+    const atrasado=!p.pago&&!p.cancelado&&dias>0;
+    const corStatus=p.cancelado?'#94a3b8':p.pago?'var(--g)':atrasado?'var(--r)':'var(--a)';
+    const labelStatus=p.cancelado?'Cancelada':p.pago?'Pago':atrasado?(dias+'d atraso'):'Pendente';
+    const bgStatus=p.cancelado?'rgba(148,163,184,.15)':p.pago?'rgba(16,185,129,.12)':atrasado?'rgba(239,68,68,.1)':'rgba(245,158,11,.12)';
     const d=document.createElement('div');
     d.style.cssText=`background:var(--card);border-radius:9px;margin-bottom:5px;padding:7px 9px;border-left:3px solid ${corStatus}`;
     d.innerHTML=`
@@ -6835,6 +6979,7 @@ function _renderHistPagPage(h){
           ${p.pago?`<button style="background:rgba(42,106,154,.1);color:var(--pl);border:none;border-radius:6px;width:24px;height:24px;font-size:11px;cursor:pointer;font-family:inherit" onclick="abrirReciboId('${p.id}')" title="Recibo">🧾</button>`:''}
           <button style="background:rgba(13,43,62,.08);color:var(--p);border:none;border-radius:6px;width:24px;height:24px;font-size:11px;cursor:pointer;font-family:inherit" onclick="abrirEditPag('${p.id}')" title="Editar">✏️</button>
           ${atrasado?`<button style="background:rgba(239,68,68,.12);color:var(--r);border:none;border-radius:6px;width:24px;height:24px;font-size:11px;cursor:pointer;font-family:inherit" onclick="abrirCobranca('${p.id}')" title="Cobrar">📲</button>`:''}
+          ${!p.pago?`<button style="background:${p.cancelado?'rgba(100,116,139,.15)':'rgba(148,163,184,.15)'};color:var(--txm);border:none;border-radius:6px;width:24px;height:24px;font-size:11px;cursor:pointer;font-family:inherit" onclick="event.stopPropagation();cancelarPag('${p.id}')" title="${p.cancelado?'Reativar parcela':'Cancelar parcela'}">${p.cancelado?'↩️':'🚫'}</button>`:''}
           <button style="background:rgba(239,68,68,.1);color:var(--r);border:none;border-radius:6px;width:24px;height:24px;font-size:11px;cursor:pointer;font-family:inherit" onclick="excluirPag('${p.id}')" title="Excluir">🗑</button>
         </div>
       </div>`;
@@ -11141,6 +11286,7 @@ async function gerarParcelasPendentes(){
     // Próximo diaVenc a partir de hoje (ou hoje mesmo, se hoje for diaVenc)
     const diasAteProxDV=(diaVencNum-hoje.getDay()+7)%7;
     const proxDVGlobal=new Date(hoje);proxDVGlobal.setDate(hoje.getDate()+diasAteProxDV);
+    proxDVGlobal.setHours(23,59,59,999); // inclui o próprio dia do vencimento (dv herda 12:00)
 
     const pagLoc=DB.pags.filter(p=>p.locId===l.id&&!p.caucAvulso&&!p.manual);
     const semPagamentoAlgum=pagLoc.length===0;
@@ -11175,13 +11321,16 @@ async function gerarParcelasPendentes(){
       const dvISO=fmtISO(dv);
       const dvFim=new Date(dv);dvFim.setDate(dv.getDate()+6);
       const semLabel=`${fmtD(dv)} a ${fmtD(dvFim)}/${dvFim.getFullYear()}`;
-      // Nunca (re)cria parcela cujo vencimento já passou. Assim, semanas passadas
-      // excluídas de propósito não ressuscitam a cada render — o gerador só materializa
-      // a semana vigente (proxDVGlobal) e as futuras devidas. A exceção é a 1ª parcela
-      // de um contrato novo, que pode ter vencimento no passado recente e ainda precisa
-      // existir.
-      const dvJaPassou=dv<hoje;
-      if(dvJaPassou&&!semPagamentoAlgum){ dv.setDate(dv.getDate()+7); continue; }
+      // Classifica a semana em relação a hoje:
+      //  - VIGENTE: o período de 7 dias (dv..dvFim) contém hoje → sempre garantimos que exista.
+      //  - ENCERRADA: terminou antes de hoje (dvFim < hoje) → nunca recria (respeita exclusão intencional).
+      //  - FUTURA: ainda não começou → gera normalmente (buracos por lançamento manual etc.).
+      // Exceção: 1ª parcela de contrato novo (semPagamentoAlgum) sempre pode ser criada.
+      const dvFimDate=new Date(dvFim);dvFimDate.setHours(23,59,59,999);
+      const semanaEncerrada=dvFimDate<hoje;
+      if(semanaEncerrada&&!semPagamentoAlgum){ dv.setDate(dv.getDate()+7); continue; }
+      // jaExiste inclui parcelas CANCELADAS: uma parcela cancelada de propósito não deve
+      // ser recriada pelo gerador (o cancelamento é o "pular esta semana" do usuário).
       const jaExiste=DB.pags.some(p=>p.locId===l.id&&!p.caucAvulso&&!p.manual&&(p.dataVenc===dvISO||p.sem===semLabel));
       if(!jaExiste){
         const caucQuitado=l.caucModo==='parcelado'&&(l.caucPago||0)>=l.cauc;
@@ -11395,6 +11544,26 @@ async function excluirPag(id){
   _rendered.delete('pag');
   renderPags();
   toast('Pagamento removido');
+}
+
+// Cancela ou reativa uma parcela. Cancelada = existe mas não será cobrada;
+// o gerador respeita (não recria, não conta como inadimplência/receita).
+// Só se aplica a parcelas NÃO pagas.
+async function cancelarPag(id){
+  const p=DB.pags.find(x=>x.id===id);
+  if(!p){toast('Pagamento não encontrado','er');return;}
+  if(p.pago){toast('Parcela já paga — use estornar/editar','er');return;}
+  const vaiCancelar=!p.cancelado;
+  if(vaiCancelar){
+    if(!confirm('Cancelar esta parcela?\n\nEla ficará marcada como cancelada (não será cobrada nem contará como inadimplência). O gerador não vai recriá-la. Você pode reativar depois.')) return;
+  }
+  const r=await Repo.pagamentos.atualizar(id,{cancelado:vaiCancelar});
+  if(r.error){toast('Erro ao '+(vaiCancelar?'cancelar':'reativar')+': '+r.mensagem,'er');return;}
+  DB.pags=DB.pags.map(x=>x.id===id?{...x,cancelado:vaiCancelar}:x);
+  markDirty('rel','dash');
+  _rendered.delete('pag');
+  renderPags();
+  toast(vaiCancelar?'Parcela cancelada':'Parcela reativada');
 }
 
 
