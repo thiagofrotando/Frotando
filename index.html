@@ -189,7 +189,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.47</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.48</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -3777,16 +3777,37 @@ function abrirRelRentabilidade(){
     const evs=DB.evs.filter(e=>e.carroId===car.id);
     const custoTotal=evs.reduce((s,e)=>s+Number(e.custo||0),0);
     const fin=DB.fins.find(f=>f.carroId===car.id&&f.status==='Ativo');
-    const parcelasAno=fin?fin.parcela*12:0; // custo anual estimado (só referência)
-    const lucroAnual=recTotal-custoTotal-(fin?fin.parcela*pags.length:0);
     const contratoAtivo=locs.find(l=>l.status==='Ativa');
     const inadimplente=DB.pags.filter(p=>p.carroId===car.id&&!p.pago&&!p.cancelado&&p.dataVenc&&new Date(p.dataVenc+'T12:00:00')<hoje);
-    return{car,locs,recTotal,custoTotal,lucroAnual,fin,contratoAtivo,inadimplente,evQtd:evs.length};
-  }).sort((a,b)=>b.lucroAnual-a.lucroAnual);
+
+    // Meses decorridos reais: da data mais antiga (início do financiamento ou 1º pagamento)
+    // até hoje. É o denominador correto para descontar o financiamento na visão acumulada.
+    const datas=[];
+    if(fin?.inicio) datas.push(new Date(fin.inicio+'T12:00:00'));
+    pags.forEach(p=>{const d=(p.data||p.dataVenc);if(d)datas.push(new Date(d+'T12:00:00'));});
+    const maisAntiga=datas.length?new Date(Math.min(...datas.map(d=>d.getTime()))):hoje;
+    const mesesDecorridos=Math.max(1,Math.round((hoje-maisAntiga)/(30.44*86400000)));
+
+    // Financiamento acumulado = parcela × meses decorridos (NÃO × nº de pagamentos semanais).
+    const finParcela=fin?Number(fin.parcela||0):0;
+    const finAcumulado=finParcela*mesesDecorridos;
+
+    // Resultado ACUMULADO (vida do carro): receita − manutenção − financiamento (por meses reais)
+    const resultadoAcum=recTotal-custoTotal-finAcumulado;
+
+    // Resultado MENSAL (médias): receita/mês − manutenção/mês − parcela
+    const recMensal=recTotal/mesesDecorridos;
+    const custoMensal=custoTotal/mesesDecorridos;
+    const resultadoMensal=recMensal-custoMensal-finParcela;
+
+    return{car,locs,recTotal,custoTotal,fin,finParcela,contratoAtivo,inadimplente,evQtd:evs.length,
+      mesesDecorridos,recMensal,custoMensal,resultadoMensal,resultadoAcum};
+  }).sort((a,b)=>b.resultadoAcum-a.resultadoAcum);
 
   const totalRec=carros.reduce((s,c)=>s+c.recTotal,0);
   const totalCusto=carros.reduce((s,c)=>s+c.custoTotal,0);
-  const totalLucro=carros.reduce((s,c)=>s+c.lucroAnual,0);
+  const totalResultadoAcum=carros.reduce((s,c)=>s+c.resultadoAcum,0);
+  const totalResultadoMensal=carros.reduce((s,c)=>s+c.resultadoMensal,0);
 
   const html=`<!DOCTYPE html>
 <html lang="pt-BR"><head><meta charset="UTF-8">
@@ -3823,25 +3844,24 @@ function abrirRelRentabilidade(){
   </div>
   <div class="kpi-row">
     <div class="kpi"><div class="kpi-label">Receita total</div><div class="kpi-val" style="color:#16a34a">${R(totalRec)}</div></div>
-    <div class="kpi"><div class="kpi-label">Custos totais</div><div class="kpi-val" style="color:#dc2626">${R(totalCusto)}</div></div>
-    <div class="kpi"><div class="kpi-label">Resultado líquido</div><div class="kpi-val" style="color:${totalLucro>=0?'#16a34a':'#dc2626'}">${R(totalLucro)}</div></div>
+    <div class="kpi"><div class="kpi-label">Resultado / mês</div><div class="kpi-val" style="color:${totalResultadoMensal>=0?'#16a34a':'#dc2626'}">${R(Math.round(totalResultadoMensal))}</div></div>
+    <div class="kpi"><div class="kpi-label">Resultado acumulado</div><div class="kpi-val" style="color:${totalResultadoAcum>=0?'#16a34a':'#dc2626'}">${R(Math.round(totalResultadoAcum))}</div></div>
   </div>
   <table>
-    <thead><tr><th>Veículo</th><th>Status</th><th>Receita</th><th>Custos</th><th>Parcela fin.</th><th>Resultado</th></tr></thead>
+    <thead><tr><th>Veículo</th><th>Status</th><th>Receita acum.</th><th>Manut.</th><th>Parcela fin.</th><th>Result./mês</th><th>Result. acum.</th></tr></thead>
     <tbody>
     ${carros.map((c,i)=>{
-      const finPag=c.fin?c.fin.parcela:0;
-      const resultado=c.recTotal-c.custoTotal-finPag*(DB.pags.filter(p=>p.carroId===c.car.id&&p.pago).length);
       const maxRec=Math.max(...carros.map(x=>x.recTotal),1);
       return`<tr>
         <td><div style="font-weight:700">${c.car.placa}</div><div style="font-size:10px;color:#64748b">${c.car.modelo?.split(' ').slice(0,2).join(' ')||''}</div>
-          <div class="bar-wrap"><div class="bar" style="width:${Math.round(c.recTotal/maxRec*100)}%;background:${resultado>=0?'#16a34a':'#dc2626'}"></div></div>
+          <div class="bar-wrap"><div class="bar" style="width:${Math.round(c.recTotal/maxRec*100)}%;background:${c.resultadoAcum>=0?'#16a34a':'#dc2626'}"></div></div>
         </td>
         <td><span style="background:${c.contratoAtivo?'#dcfce7':'#f1f5f9'};color:${c.contratoAtivo?'#16a34a':'#64748b'};border-radius:99px;padding:2px 8px;font-size:10px;font-weight:700">${c.contratoAtivo?'Alugado':'Disponível'}</span></td>
         <td class="pos">${R(c.recTotal)}</td>
         <td class="neg">${c.custoTotal>0?'-'+R(c.custoTotal):'—'}</td>
         <td style="color:#64748b">${c.fin?'-'+R(c.fin.parcela)+'/mês':'—'}</td>
-        <td class="${resultado>=0?'pos':'neg'}">${R(resultado)}</td>
+        <td class="${c.resultadoMensal>=0?'pos':'neg'}">${R(Math.round(c.resultadoMensal))}</td>
+        <td class="${c.resultadoAcum>=0?'pos':'neg'}">${R(Math.round(c.resultadoAcum))}</td>
       </tr>`;
     }).join('')}
     <tr>
@@ -3849,7 +3869,8 @@ function abrirRelRentabilidade(){
       <td class="pos"><strong>${R(totalRec)}</strong></td>
       <td class="neg"><strong>${totalCusto>0?'-'+R(totalCusto):'—'}</strong></td>
       <td>—</td>
-      <td class="${totalLucro>=0?'pos':'neg'}"><strong>${R(totalLucro)}</strong></td>
+      <td class="${totalResultadoMensal>=0?'pos':'neg'}"><strong>${R(Math.round(totalResultadoMensal))}</strong></td>
+      <td class="${totalResultadoAcum>=0?'pos':'neg'}"><strong>${R(Math.round(totalResultadoAcum))}</strong></td>
     </tr>
     </tbody>
   </table>
