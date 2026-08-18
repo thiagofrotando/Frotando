@@ -189,7 +189,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.42</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.45</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -992,7 +992,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarMoto()">Salvar</button><button class="bt btg" onclick="fecharModal('mm')">Cancelar</button></div>
   </div>
 </div></div>
-<div id="ml" class="mo" onclick="fecharModal('ml')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt">Nova Locação</div><div class="fi"><label>Carro *</label><select id="ml-carro"></select></div><div class="fi"><label>Motorista *</label><select id="ml-moto"></select></div><div class="fi"><label>Início *</label><input id="ml-inicio" type="date"></div><div class="fi"><label>Aluguel semanal (R$) *</label><input id="ml-val" type="number" placeholder="600"></div><div class="fi"><label>Pagamento do caução</label>
+<div id="ml" class="mo" onclick="fecharModal('ml')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt">Nova Locação</div><div class="ms-body"><div class="fi"><label>Carro *</label><select id="ml-carro"></select></div><div class="fi"><label>Motorista *</label><select id="ml-moto"></select></div><div class="fi"><label>Início *</label><input id="ml-inicio" type="date"></div><div class="fi"><label>Aluguel semanal (R$) *</label><input id="ml-val" type="number" placeholder="600"></div><div class="fi"><label>Pagamento do caução</label>
   <select id="ml-cauc-modo" onchange="mlAtualizarCauc()">
     <option value="integral">Pago integralmente na entrega</option>
     <option value="parcelado">Parcelado semanalmente junto ao aluguel</option>
@@ -1020,11 +1020,11 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
 <div class="fi"><label>Dia de vencimento semanal</label><select id="ml-diavenc"><option value="0">Domingo</option><option value="1">Segunda-feira</option><option value="2">Terca-feira</option><option value="3">Quarta-feira</option><option value="4">Quinta-fera</option><option value="5">Sexta-feira</option><option value="6" selected>Sabado</option></select></div><div class="fi"><label>Caução (R$)</label><input id="ml-cauc" type="number" placeholder="1400"></div>
 <div class="fi"><label>Comarca (foro do contrato)</label><input id="ml-comarca" type="text" placeholder="Ex: Belo Horizonte"></div>
 <div class="fi"><label>Uso do veículo</label><select id="ml-uso"><option value="exclusivo">Exclusivo para transporte de passageiros por aplicativo</option><option value="misto">Transporte de passageiros por aplicativo e uso particular</option></select></div>
-<div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarLoc()">Criar contrato</button><button class="bt btg" onclick="fecharModal('ml')">Cancelar</button></div></div></div>
+</div><div class="ms-footer"><div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarLoc()">Criar contrato</button><button class="bt btg" onclick="fecharModal('ml')">Cancelar</button></div></div></div></div>
 
-<div id="mp" class="mo" onclick="fecharModal('mp')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt">Registrar Pagamento</div><div class="fi"><label>Contrato *</label><select id="mp-loc" onchange="_mpOnLocChange()"></select></div><div class="fi"><label>Semana *</label><select id="mp-sem-sel" onchange="mpAtualizarSemana()"><option value="">Selecione...</option></select></div><div class="fi"><label>Valor (R$) *</label><input id="mp-val" type="number" placeholder="600"></div><div class="fi"><label>Data pagamento</label><input id="mp-data" type="date"></div><div class="fi"><label>Dias de atraso</label><input id="mp-atr" type="number" placeholder="0"></div><div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarPag()">Registrar</button><button class="bt btg" onclick="fecharModal('mp')">Cancelar</button></div></div></div>
+<div id="mp" class="mo" onclick="fecharModal('mp')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt">Registrar Pagamento</div><div class="ms-body"><div class="fi"><label>Contrato *</label><select id="mp-loc" onchange="_mpOnLocChange()"></select></div><div class="fi"><label>Semana *</label><select id="mp-sem-sel" onchange="mpAtualizarSemana()"><option value="">Selecione...</option></select></div><div class="fi"><label>Valor (R$) *</label><input id="mp-val" type="number" placeholder="600"></div><div class="fi"><label>Data pagamento</label><input id="mp-data" type="date"></div><div class="fi"><label>Dias de atraso</label><input id="mp-atr" type="number" placeholder="0"></div></div><div class="ms-footer"><div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarPag()">Registrar</button><button class="bt btg" onclick="fecharModal('mp')">Cancelar</button></div></div></div></div>
 
-<div id="mev" class="mo" onclick="fecharModal('mev')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt">Registrar Evento</div>
+<div id="mev" class="mo" onclick="fecharModal('mev')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt">Registrar Evento</div><div class="ms-body">
 <div class="fi"><label>Tipo *</label><select id="mev-tipo"><option>Manutenção</option><option>Acidente</option><option>Atraso</option><option>Outro</option></select></div>
 <div class="fi"><label>Carro</label><select id="mev-carro"></select></div>
 <div class="fi"><label>Data *</label><input id="mev-data" type="date"></div>
@@ -1058,11 +1058,11 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div id="mev-abono-preview" style="font-size:11px;color:var(--a);font-weight:700;margin-top:4px"></div>
   </div>
 </div>
-<div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarEv()">Salvar</button><button class="bt btg" onclick="fecharModal('mev')">Cancelar</button></div></div></div>
+</div><div class="ms-footer"><div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarEv()">Salvar</button><button class="bt btg" onclick="fecharModal('mev')">Cancelar</button></div></div></div></div>
 
-<div id="mkm" class="mo" onclick="fecharModal('mkm')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt">Registrar KM</div><div class="fi"><label>Carro *</label><select id="mkm-carro"></select></div><div class="fi"><label>KM atual *</label><input id="mkm-km" type="number" placeholder="0"></div><div class="fi"><label>Data *</label><input id="mkm-data" type="date"></div><div class="fi"><label>Observação</label><input id="mkm-obs" type="text" placeholder="Verificação mensal..."></div><div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarKm()">Salvar</button><button class="bt btg" onclick="fecharModal('mkm')">Cancelar</button></div></div></div>
+<div id="mkm" class="mo" onclick="fecharModal('mkm')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt">Registrar KM</div><div class="ms-body"><div class="fi"><label>Carro *</label><select id="mkm-carro"></select></div><div class="fi"><label>KM atual *</label><input id="mkm-km" type="number" placeholder="0"></div><div class="fi"><label>Data *</label><input id="mkm-data" type="date"></div><div class="fi"><label>Observação</label><input id="mkm-obs" type="text" placeholder="Verificação mensal..."></div></div><div class="ms-footer"><div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarKm()">Salvar</button><button class="bt btg" onclick="fecharModal('mkm')">Cancelar</button></div></div></div></div>
 
-<div id="mfin" class="mo" onclick="fecharModal('mfin')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt" id="mfin-t">Novo Financiamento</div><div class="fi"><label>Carro *</label><select id="mfin-carro"></select></div><div class="fi"><label>Valor total do veículo (R$)</label><input id="mfin-vtotal" type="number" placeholder="40000"></div><div class="fi"><label>Entrada dada (R$)</label><input id="mfin-entrada" type="number" placeholder="0"></div><div class="fi"><label>Valor financiado (R$) *</label><input id="mfin-vfin" type="number" placeholder="35000"></div><div class="fi"><label>Taxa de juros mensal (%)</label><input id="mfin-taxa" type="number" placeholder="2.03" step="0.01"></div><div class="fi"><label>Nº de parcelas</label><input id="mfin-np" type="number" placeholder="36"></div><div class="fi"><label>Valor da parcela (R$) — opcional</label><input id="mfin-parcela-manual" type="number" placeholder="Deixe em branco para calcular automaticamente"><div style="font-size:10px;color:var(--txm);margin-top:3px">Se você já sabe o valor exato do boleto (com seguro, taxas etc.), informe aqui. Caso contrário, calculamos pela tabela Price a partir da taxa e nº de parcelas.</div></div><div class="fi"><label>Data da 1ª parcela</label><input id="mfin-inicio" type="date"><div style="font-size:10px;color:var(--txm);margin-top:3px">A parcela só entra nos cálculos financeiros a partir deste mês</div></div><div class="fi"><label>Observações</label><input id="mfin-obs" type="text" placeholder="Ex: Financiamento banco gerente"></div><div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarFin()">Cadastrar</button><button class="bt btg" onclick="fecharModal('mfin')">Cancelar</button></div></div></div>
+<div id="mfin" class="mo" onclick="fecharModal('mfin')"><div class="ms" onclick="event.stopPropagation()"><div class="mh"></div><div class="mt" id="mfin-t">Novo Financiamento</div><div class="ms-body"><div class="fi"><label>Carro *</label><select id="mfin-carro"></select></div><div class="fi"><label>Valor total do veículo (R$)</label><input id="mfin-vtotal" type="number" placeholder="40000"></div><div class="fi"><label>Entrada dada (R$)</label><input id="mfin-entrada" type="number" placeholder="0"></div><div class="fi"><label>Valor financiado (R$) *</label><input id="mfin-vfin" type="number" placeholder="35000"></div><div class="fi"><label>Taxa de juros mensal (%)</label><input id="mfin-taxa" type="number" placeholder="2.03" step="0.01"></div><div class="fi"><label>Nº de parcelas</label><input id="mfin-np" type="number" placeholder="36"></div><div class="fi"><label>Valor da parcela (R$) — opcional</label><input id="mfin-parcela-manual" type="number" placeholder="Deixe em branco para calcular automaticamente"><div style="font-size:10px;color:var(--txm);margin-top:3px">Se você já sabe o valor exato do boleto (com seguro, taxas etc.), informe aqui. Caso contrário, calculamos pela tabela Price a partir da taxa e nº de parcelas.</div></div><div class="fi"><label>Data da 1ª parcela</label><input id="mfin-inicio" type="date"><div style="font-size:10px;color:var(--txm);margin-top:3px">A parcela só entra nos cálculos financeiros a partir deste mês</div></div><div class="fi"><label>Observações</label><input id="mfin-obs" type="text" placeholder="Ex: Financiamento banco gerente"></div></div><div class="ms-footer"><div style="display:flex;gap:8px"><button class="bt btp" style="flex:1" onclick="salvarFin()">Cadastrar</button><button class="bt btg" onclick="fecharModal('mfin')">Cancelar</button></div></div></div></div>
 
 <div id="mrecibo" class="mo" onclick="fecharModal('mrecibo')">
   <div class="ms" onclick="event.stopPropagation()">
@@ -1080,15 +1080,19 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
   <div class="ms" onclick="event.stopPropagation()">
     <div class="mh"></div>
     <div class="mt">Editar Pagamento</div>
+    <div class="ms-body">
     <div class="fi"><label>Semana</label><input id="ep-sem" type="text" placeholder="dd/mm a dd/mm"></div>
     <div class="fi"><label>Data de vencimento</label><input id="ep-venc" type="date"></div>
     <div class="fi"><label>Valor (R$) *</label><input id="ep-val" type="number"></div>
     <div class="fi"><label>Data pagamento</label><input id="ep-data" type="date"></div>
     <div class="fi"><label>Dias de atraso</label><input id="ep-atr" type="number" placeholder="0"></div>
     <div class="fi"><label>Status</label><select id="ep-pago"><option value="1">Pago</option><option value="0">Pendente</option></select></div>
+    </div>
+    <div class="ms-footer">
     <div style="display:flex;gap:8px">
       <button class="bt btp" style="flex:1" onclick="salvarEditPag()">Salvar</button>
       <button class="bt btg" onclick="fecharModal('meditpag')">Cancelar</button>
+    </div>
     </div>
   </div>
 </div>
@@ -1097,6 +1101,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
   <div class="ms" onclick="event.stopPropagation()">
     <div class="mh"></div>
     <div class="mt">Registrar Pagamento</div>
+    <div class="ms-body">
     <div id="mp-resumo-fin" style="background:var(--bg);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:12px"></div>
     <!-- Toggle Parcela / Amortizacao -->
     <div style="display:flex;gap:0;margin-bottom:14px;border-radius:10px;overflow:hidden;border:1.5px solid var(--sll)">
@@ -1131,9 +1136,12 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       </div>
       <div id="mp-preview-amor" style="display:none;background:rgba(16,185,129,.08);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--g)"></div>
     </div>
+    </div>
+    <div class="ms-footer">
     <div style="display:flex;gap:8px">
       <button class="bt btp" style="flex:1" onclick="confirmarPagamentoFin()">Confirmar</button>
       <button class="bt btg" onclick="fecharModal('mparcela')">Cancelar</button>
+    </div>
     </div>
   </div>
 </div>
@@ -6528,6 +6536,62 @@ function _relatorioHistoricoCarro(carroId){
   const parcelasPagasFin=fin?Math.max(0,Number(fin.vFin||0)-saldoDevedorFin):0;
   const totalPagoFin=fin?Number(fin.npg||0)*Number(fin.parcela||0):0;
 
+  // ── Análise de rentabilidade (TIR + fluxo de caixa) ──────────────────────────
+  // Parâmetros do negócio
+  const SEM_POR_MES=4.33;
+  const seguroMes=Number(c.segVal||0);           // seguro mensal do carro
+  const rastreadorMes=Number(c.rasVal||0);        // rastreador mensal
+  const reservaManutMes=Number((DB.config&&DB.config.reservaManut)||200); // reserva padrão
+  const entradaFin=fin?Number(fin.entrada||0):0;
+  const parcelaFin=fin?Number(fin.parcela||0):0;
+  const nParcelas=fin?Number(fin.nparcelas||0):0;
+  const valorCompra=Number(c.valor||fin?.vTotal||0);
+  const aluguelSemanal=(() => {
+    const ativo=contratos.find(l=>l.status==='Ativa');
+    return Number(ativo?.val || contratos[0]?.val || 600);
+  })();
+  const aluguelMes=aluguelSemanal*SEM_POR_MES;
+  const custoMensalFixo=parcelaFin+seguroMes+rastreadorMes+reservaManutMes;
+  const fluxoLiquidoMes=aluguelMes-custoMensalFixo;
+  // Valor residual estimado ao fim do financiamento (60% do valor de compra — ajustável)
+  const percResidual=Number((DB.config&&DB.config.percResidual)||0.60);
+  const valorResidual=Math.round(valorCompra*percResidual);
+
+  // TIR PROJETADA: entrada no mês 0, fluxo líquido mensal, residual no último mês
+  let tirProjMensal=null, tirProjAnual=null;
+  if(fin && entradaFin>0 && nParcelas>0){
+    const fluxoProj=[-entradaFin];
+    for(let m=1;m<=nParcelas;m++){
+      fluxoProj.push(m===nParcelas ? fluxoLiquidoMes+valorResidual : fluxoLiquidoMes);
+    }
+    tirProjMensal=_calcTIR(fluxoProj);
+    tirProjAnual=_tirAnual(tirProjMensal);
+  }
+
+  // TIR REAL: entrada no mês 0, aluguel efetivamente recebido por mês (dos pagamentos pagos),
+  // menos custos, do início do financiamento até hoje.
+  let tirRealMensal=null, tirRealAnual=null, mesesReais=0;
+  if(fin && entradaFin>0 && fin.inicio){
+    const inicioFin=new Date(fin.inicio+'T12:00:00');
+    const hoje2=new Date();
+    mesesReais=Math.max(1,Math.round((hoje2-inicioFin)/(30.44*86400000)));
+    // Agrupa aluguel recebido por mês desde o início
+    const recebidoPorMes=new Array(mesesReais+1).fill(0);
+    pagos.forEach(pg=>{
+      const dpg=pg.data?new Date((pg.data.includes('/')?pg.data.split('/').reverse().join('-'):pg.data)+'T12:00:00'):null;
+      if(!dpg||dpg<inicioFin) return;
+      const idx=Math.min(mesesReais,Math.max(1,Math.round((dpg-inicioFin)/(30.44*86400000))+1));
+      recebidoPorMes[idx]+=Number(pg.val||0);
+    });
+    const fluxoReal=[-entradaFin];
+    for(let m=1;m<=mesesReais;m++){
+      fluxoReal.push((recebidoPorMes[m]||0)-custoMensalFixo);
+    }
+    tirRealMensal=_calcTIR(fluxoReal);
+    tirRealAnual=_tirAnual(tirRealMensal);
+  }
+  const pctTIR=x=>x==null?'—':(x*100).toFixed(2).replace('.',',')+'%';
+
   const dataGer=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 
   const linhasContratos=contratos.map(l=>{
@@ -6577,7 +6641,17 @@ function _relatorioHistoricoCarro(carroId){
   .card .lbl{font-size:8.5pt;color:#64748b;text-transform:uppercase;letter-spacing:.3px}
   .card .vl{font-size:14pt;font-weight:800;color:#0d2b3e;margin-top:2pt}
   .rodape{margin-top:24pt;padding-top:10pt;border-top:1px solid #e2e8f0;font-size:8.5pt;color:#94a3b8;text-align:center}
-  @media print{body{padding:12mm 14mm}h2{page-break-after:avoid}tr{page-break-inside:avoid}}
+  .rent-bloco{break-inside:avoid;page-break-inside:avoid}
+  @media print{
+    body{padding:12mm 14mm}
+    h2{page-break-after:avoid;break-after:avoid}
+    tr{page-break-inside:avoid;break-inside:avoid}
+    .cards{page-break-inside:avoid;break-inside:avoid}
+    .card{page-break-inside:avoid;break-inside:avoid}
+    .grid{page-break-inside:avoid;break-inside:avoid}
+    .kv{page-break-inside:avoid;break-inside:avoid}
+    .rent-bloco{page-break-inside:avoid;break-inside:avoid}
+  }
 </style></head><body>
   <h1>Relatório Histórico do Veículo</h1>
   <div class="sub">${c.placa} — ${c.modelo||''}${c.ano?' ('+c.ano+')':''} · Gerado em ${dataGer} pelo Frotando</div>
@@ -6622,6 +6696,32 @@ function _relatorioHistoricoCarro(carroId){
     <div class="kv"><span>Saldo devedor (aprox.)</span><span style="color:#dc2626">${R(saldoDevedorFin)}</span></div>
     <div class="kv"><span>Situação</span><span>${fin.status||'—'}</span></div>
   </div>`:'<h2>Financiamento</h2><div class="sub">Nenhum financiamento cadastrado para este veículo.</div>'}
+
+  <div class="rent-bloco">
+  <h2>Rentabilidade</h2>
+  <div class="cards">
+    <div class="card"><div class="lbl">Aluguel/mês (est.)</div><div class="vl" style="color:#16a34a">${R(Math.round(aluguelMes))}</div></div>
+    <div class="card"><div class="lbl">Custo fixo/mês</div><div class="vl" style="color:#dc2626">${R(Math.round(custoMensalFixo))}</div></div>
+    <div class="card"><div class="lbl">Sobra/mês (est.)</div><div class="vl" style="color:${fluxoLiquidoMes>=0?'#16a34a':'#dc2626'}">${R(Math.round(fluxoLiquidoMes))}</div></div>
+    <div class="card"><div class="lbl">Valor residual (est.)</div><div class="vl">${R(valorResidual)}</div></div>
+  </div>
+  <div class="grid" style="margin-top:12pt">
+    <div class="kv"><span>Composição do custo fixo</span><span style="font-weight:400;font-size:9pt;color:#64748b">parcela ${R(Math.round(parcelaFin))} + seguro ${R(Math.round(seguroMes))} + rastreador ${R(Math.round(rastreadorMes))} + reserva ${R(Math.round(reservaManutMes))}</span></div>
+  </div>
+  ${(entradaFin>0)?`
+  <div class="grid" style="margin-top:10pt">
+    <div class="kv"><span>TIR real (a.m. · até hoje)</span><span>${pctTIR(tirRealMensal)}</span></div>
+    <div class="kv"><span>TIR real (a.a.)</span><span>${pctTIR(tirRealAnual)}</span></div>
+    <div class="kv"><span>TIR projetada (a.m. · até fim do financiamento)</span><span style="color:#16a34a">${pctTIR(tirProjMensal)}</span></div>
+    <div class="kv"><span>TIR projetada (a.a.)</span><span style="color:#16a34a">${pctTIR(tirProjAnual)}</span></div>
+  </div>
+  <div class="sub" style="margin-top:8pt;font-size:9pt;line-height:1.4">A TIR considera a entrada de ${R(entradaFin)} como capital investido, o fluxo mensal (aluguel − parcela − seguro − rastreador − reserva) e o valor residual de ${R(valorResidual)} ao fim. A projetada usa aluguel estimado; a real usa o que já foi efetivamente recebido.</div>
+  `:`
+  <div class="sub" style="margin-top:10pt;padding:10pt;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;line-height:1.5">
+    <strong>TIR não aplicável a este veículo.</strong> Como o financiamento foi de 100% (entrada zero), não há capital próprio investido para calcular uma taxa de retorno — matematicamente a TIR tenderia ao infinito. Nesse caso, o indicador que importa é a <strong>sobra mensal de ${R(Math.round(fluxoLiquidoMes))}</strong>: é o que o carro coloca (ou tira) do seu bolso a cada mês depois de pagar tudo. Ao fim do financiamento, o carro ainda vale cerca de ${R(valorResidual)}, que passa a ser lucro seu.
+  </div>
+  `}
+  </div>
 
   <h2>Contratos e Motoristas (${contratos.length})</h2>
   ${contratos.length?`<table>
@@ -10921,6 +11021,39 @@ async function logout(){
   _loginMsg('');
 }
 function calcSaldo(f){let s=f.vFin;for(let i=0;i<(f.npg||0);i++){const j=s*f.taxa;s=Math.max(0,s-(f.parcela-j));}return Math.round(s);}
+
+// TIR (Taxa Interna de Retorno) mensal a partir de um fluxo de caixa [mês0, mês1, ...].
+// mês0 costuma ser negativo (investimento/saída). Retorna a taxa mensal decimal, ou null
+// se não convergir (ex.: fluxo sem troca de sinal, ou sem retorno positivo).
+function _calcTIR(fluxo){
+  if(!fluxo||fluxo.length<2) return null;
+  const temPos=fluxo.some(v=>v>0), temNeg=fluxo.some(v=>v<0);
+  if(!temPos||!temNeg) return null; // TIR indefinida sem entrada E saída
+  const vpl=(i)=>fluxo.reduce((s,fc,t)=>s+fc/Math.pow(1+i,t),0);
+  const dvpl=(i)=>fluxo.reduce((s,fc,t)=>s-(t*fc)/Math.pow(1+i,t+1),0);
+  // Newton-Raphson
+  let i=0.02; // chute inicial 2% a.m.
+  for(let k=0;k<100;k++){
+    const f=vpl(i), d=dvpl(i);
+    if(Math.abs(f)<1e-7) return i;
+    if(!isFinite(d)||d===0) break;
+    let novo=i-f/d;
+    if(novo<=-0.9999) novo=-0.99; // evita divergir abaixo de -100%
+    if(Math.abs(novo-i)<1e-9) return novo;
+    i=novo;
+  }
+  // Fallback: bisseção entre -0.99 e 5 (até 500% a.m.)
+  let lo=-0.99, hi=5, flo=vpl(lo), fhi=vpl(hi);
+  if(flo*fhi>0) return null;
+  for(let k=0;k<200;k++){
+    const mid=(lo+hi)/2, fm=vpl(mid);
+    if(Math.abs(fm)<1e-7) return mid;
+    if(flo*fm<0){hi=mid;fhi=fm;}else{lo=mid;flo=fm;}
+  }
+  return (lo+hi)/2;
+}
+// Converte taxa mensal em anual equivalente (juros compostos)
+function _tirAnual(mensal){return mensal==null?null:Math.pow(1+mensal,12)-1;}
 
 // Retorna true se a 1ª parcela deste financiamento já caiu no mês/ano de referência
 // (ou antes). Sem data de início cadastrada, mantém o comportamento antigo (sempre conta).
