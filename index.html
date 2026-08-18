@@ -189,7 +189,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.45</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.47</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -3781,7 +3781,7 @@ function abrirRelRentabilidade(){
     const lucroAnual=recTotal-custoTotal-(fin?fin.parcela*pags.length:0);
     const contratoAtivo=locs.find(l=>l.status==='Ativa');
     const inadimplente=DB.pags.filter(p=>p.carroId===car.id&&!p.pago&&!p.cancelado&&p.dataVenc&&new Date(p.dataVenc+'T12:00:00')<hoje);
-    return{car,locs,recTotal,custoTotal,lucroAnual,fin,parcelasMes,contratoAtivo,inadimplente,evQtd:evs.length};
+    return{car,locs,recTotal,custoTotal,lucroAnual,fin,contratoAtivo,inadimplente,evQtd:evs.length};
   }).sort((a,b)=>b.lucroAnual-a.lucroAnual);
 
   const totalRec=carros.reduce((s,c)=>s+c.recTotal,0);
@@ -7488,7 +7488,7 @@ function exportarRelHTML(){
     const d=new Date(p.data+'T12:00:00');
     return d.getMonth()===mes&&d.getFullYear()===ano;
   });
-  const recebidos=pagsMes.filter(p=>p.pago);
+  const recebidos=pagsMes.filter(p=>p.pago).sort((a,b)=>new Date((a.data||a.dataVenc)+'T12:00:00')-new Date((b.data||b.dataVenc)+'T12:00:00'));
   // RECEITA = aluguel. CAUÇÃO = garantia (passivo), não é receita.
   const _valAlug=p=>Number(p.valAlug??(p.caucAvulso?0:p.val)??0);
   const recMes=recebidos.reduce((s,p)=>s+_valAlug(p),0);
@@ -9778,7 +9778,7 @@ function gerarRelContabil(){
   const docFiscal=isPJ?('CNPJ: '+(cfg.cnpj||'---')+' | IE: '+(cfg.ie||'Isento')):('CPF: '+(cfg.cpf||'---'));
   const regime=isPJ?({mei:'MEI',simples:'Simples Nacional',presumido:'Lucro Presumido',real:'Lucro Real'}[cfg.regime||'mei']):'Pessoa Fisica';
   const pagsMes=DB.pags.filter(p=>{if(!p.data)return false;const d=new Date(p.data+'T12:00:00');return d.getMonth()===_relMes&&d.getFullYear()===_relAno;});
-  const recebidos=pagsMes.filter(p=>p.pago);
+  const recebidos=pagsMes.filter(p=>p.pago).sort((a,b)=>new Date((a.data||a.dataVenc)+'T12:00:00')-new Date((b.data||b.dataVenc)+'T12:00:00'));
   // RECEITA = aluguel. CAUÇÃO = garantia (passivo), não é receita.
   const recTotal=recebidos.reduce((s,p)=>s+Number(p.valAlug??(p.caucAvulso?0:p.val)??0),0);
   const caucRecMes=recebidos.reduce((s,p)=>s+Number(p.valCauc||0)+(p.caucAvulso?Number(p.val||0):0),0);
