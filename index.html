@@ -189,7 +189,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.49</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.50</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -2942,6 +2942,17 @@ const R=v=>`R$ ${Number(v||0).toLocaleString('pt-BR')}`;
 const fD=d=>{if(!d)return'—';try{const[y,m,dd]=d.split('-');return`${dd}/${m}/${y}`}catch{return d}};
 const today=()=>new Date().toISOString().split('T')[0];
 const cCar=id=>DB.carros.find(c=>c.id===id);
+// Caução efetivamente paga de um contrato: o MAIOR entre o campo caucPago (que pode
+// estar defasado) e a soma real dos pagamentos de caução confirmados, limitado ao total.
+// Fonte confiável para encerramento, devolução e recibos.
+function _caucPagoRealDe(loc){
+  if(!loc) return 0;
+  const somaReal=DB.pags
+    .filter(p=>p.locId===loc.id&&p.pago&&(Number(p.valCauc||0)>0||p.caucAvulso))
+    .reduce((s,p)=>s+Number(p.caucAvulso?p.val:p.valCauc||0),0);
+  const total=Number(loc.cauc||0)||Infinity;
+  return Math.min(Math.max(Number(loc.caucPago||0),somaReal),total);
+}
 const cMot=id=>DB.motos.find(m=>m.id===id);
 const evCor={Acidente:'var(--r)',Manutenção:'var(--y)',Atraso:'var(--pl)',Outro:'var(--pur)'};
 const stCor=s=>s==='Alugado'||s==='Ativa'||s==='Ativo'?'var(--g)':s==='Disponível'?'var(--pl)':'var(--sl)';
@@ -4595,7 +4606,7 @@ function abrirEncerramento(locId){
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
         <div><div style="font-size:9px;color:var(--txm);font-weight:700">INÍCIO</div><div style="font-weight:700;font-size:12px">${fD(loc.inicio)}</div></div>
         <div><div style="font-size:9px;color:var(--txm);font-weight:700">ALUGUEL</div><div style="font-weight:700;font-size:12px">${R(loc.val)}/sem</div></div>
-        <div><div style="font-size:9px;color:var(--txm);font-weight:700">CAUÇÃO PAGO</div><div style="font-weight:700;font-size:12px;color:var(--g)">${R(loc.caucPago||0)}</div></div>
+        <div><div style="font-size:9px;color:var(--txm);font-weight:700">CAUÇÃO PAGO</div><div style="font-weight:700;font-size:12px;color:var(--g)">${R(_caucPagoRealDe(loc))}</div></div>
         <div><div style="font-size:9px;color:var(--txm);font-weight:700">RECEBIDO</div><div style="font-weight:700;font-size:12px;color:var(--g)">${R(rec)}</div></div>
         <div><div style="font-size:9px;color:var(--txm);font-weight:700">PENDENTE</div><div style="font-weight:700;font-size:12px;color:${pend>0?'var(--r)':'var(--txm)'}">${R(pend)}</div></div>
         <div><div style="font-size:9px;color:var(--txm);font-weight:700">KM INICIAL</div><div style="font-weight:700;font-size:12px">${Number(loc.kmIni||0).toLocaleString('pt-BR')}</div></div>
@@ -4823,7 +4834,8 @@ function _encMontarResumo(){
   if(!loc) return;
   const mot=cMot(loc.motoId);const car=cCar(loc.carroId);
   const {itens,total:totalDesc}=_encGetDescontos();
-  const caucPago=loc.caucPago||0;
+  // Caução paga: soma real dos pagamentos (campo pode estar defasado). Ver _caucPagoRealDe.
+  const caucPago=_caucPagoRealDe(loc);
   const kmFinal=Number(document.getElementById('enc-km')?.value)||0;
   const kmRodado=kmFinal-(loc.kmIni||0);
   const dataEnc=document.getElementById('enc-data')?.value||today();
@@ -4984,7 +4996,8 @@ async function _encConfirmar(){
   const pend=_calcPend.pend;
   const valPend=_calcPend.valPend;
   const debitoTotal=totalDesc+(cobrarPend?valPend:0);
-  const saldoFavor=(loc.caucPago||0)-debitoTotal;
+  const _caucPagoC=_caucPagoRealDe(loc);
+  const saldoFavor=_caucPagoC-debitoTotal;
   const caucDevolver=Math.max(0,saldoFavor);
   const saldoDevedor=Math.max(0,-saldoFavor);
   const _vd=_temVistoria()?_vistoriaDo(_encLocId,'devolucao'):null;
@@ -5208,7 +5221,7 @@ function _gerarTermoDivida(loc,mot,car,cfg,saldoDevedor){
 ${loc.encTemLaudo?`<p style="margin-top:8pt;font-size:12px">As avarias acima foram apuradas mediante <strong>vistoria fotográfica de devolução</strong>, realizada com registro de imagens, geolocalização e data/hora, arquivada eletronicamente e comparada à vistoria de entrega do veículo. O laudo fotográfico integral constitui documento probatório complementar a este Termo e encontra-se à disposição das partes.</p>`:''}
 
 <table style="margin-top:10pt">
-  <tr><td class="label">Caução recebido</td><td>R$ ${R2(loc.caucPago||0)}</td></tr>
+  <tr><td class="label">Caução recebido</td><td>R$ ${R2(_caucPagoRealDe(loc))}</td></tr>
   ${(loc.encDescTotal||0)>0?`<tr><td class="label">(-) Descontos por avarias</td><td>R$ ${R2(loc.encDescTotal||0)}</td></tr>`:''}
   ${valPend>0&&cobrarPend?`<tr><td class="label">(-) Parcelas de aluguel em aberto</td><td>R$ ${R2(valPend)}</td></tr>`:''}
   <tr class="total-row"><td class="label">SALDO DEVEDOR RECONHECIDO</td><td>R$ ${R2(saldoDevedor)}</td></tr>
@@ -5391,7 +5404,7 @@ function _gerarPDFEncerramento(loc){
       <div class="st">Acerto do caução</div>
       <div class="fin">
         <div class="fr"><span class="fl">Caução total</span><span class="fv">${R(loc.cauc||0)}</span></div>
-        <div class="fr"><span class="fl">Caução recebido</span><span class="fv" style="color:#16a34a">${R(loc.caucPago||0)}</span></div>
+        <div class="fr"><span class="fl">Caução recebido</span><span class="fv" style="color:#16a34a">${R(_caucPagoRealDe(loc))}</span></div>
         ${(loc.encDescTotal||0)>0?`<div class="fr"><span class="fl">(-) Descontos por avarias</span><span class="fv" style="color:#dc2626">-${R(loc.encDescTotal||0)}</span></div>`:''}
         ${valPend>0?`<div class="fr"><span class="fl">${cobrarPend?'(-) Parcelas pendentes cobradas':'Parcelas pendentes (canceladas)'}</span><span class="fv" style="color:${cobrarPend?'#dc2626':'#94a3b8'}">${cobrarPend?'-'+R(valPend):R(valPend)}</span></div>`:''}
         ${temSaldoDevedor
