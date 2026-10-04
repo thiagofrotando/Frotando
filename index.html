@@ -189,7 +189,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.50</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.57</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -996,8 +996,17 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
   <select id="ml-cauc-modo" onchange="mlAtualizarCauc()">
     <option value="integral">Pago integralmente na entrega</option>
     <option value="parcelado">Parcelado semanalmente junto ao aluguel</option>
+    <option value="bloco">Em blocos a cada X parcelas semanais</option>
+    <option value="mensal">Mensalmente (dia fixo do mês)</option>
     <option value="dispensado">Dispensado (sem caução)</option>
   </select>
+</div>
+<div id="ml-cauc-entrada-area" style="display:none">
+  <div class="fi">
+    <label>Entrada à vista na entrega (R$)</label>
+    <input id="ml-cauc-entrada" type="number" placeholder="0" min="0" oninput="mlAtualizarCauc()">
+    <div style="font-size:10px;color:var(--txm);margin-top:3px">Opcional. Parte da caução paga à vista; o restante segue o parcelamento escolhido.</div>
+  </div>
 </div>
 <div id="ml-cauc-parc-area" style="display:none">
   <div class="fi">
@@ -1009,6 +1018,28 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <label>Cobrar caução a partir da parcela nº</label>
     <input id="ml-cauc-ini-parcela" type="number" min="1" value="1" placeholder="1">
     <div style="font-size:10px;color:var(--txm);margin-top:3px">Padrão: 1 (começa na 1ª semana). Use 2 para começar na 2ª semana, etc.</div>
+  </div>
+</div>
+<div id="ml-cauc-bloco-area" style="display:none">
+  <div class="fi">
+    <label>Valor de cada bloco (R$)</label>
+    <input id="ml-cauc-bloco-valor" type="number" placeholder="350" oninput="mlAtualizarCauc()">
+  </div>
+  <div class="fi">
+    <label>Acrescentar bloco a cada N parcelas semanais</label>
+    <input id="ml-cauc-bloco-cada" type="number" min="1" placeholder="4" oninput="mlAtualizarCauc()">
+    <div style="font-size:10px;color:var(--txm);margin-top:3px" id="ml-cauc-bloco-preview">Ex: R$350 a cada 4 semanas. Nas semanas 4, 8, 12… a parcela vem acrescida do bloco.</div>
+  </div>
+</div>
+<div id="ml-cauc-mensal-area" style="display:none">
+  <div class="fi">
+    <label>Valor da parcela mensal (R$)</label>
+    <input id="ml-cauc-mensal-valor" type="number" placeholder="350" oninput="mlAtualizarCauc()">
+  </div>
+  <div class="fi">
+    <label>Dia do mês do vencimento</label>
+    <input id="ml-cauc-mensal-dia" type="number" min="1" max="28" placeholder="10" oninput="mlAtualizarCauc()">
+    <div style="font-size:10px;color:var(--txm);margin-top:3px" id="ml-cauc-mensal-preview">Cobrança mensal separada do aluguel, no dia informado (1 a 28).</div>
   </div>
 </div>
 <div id="ml-cauc-resumo" style="background:rgba(42,106,154,.08);border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:12px;display:none"></div>
@@ -1506,7 +1537,13 @@ const repoContratos = {
       caucao_parc_semanal: Number(dados.caucParcSem) || 0,
       caucao_semanas: Number(dados.caucSemanas) || 0,
       caucao_ini_parcela: Number(dados.caucIniParcela) || 1,
-      caucao_pago: dados.caucModo === 'integral' ? (Number(dados.cauc) || 1400) : 0,
+      caucao_entrada: Number(dados.caucEntrada) || 0,
+      caucao_bloco_valor: Number(dados.caucBlocoValor) || 0,
+      caucao_bloco_cada: Number(dados.caucBlocoCada) || 0,
+      caucao_mensal_valor: Number(dados.caucMensalValor) || 0,
+      caucao_mensal_dia: Number(dados.caucMensalDia) || 0,
+      // Caução já paga na criação: integral = valor cheio; demais modos = a entrada à vista (se houver)
+      caucao_pago: dados.caucModo === 'integral' ? (Number(dados.cauc) || 1400) : (Number(dados.caucEntrada) || 0),
       km_inicial: Number(dados.km) || 0,
       km_limite: Number(dados.kmLim) || 7000,
       km_val_excedente: Number(dados.kmVal) || 0.80,
@@ -1542,6 +1579,11 @@ const repoContratos = {
     if (dados.caucSemanas !== undefined) payload.caucao_semanas = Number(dados.caucSemanas) || 0;
     if (dados.caucIniParcela !== undefined) payload.caucao_ini_parcela = Number(dados.caucIniParcela) || 1;
     if (dados.caucPago !== undefined) payload.caucao_pago = Number(dados.caucPago) || 0;
+    if (dados.caucEntrada !== undefined) payload.caucao_entrada = Number(dados.caucEntrada) || 0;
+    if (dados.caucBlocoValor !== undefined) payload.caucao_bloco_valor = Number(dados.caucBlocoValor) || 0;
+    if (dados.caucBlocoCada !== undefined) payload.caucao_bloco_cada = Number(dados.caucBlocoCada) || 0;
+    if (dados.caucMensalValor !== undefined) payload.caucao_mensal_valor = Number(dados.caucMensalValor) || 0;
+    if (dados.caucMensalDia !== undefined) payload.caucao_mensal_dia = Number(dados.caucMensalDia) || 0;
     if (dados.kmLim !== undefined) payload.km_limite = Number(dados.kmLim) || 0;
     if (dados.kmVal !== undefined) payload.km_val_excedente = Number(dados.kmVal) || 0.80;
     if (dados.diaVenc !== undefined) payload.dia_vencimento = Number(dados.diaVenc) || 6;
@@ -2953,6 +2995,42 @@ function _caucPagoRealDe(loc){
   const total=Number(loc.cauc||0)||Infinity;
   return Math.min(Math.max(Number(loc.caucPago||0),somaReal),total);
 }
+
+// Caução JÁ PROGRAMADA de um contrato: entrada à vista + caução embutida nas parcelas
+// não canceladas (pagas OU pendentes) + pagamentos avulsos de caução. É o limite certo
+// para a GERAÇÃO — se usasse só o "pago", um motorista que atrasa as parcelas faria o
+// gerador agendar caução além do total. (Para devolução, use _caucPagoRealDe.)
+function _caucProgramadaDe(loc){
+  if(!loc) return 0;
+  const doContrato=DB.pags.filter(p=>p.locId===loc.id&&!p.cancelado);
+  const nasParcelas=doContrato.filter(p=>!p.caucAvulso).reduce((s,p)=>s+Number(p.valCauc||0),0);
+  const avulsos=doContrato.filter(p=>p.caucAvulso).reduce((s,p)=>s+Number(p.val||0),0);
+  const programada=Number(loc.caucEntrada||0)+nasParcelas+avulsos;
+  return Math.max(programada, Number(loc.caucPago||0));
+}
+
+// Quanto de caução cobrar JUNTO com a parcela de aluguel da semana `numSemana` (1-based),
+// para os modos 'parcelado' (valor fixo/semana desde a parcela inicial) e 'bloco' (valor
+// fixo a cada N semanas). O modo 'mensal' NÃO usa esta função (cobrança separada).
+// `jaPagoCauc` = quanto de caução já foi pago, para não exceder o restante devido.
+function _caucaoDaSemana(loc, numSemana, jaPagoCauc){
+  if(!loc) return 0;
+  const total=Number(loc.cauc||0);
+  const restante=Math.max(0, total-Math.max(0, jaPagoCauc||0));
+  if(restante<=0) return 0;
+  if(loc.caucModo==='parcelado'){
+    const ini=Number(loc.caucIniParcela)||1;
+    if(numSemana<ini) return 0;
+    return Math.min(Number(loc.caucParcSem||0), restante);
+  }
+  if(loc.caucModo==='bloco'){
+    const cada=Number(loc.caucBlocoCada||0), valor=Number(loc.caucBlocoValor||0);
+    if(cada<=0||valor<=0) return 0;
+    if(numSemana%cada!==0) return 0; // cai nas semanas N, 2N, 3N…
+    return Math.min(valor, restante);
+  }
+  return 0;
+}
 const cMot=id=>DB.motos.find(m=>m.id===id);
 const evCor={Acidente:'var(--r)',Manutenção:'var(--y)',Atraso:'var(--pl)',Outro:'var(--pur)'};
 const stCor=s=>s==='Alugado'||s==='Ativa'||s==='Ativo'?'var(--g)':s==='Disponível'?'var(--pl)':'var(--sl)';
@@ -3102,6 +3180,13 @@ function abrirModal(id,dados){
     }
     document.getElementById('ml-val').value=DB.config.alug||600;
     document.getElementById('ml-cauc').value=DB.config.cauc||1400;
+    // Reset da caução (evita sobra de valores de uma edição anterior).
+    // Na edição, editarLoc preenche os valores reais logo em seguida.
+    const _mcm=document.getElementById('ml-cauc-modo');if(_mcm) _mcm.value='integral';
+    ['ml-cauc-entrada','ml-cauc-parc','ml-cauc-bloco-valor','ml-cauc-bloco-cada','ml-cauc-mensal-valor','ml-cauc-mensal-dia']
+      .forEach(i=>{const el=document.getElementById(i);if(el) el.value='';});
+    const _mci=document.getElementById('ml-cauc-ini-parcela');if(_mci) _mci.value=1;
+    if(typeof mlAtualizarCauc==='function') mlAtualizarCauc();
   }
   if(id==='mp'){
     // Limpar todos os campos primeiro
@@ -3420,6 +3505,12 @@ function _mapContratoRelacional(row){
     caucSemanas: row.caucao_semanas,
     caucIniParcela: Number(row.caucao_ini_parcela)||1,
     caucPago: row.caucao_pago,
+    // Caução flexível: entrada à vista + modo de parcelamento do restante
+    caucEntrada: Number(row.caucao_entrada)||0,
+    caucBlocoValor: Number(row.caucao_bloco_valor)||0,   // modo 'bloco': valor de cada bloco
+    caucBlocoCada: Number(row.caucao_bloco_cada)||0,     // modo 'bloco': a cada quantas semanas
+    caucMensalValor: Number(row.caucao_mensal_valor)||0, // modo 'mensal': valor da parcela mensal
+    caucMensalDia: Number(row.caucao_mensal_dia)||0,     // modo 'mensal': dia do mês do vencimento
     kmIni: row.km_inicial,
     kmLim: row.km_limite,
     kmVal: row.km_val_excedente??0.80,
@@ -3482,10 +3573,26 @@ async function salvarLoc(){
   if(!carroId||!motoId||!inicio){toast('Preencha carro, motorista e data','er');return;}
 
   const caucModo=document.getElementById('ml-cauc-modo')?.value||'integral';
-  const caucParcSem=caucModo==='parcelado'?Number(document.getElementById('ml-cauc-parc')?.value)||0:0;
-  if(caucModo==='parcelado'&&caucParcSem<=0){toast('Informe o valor semanal do caucao','er');return;}
   const caucValTotal=Number(document.getElementById('ml-cauc').value)||1400;
-  const caucSemanas=caucModo==='parcelado'&&caucParcSem>0?Math.ceil(caucValTotal/caucParcSem):0;
+  const parcelado=caucModo==='parcelado'||caucModo==='bloco'||caucModo==='mensal';
+  const caucEntrada=parcelado?Math.max(0,Number(document.getElementById('ml-cauc-entrada')?.value)||0):0;
+  if(caucEntrada>caucValTotal){toast('A entrada não pode ser maior que o total da caução','er');return;}
+  const restanteCauc=Math.max(0,caucValTotal-caucEntrada);
+
+  // Campos por modo
+  const caucParcSem=caucModo==='parcelado'?Number(document.getElementById('ml-cauc-parc')?.value)||0:0;
+  const caucBlocoValor=caucModo==='bloco'?Number(document.getElementById('ml-cauc-bloco-valor')?.value)||0:0;
+  const caucBlocoCada=caucModo==='bloco'?Number(document.getElementById('ml-cauc-bloco-cada')?.value)||0:0;
+  const caucMensalValor=caucModo==='mensal'?Number(document.getElementById('ml-cauc-mensal-valor')?.value)||0:0;
+  const caucMensalDia=caucModo==='mensal'?Number(document.getElementById('ml-cauc-mensal-dia')?.value)||0:0;
+
+  // Validações por modo
+  if(caucModo==='parcelado'&&caucParcSem<=0){toast('Informe o valor semanal da caução','er');return;}
+  if(caucModo==='bloco'&&(caucBlocoValor<=0||caucBlocoCada<=0)){toast('Informe o valor do bloco e a cada quantas semanas','er');return;}
+  if(caucModo==='mensal'&&(caucMensalValor<=0||caucMensalDia<=0)){toast('Informe o valor mensal e o dia do vencimento','er');return;}
+  if(caucModo==='mensal'&&(caucMensalDia<1||caucMensalDia>28)){toast('O dia do vencimento mensal deve ser entre 1 e 28','er');return;}
+
+  const caucSemanas=caucModo==='parcelado'&&caucParcSem>0?Math.ceil(restanteCauc/caucParcSem):0;
   const caucIniParcela=caucModo==='parcelado'?Math.max(1,Number(document.getElementById('ml-cauc-ini-parcela')?.value)||1):1;
   const diaVenc=Number(document.getElementById('ml-diavenc')?document.getElementById('ml-diavenc').value:6)||6;
 
@@ -3493,6 +3600,7 @@ async function salvarLoc(){
     carroId, motoristaId:motoId, inicio,
     val:Number(document.getElementById('ml-val').value)||600,
     cauc:caucValTotal,caucModo,caucParcSem,caucSemanas,caucIniParcela,
+    caucEntrada,caucBlocoValor,caucBlocoCada,caucMensalValor,caucMensalDia,
     km:Number(document.getElementById('ml-km').value)||0,
     kmLim:Number(document.getElementById('ml-kmlim')?.value)||DB.config.kmLim||7000,
     kmVal:Number(document.getElementById('ml-kmval')?.value)||DB.config.kmVal||0.80,
@@ -3523,11 +3631,12 @@ async function _gerarPagsIniciais(loc){
   // REGRA: semana sábado→sexta, pagamento antecipado no sábado (dataVenc = sábado)
   const ini=new Date(loc.inicio+'T12:00:00');
   const fmtISO=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  const caucQuitado=loc.caucModo==='parcelado'&&(loc.caucPago||0)>=loc.cauc;
-  // caucIniParcela: caução só começa na parcela N (1=default).
-  const caucIniParcela=Number(loc.caucIniParcela)||1;
-  const valCaucSem1=(!caucQuitado&&loc.caucModo==='parcelado'&&caucIniParcela<=1)?loc.caucParcSem||0:0;
-  const valCaucSem2=(!caucQuitado&&loc.caucModo==='parcelado'&&caucIniParcela<=2)?loc.caucParcSem||0:0;
+  // Caução embutida nas 2 primeiras parcelas (modos 'parcelado' e 'bloco').
+  // Limite = caução já programada (no contrato novo, é a entrada à vista).
+  const _somaSemanal=loc.caucModo==='parcelado'||loc.caucModo==='bloco';
+  const _progIni=_caucProgramadaDe(loc);
+  const valCaucSem1=_somaSemanal?_caucaoDaSemana(loc,1,_progIni):0;
+  const valCaucSem2=_somaSemanal?_caucaoDaSemana(loc,2,_progIni+valCaucSem1):0;
 
   const diaVencNum = Number(loc.diaVenc ?? 6); // 0=Dom...6=Sáb; default sábado
   const diasDesdeUltimoDV = (ini.getDay() - diaVencNum + 7) % 7;
@@ -3583,6 +3692,8 @@ async function _gerarPagsIniciais(loc){
       proporcional:r.data.proporcional||false,
     });
   });
+  // Caução mensal: já cria a 1ª cobrança se o vencimento estiver próximo
+  if(loc.caucModo==='mensal') await _gerarCaucaoMensal(loc);
 }
 
 
@@ -6095,13 +6206,169 @@ function _renderDashKpis(){
   const pend=DB.pags.filter(p=>!p.pago).length;
   const saldo=DB.fins.filter(f=>f.status==='Ativo').reduce((s,f)=>s+calcSaldo(f),0);
   const evAb=DB.evs.filter(e=>!e.resolvido).length;
+
+  // ── Previsão de LUCRO LÍQUIDO do mês (inclui entradas/saídas ainda em aberto) ──
+  // Financiamento: 1 parcela por financiamento ativo no mês
+  const finMes=DB.fins.filter(f=>f.status==='Ativo').reduce((s,f)=>s+Number(f.parcela||0),0);
+  // Custos fixos mensais: seguro + rastreador de TODA a frota (mesmo carros parados —
+  // o seguro corre independente de o carro estar alugado). Mesma fonte do card Fluxo/mês.
+  const custosFixosMes=_custoFixoFrota(_anoD,_mesD).total;
+  // Eventos/manutenções lançados neste mês (mesmo os ainda em aberto/não resolvidos)
+  const eventosMes=DB.evs.filter(e=>{
+    if(!e.data) return false;
+    const d=e.data.includes('/')?new Date(e.data.split('/').reverse().join('-')+'T12:00:00'):new Date(e.data+'T12:00:00');
+    return d.getFullYear()===_anoD&&d.getMonth()===_mesD;
+  }).reduce((s,e)=>s+Number(e.custo||0),0);
+  const lucroPrevisto=recMes-finMes-custosFixosMes-eventosMes;
+
+  // ── Recebimentos previstos para HOJE (parcelas que vencem na data de hoje) ──
+  const _hojeISO=`${_anoD}-${String(_mesD+1).padStart(2,'0')}-${String(_hojeDk.getDate()).padStart(2,'0')}`;
+  const recHoje=DB.pags.filter(p=>!p.pago&&!p.cancelado&&p.dataVenc===_hojeISO);
+  const totalRecHoje=recHoje.reduce((s,p)=>s+Number(p.val||0),0);
   // KPIs
   document.getElementById('kg-dash').innerHTML=`
+    <div class="ki" onclick="_recebimentosHoje()" style="cursor:pointer" title="Ver quem paga hoje"><div class="kl">Recebimentos hoje ⓘ</div><div class="kv" style="color:${totalRecHoje>0?'var(--pl)':'var(--txm)'}">${R(Math.round(totalRecHoje))}</div><div class="ks">${recHoje.length} a receber</div></div>
     <div class="ki"><div class="kl">Carros ativos</div><div class="kv" style="color:var(--pl)">${DB.carros.filter(c=>c.status==='Alugado').length}<span style="font-size:11px;color:var(--txm)"> / ${DB.carros.length}</span></div></div>
     <div class="ki"><div class="kl">Receita/mês est.</div><div class="kv" style="color:var(--g)">${R(Math.round(recMes))}</div><div class="ks">${ativas.length} contrato(s)</div></div>
+    <div class="ki" onclick="_memoriaLucroPrevisto()" style="cursor:pointer" title="Ver memória de cálculo"><div class="kl">Lucro previsto/mês ⓘ</div><div class="kv" style="color:${lucroPrevisto>=0?'var(--g)':'var(--r)'}">${R(Math.round(lucroPrevisto))}</div><div class="ks">após fin. e custos</div></div>
     <div class="ki"><div class="kl">Pgtos pendentes</div><div class="kv" style="color:${pend>0?'var(--r)':'var(--g)'}">${pend}</div><div class="ks">${pend>0?'aguardando':'em dia'}</div></div>
     <div class="ki"><div class="kl">Saldo devedor</div><div class="kv" style="color:var(--r)">${R(saldo)}</div><div class="ks">financiamentos</div></div>`;
 }
+
+// Memória de cálculo do Lucro Previsto do mês — mostra item a item como o valor foi obtido.
+function _memoriaLucroPrevisto(){
+  const _h=new Date();const ano=_h.getFullYear(),mes=_h.getMonth();
+  const nomeMes=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][mes];
+  const ativas=DB.locs.filter(l=>l.status==='Ativa');
+
+  // 1) Receita estimada por contrato (parcelas semanais que vencem no mês)
+  const linhasRec=ativas.map(l=>{
+    const mot=cMot(l.motoId);const car=cCar(l.carroId);
+    const rec=_receitaEstimadaMes(l,ano,mes);
+    const nSem=Number(l.val)>0?Math.round(rec/Number(l.val)):0;
+    return{nome:mot?.nome||'?',placa:car?.placa||'?',val:Number(l.val||0),nSem,rec};
+  }).filter(x=>x.rec>0);
+  const totalRec=linhasRec.reduce((s,x)=>s+x.rec,0);
+
+  // 2) Financiamentos ativos (1 parcela/mês cada)
+  const linhasFin=DB.fins.filter(f=>f.status==='Ativo').map(f=>{
+    const car=cCar(f.carroId);
+    return{placa:car?.placa||'?',parcela:Number(f.parcela||0)};
+  }).filter(x=>x.parcela>0);
+  const totalFin=linhasFin.reduce((s,x)=>s+x.parcela,0);
+
+  // 3) Custos fixos por carro — TODA a frota (seguro corre mesmo com o carro parado)
+  const linhasFix=DB.carros.map(car=>{
+    const seg=Number(car?.segVal||0),ras=Number(car?.rasVal||0);
+    const alugado=car.status==='Alugado';
+    return{placa:car?.placa||'?',seg,ras,tot:seg+ras,parado:!alugado};
+  }).filter(x=>x.tot>0);
+  // Total pela mesma fonte do card (considera início da apólice via _custoFixoFrota)
+  const totalFix=_custoFixoFrota(ano,mes).total;
+
+  // 4) Eventos do mês (inclui abertos)
+  const linhasEv=DB.evs.filter(e=>{
+    if(!e.data)return false;
+    const d=e.data.includes('/')?new Date(e.data.split('/').reverse().join('-')+'T12:00:00'):new Date(e.data+'T12:00:00');
+    return d.getFullYear()===ano&&d.getMonth()===mes;
+  }).map(e=>{const car=cCar(e.carroId);return{placa:car?.placa||'?',tipo:e.tipo||'Evento',custo:Number(e.custo||0),aberto:!e.resolvido};}).filter(x=>x.custo>0);
+  const totalEv=linhasEv.reduce((s,x)=>s+x.custo,0);
+
+  const lucro=totalRec-totalFin-totalFix-totalEv;
+
+  const secao=(titulo,cor,linhas,total,render)=>`
+    <div style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+        <span style="font-size:13px;font-weight:800;color:var(--p)">${titulo}</span>
+        <span style="font-size:13px;font-weight:800;color:${cor}">${total>=0?'':'-'}${R(Math.abs(Math.round(total)))}</span>
+      </div>
+      ${linhas.length?linhas.map(render).join(''):'<div style="font-size:11px;color:var(--txm);padding:4px 0">Nenhum</div>'}
+    </div>`;
+  const linha=(a,b)=>`<div style="display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;border-bottom:1px solid var(--bg)"><span style="color:var(--txm)">${a}</span><span style="font-weight:600">${b}</span></div>`;
+
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center';
+  overlay.onclick=e=>{if(e.target===overlay)overlay.remove();};
+  overlay.innerHTML=`
+    <div style="background:var(--card);width:100%;max-width:520px;max-height:88vh;overflow-y:auto;border-radius:16px 16px 0 0;padding:18px 16px 28px">
+      <div style="width:40px;height:4px;background:var(--sll);border-radius:99px;margin:0 auto 14px"></div>
+      <div style="font-size:16px;font-weight:900;color:var(--p)">Lucro previsto — ${nomeMes}</div>
+      <div style="font-size:11px;color:var(--txm);margin-bottom:4px">Como chegamos nesse valor (inclui parcelas e eventos ainda em aberto)</div>
+
+      ${secao('➕ Receita estimada','var(--g)',linhasRec,totalRec,x=>linha(`${x.nome.split(' ').slice(0,2).join(' ')} · ${x.placa} — ${x.nSem}× ${R(x.val)}`,R(x.rec)))}
+      ${secao('➖ Financiamentos','var(--r)',linhasFin,-totalFin,x=>linha(`${x.placa} — parcela`,'-'+R(x.parcela)))}
+      ${secao('➖ Custos fixos (seguro + rastreador)','var(--r)',linhasFix,-totalFix,x=>linha(`${x.placa}${x.parado?' (parado)':''}${x.ras>0?' — seg '+R(x.seg)+' + rast '+R(x.ras):' — seguro'}`,'-'+R(x.tot)))}
+      ${secao('➖ Eventos do mês','var(--r)',linhasEv,-totalEv,x=>linha(`${x.placa} — ${x.tipo}${x.aberto?' (aberto)':''}`,'-'+R(x.custo)))}
+
+      <div style="margin-top:16px;padding-top:12px;border-top:2px solid var(--p);display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-size:15px;font-weight:900;color:var(--p)">Lucro previsto</span>
+        <span style="font-size:18px;font-weight:900;color:${lucro>=0?'var(--g)':'var(--r)'}">${R(Math.round(lucro))}</span>
+      </div>
+      <div style="font-size:10px;color:var(--txm);margin-top:8px;line-height:1.4">Receita ${R(Math.round(totalRec))} − Financiamento ${R(Math.round(totalFin))} − Custos fixos ${R(Math.round(totalFix))} − Eventos ${R(Math.round(totalEv))}</div>
+
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;background:var(--bg);color:var(--txm);border:1px solid var(--sll);border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:16px">Fechar</button>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+// Detalhamento dos recebimentos previstos para hoje (quem paga, quanto, status).
+function _recebimentosHoje(){
+  const _h=new Date();
+  const hojeISO=`${_h.getFullYear()}-${String(_h.getMonth()+1).padStart(2,'0')}-${String(_h.getDate()).padStart(2,'0')}`;
+  const hojeBR=`${String(_h.getDate()).padStart(2,'0')}/${String(_h.getMonth()+1).padStart(2,'0')}/${_h.getFullYear()}`;
+  // Todas as parcelas que vencem hoje (pagas e não pagas), exceto canceladas
+  const doDia=DB.pags.filter(p=>!p.cancelado&&p.dataVenc===hojeISO)
+    .sort((a,b)=>{if(a.pago!==b.pago)return a.pago?1:-1;return Number(b.val||0)-Number(a.val||0);});
+  const aReceber=doDia.filter(p=>!p.pago);
+  const jaPagos=doDia.filter(p=>p.pago);
+  const totalReceber=aReceber.reduce((s,p)=>s+Number(p.val||0),0);
+  const totalPago=jaPagos.reduce((s,p)=>s+Number(p.val||0),0);
+
+  const linhaPag=p=>{
+    const m=cMot(p.motoId),c=cCar(p.carroId);
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--bg)">
+      <div>
+        <div style="font-size:13px;font-weight:700">${m?.nome||'—'}</div>
+        <div style="font-size:10.5px;color:var(--txm)">${c?.placa||''}${p.manual?' · lançamento manual':''}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:13px;font-weight:800;color:${p.pago?'var(--g)':'var(--pl)'}">${R(p.val)}</div>
+        <div style="font-size:10px;font-weight:700;color:${p.pago?'var(--g)':'var(--a)'}">${p.pago?'✓ Pago':'Aguardando'}</div>
+      </div>
+    </div>`;
+  };
+
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center';
+  overlay.onclick=e=>{if(e.target===overlay)overlay.remove();};
+  overlay.innerHTML=`
+    <div style="background:var(--card);width:100%;max-width:520px;max-height:88vh;overflow-y:auto;border-radius:16px 16px 0 0;padding:18px 16px 28px">
+      <div style="width:40px;height:4px;background:var(--sll);border-radius:99px;margin:0 auto 14px"></div>
+      <div style="font-size:16px;font-weight:900;color:var(--p)">Recebimentos de hoje</div>
+      <div style="font-size:11px;color:var(--txm);margin-bottom:10px">${hojeBR} · parcelas que vencem hoje</div>
+
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <div style="flex:1;background:rgba(59,130,246,.08);border-radius:9px;padding:9px 11px">
+          <div style="font-size:10px;color:var(--pl);font-weight:700">A RECEBER</div>
+          <div style="font-size:16px;font-weight:900;color:var(--pl)">${R(Math.round(totalReceber))}</div>
+          <div style="font-size:10px;color:var(--txm)">${aReceber.length} parcela(s)</div>
+        </div>
+        <div style="flex:1;background:rgba(16,185,129,.08);border-radius:9px;padding:9px 11px">
+          <div style="font-size:10px;color:var(--g);font-weight:700">JÁ RECEBIDO</div>
+          <div style="font-size:16px;font-weight:900;color:var(--g)">${R(Math.round(totalPago))}</div>
+          <div style="font-size:10px;color:var(--txm)">${jaPagos.length} parcela(s)</div>
+        </div>
+      </div>
+
+      ${aReceber.length?`<div style="font-size:12px;font-weight:800;color:var(--p);margin-top:14px;margin-bottom:2px">Aguardando pagamento</div>${aReceber.map(linhaPag).join('')}`:''}
+      ${jaPagos.length?`<div style="font-size:12px;font-weight:800;color:var(--p);margin-top:14px;margin-bottom:2px">Já pagos hoje</div>${jaPagos.map(linhaPag).join('')}`:''}
+      ${doDia.length===0?'<div style="text-align:center;color:var(--txm);font-size:13px;padding:24px 0">Nenhuma parcela vence hoje 🎉</div>':''}
+
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;background:var(--bg);color:var(--txm);border:1px solid var(--sll);border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:16px">Fechar</button>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
 function _renderResumoExec(){
   const el=document.getElementById('cd-resumo-exec');
   if(!el) return;
@@ -6201,10 +6468,17 @@ function _renderDashExtras(){
   const recMesF=ativasF.reduce((s,l)=>s+_receitaEstimadaMes(l,_hoje.getFullYear(),_hoje.getMonth()),0);
   const parcM=DB.fins.filter(f=>f.status==='Ativo'&&_parcelaContaEm(f,_hoje.getFullYear(),_hoje.getMonth())).reduce((s,f)=>s+f.parcela,0);
   const segM=_custoFixoFrota().total;
-  const sobra=recMesF-parcM-segM;
+  // Eventos/manutenções do mês (inclui os ainda em aberto) — mesma base do lucro previsto
+  const _anoF=_hoje.getFullYear(),_mesF=_hoje.getMonth();
+  const evM=DB.evs.filter(e=>{
+    if(!e.data) return false;
+    const d=e.data.includes('/')?new Date(e.data.split('/').reverse().join('-')+'T12:00:00'):new Date(e.data+'T12:00:00');
+    return d.getFullYear()===_anoF&&d.getMonth()===_mesF;
+  }).reduce((s,e)=>s+Number(e.custo||0),0);
+  const sobra=recMesF-parcM-segM-evM;
   const cfl=document.getElementById('cd-fluxo-dash');
   cfl.innerHTML=`<div class="st">Fluxo/mês</div>
-    ${[['Receita',R(Math.round(recMesF)),'var(--g)'],['Parcelas','-'+R(Math.round(parcM)),'var(--r)'],['Seg+Ras','-'+R(segM),'var(--r)']].map(([k,v,c])=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(203,213,225,.2);font-size:12px"><span style="color:var(--txm)">${k}</span><span style="font-weight:700;color:${c}">${v}</span></div>`).join('')}
+    ${[['Receita',R(Math.round(recMesF)),'var(--g)'],['Parcelas','-'+R(Math.round(parcM)),'var(--r)'],['Seg+Ras','-'+R(segM),'var(--r)'],...(evM>0?[['Eventos','-'+R(Math.round(evM)),'var(--r)']]:[])].map(([k,v,c])=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(203,213,225,.2);font-size:12px"><span style="color:var(--txm)">${k}</span><span style="font-weight:700;color:${c}">${v}</span></div>`).join('')}
     <div style="display:flex;justify-content:space-between;padding:7px 0;font-size:13px;font-weight:800">
       <span style="color:var(--p)">Sobra</span>
       <span style="color:${sobra>0?'var(--g)':'var(--r)'}">${R(Math.round(sobra))}</span>
@@ -10081,41 +10355,77 @@ async function confirmarPagamentoFin(){
 function mlAtualizarCauc(){
   const modo=document.getElementById('ml-cauc-modo')?.value||'integral';
   const areaParc=document.getElementById('ml-cauc-parc-area');
+  const areaBloco=document.getElementById('ml-cauc-bloco-area');
+  const areaMensal=document.getElementById('ml-cauc-mensal-area');
+  const areaEntrada=document.getElementById('ml-cauc-entrada-area');
   const resumo=document.getElementById('ml-cauc-resumo');
   const campoCauc=document.getElementById('ml-cauc');
+  const parcelado=modo==='parcelado'||modo==='bloco'||modo==='mensal';
+  // Exibe cada área conforme o modo
   if(areaParc) areaParc.style.display=modo==='parcelado'?'block':'none';
+  if(areaBloco) areaBloco.style.display=modo==='bloco'?'block':'none';
+  if(areaMensal) areaMensal.style.display=modo==='mensal'?'block':'none';
+  if(areaEntrada) areaEntrada.style.display=parcelado?'block':'none'; // entrada só faz sentido com parcelamento
+
   // Dispensado: zera e desabilita o campo de valor
   if(campoCauc){
     if(modo==='dispensado'){
-      campoCauc.value=0;
-      campoCauc.disabled=true;
-      campoCauc.style.opacity='.5';
+      campoCauc.value=0;campoCauc.disabled=true;campoCauc.style.opacity='.5';
       if(resumo) resumo.style.display='none';
       return;
     }
-    campoCauc.disabled=false;
-    campoCauc.style.opacity='1';
+    campoCauc.disabled=false;campoCauc.style.opacity='1';
     if(!Number(campoCauc.value)) campoCauc.value=DB.config.cauc||1400;
   }
+
+  const totalCauc=Number(campoCauc?.value)||1400;
+  const entrada=Number(document.getElementById('ml-cauc-entrada')?.value)||0;
+  const restante=Math.max(0,totalCauc-entrada);
+  const alug=Number(document.getElementById('ml-val')?.value)||600;
+  const linhaR=(a,b,cor)=>'<div style="display:flex;justify-content:space-between;border-bottom:1px solid rgba(203,213,225,.3);padding:3px 0"><span style="color:var(--txm)">'+a+'</span><span style="font-weight:600'+(cor?';color:'+cor:'')+'">'+b+'</span></div>';
+  const abreResumo=html=>{if(resumo){resumo.style.display='block';resumo.innerHTML='<div style="font-weight:700;color:var(--p);margin-bottom:4px">Resumo da caução</div>'+html;}};
+
   if(modo==='parcelado'){
-    const totalCauc=Number(document.getElementById('ml-cauc').value)||1400;
     const parcSem=Number(document.getElementById('ml-cauc-parc')?.value)||0;
-    const alug=Number(document.getElementById('ml-val').value)||600;
     if(parcSem>0){
-      const semanas=Math.ceil(totalCauc/parcSem);
+      const semanas=Math.ceil(restante/parcSem);
       const prev=document.getElementById('ml-cauc-preview');
-      if(prev) prev.textContent=semanas+' semanas para quitar o caucao ('+semanas+' x R$ '+parcSem+')';
-      if(resumo){
-        resumo.style.display='block';
-        resumo.innerHTML='<div style="font-weight:700;color:var(--p);margin-bottom:4px">Resumo do contrato</div>'
-          +'<div style="display:flex;justify-content:space-between;border-bottom:1px solid rgba(203,213,225,.3);padding:3px 0"><span style="color:var(--txm)">Aluguel semanal</span><span style="font-weight:600">'+R(alug)+'</span></div>'
-          +'<div style="display:flex;justify-content:space-between;border-bottom:1px solid rgba(203,213,225,.3);padding:3px 0"><span style="color:var(--txm)">Parcela caucao/sem</span><span style="font-weight:600;color:var(--a)">+ '+R(parcSem)+'</span></div>'
-          +'<div style="display:flex;justify-content:space-between;border-bottom:1px solid rgba(203,213,225,.3);padding:3px 0"><span style="color:var(--txm)">Total ('+semanas+' semanas)</span><span style="font-weight:700;color:var(--p)">'+R(alug+parcSem)+'/sem</span></div>'
-          +'<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--txm)">Apos quitar caucao</span><span style="font-weight:700;color:var(--g)">'+R(alug)+'/sem</span></div>';
-      }
-    } else {
-      if(resumo) resumo.style.display='none';
-    }
+      if(prev) prev.textContent=semanas+' semanas para quitar o restante ('+semanas+' × '+R(parcSem)+')';
+      abreResumo(
+        (entrada>0?linhaR('Entrada à vista',R(entrada),'var(--g)'):'')
+        +linhaR('Restante a parcelar',R(restante))
+        +linhaR('Parcela caução/sem','+ '+R(parcSem),'var(--a)')
+        +linhaR('Semana (aluguel + caução)',R(alug+parcSem)+'/sem por '+semanas+' sem','var(--p)')
+      );
+    } else if(resumo){resumo.style.display='none';}
+  } else if(modo==='bloco'){
+    const bValor=Number(document.getElementById('ml-cauc-bloco-valor')?.value)||0;
+    const bCada=Number(document.getElementById('ml-cauc-bloco-cada')?.value)||0;
+    if(bValor>0&&bCada>0){
+      const nBlocos=Math.ceil(restante/bValor);
+      const prev=document.getElementById('ml-cauc-bloco-preview');
+      if(prev) prev.textContent=nBlocos+' bloco(s) de '+R(bValor)+', 1 a cada '+bCada+' semanas (semanas '+Array.from({length:Math.min(nBlocos,3)},(_,i)=>bCada*(i+1)).join(', ')+(nBlocos>3?'…':'')+')';
+      abreResumo(
+        (entrada>0?linhaR('Entrada à vista',R(entrada),'var(--g)'):'')
+        +linhaR('Restante a parcelar',R(restante))
+        +linhaR('Bloco de caução','+ '+R(bValor)+' a cada '+bCada+' sem','var(--a)')
+        +linhaR('Total de blocos',nBlocos+' × '+R(bValor),'var(--p)')
+      );
+    } else if(resumo){resumo.style.display='none';}
+  } else if(modo==='mensal'){
+    const mValor=Number(document.getElementById('ml-cauc-mensal-valor')?.value)||0;
+    const mDia=Number(document.getElementById('ml-cauc-mensal-dia')?.value)||0;
+    if(mValor>0&&mDia>0){
+      const nMeses=Math.ceil(restante/mValor);
+      const prev=document.getElementById('ml-cauc-mensal-preview');
+      if(prev) prev.textContent=nMeses+' cobrança(s) mensal(is) de '+R(mValor)+', todo dia '+mDia;
+      abreResumo(
+        (entrada>0?linhaR('Entrada à vista',R(entrada),'var(--g)'):'')
+        +linhaR('Restante a parcelar',R(restante))
+        +linhaR('Parcela mensal','+ '+R(mValor)+' (dia '+mDia+')','var(--a)')
+        +linhaR('Total de meses',nMeses+' × '+R(mValor),'var(--p)')
+      );
+    } else if(resumo){resumo.style.display='none';}
   } else {
     if(resumo) resumo.style.display='none';
   }
@@ -10541,12 +10851,22 @@ function editarLoc(id){
     const mcm=document.getElementById('ml-cauc-modo');
     if(mcm){
       mcm.value=l.caucModo||'integral';
-      mlAtualizarCauc();
+      const setC=(elId,v)=>{const el=document.getElementById(elId);if(el) el.value=v||'';};
+      // Entrada à vista (vale para os modos parcelados)
+      setC('ml-cauc-entrada', l.caucEntrada||'');
       if(l.caucModo==='parcelado'){
-        const mcp=document.getElementById('ml-cauc-parc');if(mcp) mcp.value=l.caucParcSem||'';
+        setC('ml-cauc-parc', l.caucParcSem);
         const mci=document.getElementById('ml-cauc-ini-parcela');if(mci) mci.value=l.caucIniParcela||1;
-        mlAtualizarCauc();
       }
+      if(l.caucModo==='bloco'){
+        setC('ml-cauc-bloco-valor', l.caucBlocoValor);
+        setC('ml-cauc-bloco-cada', l.caucBlocoCada);
+      }
+      if(l.caucModo==='mensal'){
+        setC('ml-cauc-mensal-valor', l.caucMensalValor);
+        setC('ml-cauc-mensal-dia', l.caucMensalDia);
+      }
+      mlAtualizarCauc();
     }
     // Selects de carro e motorista
     const mc=document.getElementById('ml-carro');
@@ -10561,24 +10881,43 @@ function editarLoc(id){
 }
 
 async function salvarEditLoc(id){
+  const locAtual=DB.locs.find(x=>x.id===id);
   const caucModo=document.getElementById('ml-cauc-modo')?.value||'integral';
-  const caucParcSem=caucModo==='parcelado'?Number(document.getElementById('ml-cauc-parc')?.value)||0:0;
   const caucValTotal=Number(document.getElementById('ml-cauc').value)||0;
-  const caucSemanas=caucModo==='parcelado'&&caucParcSem>0?Math.ceil(caucValTotal/caucParcSem):0;
-  if(caucModo==='parcelado'&&caucParcSem<=0){toast('Informe o valor semanal do caução','er');return;}
+  const parcelado=caucModo==='parcelado'||caucModo==='bloco'||caucModo==='mensal';
+  const caucEntrada=parcelado?Math.max(0,Number(document.getElementById('ml-cauc-entrada')?.value)||0):0;
+  if(caucEntrada>caucValTotal){toast('A entrada não pode ser maior que o total da caução','er');return;}
 
+  const caucParcSem=caucModo==='parcelado'?Number(document.getElementById('ml-cauc-parc')?.value)||0:0;
+  const caucBlocoValor=caucModo==='bloco'?Number(document.getElementById('ml-cauc-bloco-valor')?.value)||0:0;
+  const caucBlocoCada=caucModo==='bloco'?Number(document.getElementById('ml-cauc-bloco-cada')?.value)||0:0;
+  const caucMensalValor=caucModo==='mensal'?Number(document.getElementById('ml-cauc-mensal-valor')?.value)||0:0;
+  const caucMensalDia=caucModo==='mensal'?Number(document.getElementById('ml-cauc-mensal-dia')?.value)||0:0;
+
+  if(caucModo==='parcelado'&&caucParcSem<=0){toast('Informe o valor semanal da caução','er');return;}
+  if(caucModo==='bloco'&&(caucBlocoValor<=0||caucBlocoCada<=0)){toast('Informe o valor do bloco e a cada quantas semanas','er');return;}
+  if(caucModo==='mensal'&&(caucMensalValor<=0||caucMensalDia<1||caucMensalDia>28)){toast('Informe o valor mensal e um dia entre 1 e 28','er');return;}
+
+  const caucSemanas=caucModo==='parcelado'&&caucParcSem>0?Math.ceil(Math.max(0,caucValTotal-caucEntrada)/caucParcSem):0;
   const caucIniParcela=caucModo==='parcelado'?Math.max(1,Number(document.getElementById('ml-cauc-ini-parcela')?.value)||1):1;
 
   const updates={
     val:Number(document.getElementById('ml-val').value)||0,
     cauc:caucValTotal,
     caucModo,caucParcSem,caucSemanas,caucIniParcela,
+    caucEntrada,caucBlocoValor,caucBlocoCada,caucMensalValor,caucMensalDia,
     kmLim:Number(document.getElementById('ml-kmlim')?.value)||DB.config.kmLim||7000,
     kmVal:Number(document.getElementById('ml-kmval')?.value)||DB.config.kmVal||0.80,
     diaVenc:Number(document.getElementById('ml-diavenc')?.value??6),
     comarca:document.getElementById('ml-comarca')?.value?.trim()||'',
     uso:document.getElementById('ml-uso')?.value||'exclusivo',
   };
+  // A entrada foi registrada como caução paga na criação: se mudou, ajusta pela diferença
+  const entradaAntiga=Number(locAtual?.caucEntrada||0);
+  const eraParcelado=['parcelado','bloco','mensal'].includes(locAtual?.caucModo);
+  if(locAtual&&eraParcelado&&parcelado&&caucEntrada!==entradaAntiga){
+    updates.caucPago=Math.min(caucValTotal,Math.max(0,Number(locAtual.caucPago||0)-entradaAntiga+caucEntrada));
+  }
 
   toast('Salvando…');
   const r = await Repo.contratos.atualizar(id, updates);
@@ -11442,6 +11781,48 @@ function _semanaAtualLabel(){
 }
 
 // ── GERAÇÃO AUTOMÁTICA DE PARCELAS ────────────────────────────────────────────
+// Caução no modo 'mensal': cobrança SEPARADA do aluguel, no dia fixo do mês.
+// Gravada como pagamento avulso de caução (caucAvulso) — não conta como parcela de
+// aluguel, não entra na receita e já é somada na devolução (_caucPagoRealDe).
+// Mesmas regras do gerador semanal:
+//  - antecipa: cria a cobrança quando faltam até 7 dias para o vencimento
+//  - não recria cobrança de mês passado excluída de propósito (exceto a 1ª do contrato)
+//  - cancelada conta como existente (não recria)
+//  - nunca agenda além do total da caução (desconta entrada e o já programado)
+async function _gerarCaucaoMensal(l){
+  const valor=Number(l.caucMensalValor||0), dia=Number(l.caucMensalDia||0);
+  if(l.caucModo!=='mensal'||valor<=0||dia<1||dia>28||!l.inicio) return false;
+  const hoje=new Date();hoje.setHours(0,0,0,0);
+  const limite=new Date(hoje);limite.setDate(hoje.getDate()+7);
+  const fmtISO=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const rotulo=d=>`Caução mensal ${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  const mensais=()=>DB.pags.filter(p=>p.locId===l.id&&p.caucAvulso&&String(p.sem||'').startsWith('Caução mensal'));
+  // 1º vencimento: primeira ocorrência do dia `dia` na data de início ou depois
+  const ini=new Date(l.inicio+'T00:00:00');
+  let venc=new Date(ini.getFullYear(),ini.getMonth(),dia);
+  if(venc<ini) venc=new Date(ini.getFullYear(),ini.getMonth()+1,dia);
+  let alterou=false, guard=0;
+  while(venc<=limite&&guard++<120){
+    const restante=Number(l.cauc||0)-_caucProgramadaDe(l);
+    if(restante<=0) break;
+    const lbl=rotulo(venc);
+    const jaExiste=mensais().some(p=>p.sem===lbl); // inclui canceladas
+    const ehPrimeira=mensais().length===0;
+    const passou=venc<hoje;
+    if(!jaExiste&&(!passou||ehPrimeira)){
+      const v=Math.min(valor,restante);
+      const r=await Repo.pagamentos.criar({
+        contratoId:l.id, carroId:l.carroId, motoristaId:l.motoId,
+        sem:lbl, dataVenc:fmtISO(venc),
+        val:v, valAlug:0, valCauc:v, temCauc:true, pago:false, caucAvulso:true,
+      });
+      if(!r.error){DB.pags.push(_mapPagamentoRelacional(r.data));alterou=true;}
+    }
+    venc=new Date(venc.getFullYear(),venc.getMonth()+1,dia);
+  }
+  return alterou;
+}
+
 async function gerarParcelasPendentes(){
   // REGRA: semana começa no dia de vencimento do contrato (loc.diaVenc).
   // dataVenc = primeiro dia do ciclo = dia do pagamento.
@@ -11451,6 +11832,8 @@ async function gerarParcelasPendentes(){
   let alterou=false;
 
   for(const l of DB.locs.filter(l=>l.status==='Ativa')){
+    // Caução mensal: cobrança separada no dia fixo (não mexe nas parcelas semanais)
+    if(l.caucModo==='mensal'&&await _gerarCaucaoMensal(l)) alterou=true;
     const diaVencNum=Number(l.diaVenc??6);
     // Próximo diaVenc a partir de hoje (ou hoje mesmo, se hoje for diaVenc)
     const diasAteProxDV=(diaVencNum-hoje.getDay()+7)%7;
@@ -11502,12 +11885,14 @@ async function gerarParcelasPendentes(){
       // ser recriada pelo gerador (o cancelamento é o "pular esta semana" do usuário).
       const jaExiste=DB.pags.some(p=>p.locId===l.id&&!p.caucAvulso&&!p.manual&&(p.dataVenc===dvISO||p.sem===semLabel));
       if(!jaExiste){
-        const caucQuitado=l.caucModo==='parcelado'&&(l.caucPago||0)>=l.cauc;
-        // Calcular número da parcela atual (1-based)
+        // Número da parcela de aluguel (1-based) = número da semana para fins de caução
         const numParcelaAtual=DB.pags.filter(p=>p.locId===l.id&&!p.caucAvulso&&!p.manual).length+1;
-        const caucIniParcela=Number(l.caucIniParcela)||1;
-        const caucAtivo=!caucQuitado&&l.caucModo==='parcelado'&&numParcelaAtual>=caucIniParcela;
-        const valCaucSem=caucAtivo?l.caucParcSem||0:0;
+        // Caução já paga (para não exceder o restante). Modos 'parcelado' e 'bloco' somam
+        // à parcela semanal; 'mensal' e 'integral' não entram aqui.
+        const caucJaProgramada=_caucProgramadaDe(l);
+        const valCaucSem=(l.caucModo==='parcelado'||l.caucModo==='bloco')
+          ? _caucaoDaSemana(l, numParcelaAtual, caucJaProgramada)
+          : 0;
 
         // Primeira parcela com início não-coincidente com diaVenc → proporcional
         const ehPrimeiraSemanaDoContrato=semPagamentoAlgum&&dv.getTime()===dvInicioContrato.getTime();
