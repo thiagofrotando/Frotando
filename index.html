@@ -189,7 +189,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.57</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.59</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -1579,6 +1579,8 @@ const repoContratos = {
     if (dados.caucSemanas !== undefined) payload.caucao_semanas = Number(dados.caucSemanas) || 0;
     if (dados.caucIniParcela !== undefined) payload.caucao_ini_parcela = Number(dados.caucIniParcela) || 1;
     if (dados.caucPago !== undefined) payload.caucao_pago = Number(dados.caucPago) || 0;
+    if (dados.inicio !== undefined && dados.inicio) payload.inicio = dados.inicio;
+    if (dados.kmIni !== undefined) payload.km_inicial = Number(dados.kmIni) || 0;
     if (dados.caucEntrada !== undefined) payload.caucao_entrada = Number(dados.caucEntrada) || 0;
     if (dados.caucBlocoValor !== undefined) payload.caucao_bloco_valor = Number(dados.caucBlocoValor) || 0;
     if (dados.caucBlocoCada !== undefined) payload.caucao_bloco_cada = Number(dados.caucBlocoCada) || 0;
@@ -3187,6 +3189,11 @@ function abrirModal(id,dados){
       .forEach(i=>{const el=document.getElementById(i);if(el) el.value='';});
     const _mci=document.getElementById('ml-cauc-ini-parcela');if(_mci) _mci.value=1;
     if(typeof mlAtualizarCauc==='function') mlAtualizarCauc();
+    // Restaura título e botão para CRIAÇÃO. Se uma edição foi cancelada, o botão ficava
+    // apontando para salvarEditLoc(contrato antigo). Na edição, editarLoc troca de novo.
+    const _mt=document.querySelector('#ml .mt');if(_mt) _mt.textContent='Nova Locação';
+    const _btn=document.querySelector('#ml button.btp');
+    if(_btn){_btn.textContent='Criar contrato';_btn.onclick=salvarLoc;}
   }
   if(id==='mp'){
     // Limpar todos os campos primeiro
@@ -10901,7 +10908,12 @@ async function salvarEditLoc(id){
   const caucSemanas=caucModo==='parcelado'&&caucParcSem>0?Math.ceil(Math.max(0,caucValTotal-caucEntrada)/caucParcSem):0;
   const caucIniParcela=caucModo==='parcelado'?Math.max(1,Number(document.getElementById('ml-cauc-ini-parcela')?.value)||1):1;
 
+  const inicio=document.getElementById('ml-inicio')?.value||'';
+  if(!inicio){toast('Informe a data de início','er');return;}
+
   const updates={
+    inicio,
+    kmIni:Number(document.getElementById('ml-km')?.value)||0,
     val:Number(document.getElementById('ml-val').value)||0,
     cauc:caucValTotal,
     caucModo,caucParcSem,caucSemanas,caucIniParcela,
@@ -10929,7 +10941,14 @@ async function salvarEditLoc(id){
   const mt=document.querySelector('#ml .mt');if(mt) mt.textContent='Nova Locação';
   const btn=document.querySelector('#ml button.btp');
   if(btn){btn.textContent='Criar contrato';btn.onclick=salvarLoc;}
-  renderLocs();toast('Contrato atualizado! ✓');
+  renderLocs();
+  // Mudança de data com parcelas já geradas: elas mantêm as datas antigas
+  const qtdParc=DB.pags.filter(p=>p.locId===id&&!p.caucAvulso&&!p.manual&&!p.cancelado).length;
+  if(locAtual&&locAtual.inicio!==inicio&&qtdParc>0){
+    toast(`Contrato atualizado. Atenção: as ${qtdParc} parcela(s) já geradas mantêm as datas antigas — confira em Recebimentos.`,'info');
+  } else {
+    toast('Contrato atualizado! ✓');
+  }
 }
 
 async function excluirLoc(id){
