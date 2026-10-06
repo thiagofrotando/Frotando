@@ -189,7 +189,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.59</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.61</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -2991,11 +2991,140 @@ const cCar=id=>DB.carros.find(c=>c.id===id);
 // Fonte confiável para encerramento, devolução e recibos.
 function _caucPagoRealDe(loc){
   if(!loc) return 0;
-  const somaReal=DB.pags
-    .filter(p=>p.locId===loc.id&&p.pago&&(Number(p.valCauc||0)>0||p.caucAvulso))
+  // Entrada à vista não gera registro de pagamento: soma direto do contrato
+  const somaReal=Number(loc.caucEntrada||0)+DB.pags
+    .filter(p=>p.locId===loc.id&&p.pago&&!p.cancelado&&(Number(p.valCauc||0)>0||p.caucAvulso))
     .reduce((s,p)=>s+Number(p.caucAvulso?p.val:p.valCauc||0),0);
   const total=Number(loc.cauc||0)||Infinity;
   return Math.min(Math.max(Number(loc.caucPago||0),somaReal),total);
+}
+
+// ── EXTRATO DA CAUÇÃO ────────────────────────────────────────────────────────
+// Fonte única dos dados do extrato (tela, impressão e WhatsApp usam a mesma).
+// O total pago é o de _caucPagoRealDe — o mesmo do card e do encerramento.
+function _dadosExtratoCaucao(loc){
+  const total=Number(loc.cauc||0);
+  const ehCauc=p=>Number(p.valCauc||0)>0||p.caucAvulso;
+  const valorCauc=p=>Number(p.caucAvulso?p.val:p.valCauc||0);
+  const descPag=p=>{
+    const sem=String(p.sem||'');
+    if(p.caucAvulso) return sem.startsWith('Caução mensal')?sem:('Caução avulsa'+(sem?' · '+sem:''));
+    return 'Junto ao aluguel'+(sem?' · '+sem:'');
+  };
+  const pagos=[];
+  if(loc.caucModo==='integral'&&total>0) pagos.push({data:loc.inicio,desc:'Pagamento integral na entrega',valor:total});
+  if(Number(loc.caucEntrada||0)>0) pagos.push({data:loc.inicio,desc:'Entrada à vista na entrega',valor:Number(loc.caucEntrada)});
+  DB.pags.filter(p=>p.locId===loc.id&&p.pago&&!p.cancelado&&ehCauc(p))
+    .forEach(p=>pagos.push({data:p.data||p.dataVenc,desc:descPag(p),valor:valorCauc(p)}));
+  pagos.sort((a,b)=>String(a.data||'').localeCompare(String(b.data||'')));
+  const pago=Math.min(total,_caucPagoRealDe(loc));
+  const listado=pagos.reduce((s,x)=>s+x.valor,0);
+  // Valor registrado no contrato sem lançamento correspondente (ex.: contratos antigos)
+  if(pago-listado>0.009) pagos.push({data:'',desc:'Registrado no contrato (sem lançamento detalhado)',valor:Math.round((pago-listado)*100)/100});
+  const pendentes=DB.pags.filter(p=>p.locId===loc.id&&!p.pago&&!p.cancelado&&ehCauc(p))
+    .map(p=>({data:p.dataVenc,desc:descPag(p),valor:valorCauc(p)}))
+    .sort((a,b)=>String(a.data||'').localeCompare(String(b.data||'')));
+  const agendado=pendentes.reduce((s,x)=>s+x.valor,0);
+  const falta=Math.max(0,total-pago);
+  // Forma de pagamento combinada
+  const ent=Number(loc.caucEntrada||0);
+  const pre=ent>0?`Entrada de ${R(ent)} + `:'';
+  let forma='—';
+  if(loc.caucModo==='integral') forma='Paga integralmente na entrega';
+  else if(loc.caucModo==='dispensado') forma='Dispensada';
+  else if(loc.caucModo==='parcelado') forma=pre+`${R(loc.caucParcSem)} por semana junto ao aluguel`+((Number(loc.caucIniParcela)||1)>1?`, a partir da ${loc.caucIniParcela}ª parcela`:'');
+  else if(loc.caucModo==='bloco') forma=pre+`blocos de ${R(loc.caucBlocoValor)} a cada ${loc.caucBlocoCada} semanas`;
+  else if(loc.caucModo==='mensal') forma=pre+`${R(loc.caucMensalValor)} por mês, todo dia ${loc.caucMensalDia}`;
+  return{total,pago,falta,agendado,naoAgendado:Math.max(0,falta-agendado),pagos,pendentes,forma};
+}
+
+function _textoExtratoCaucao(loc){
+  const d=_dadosExtratoCaucao(loc), m=cMot(loc.motoId), c=cCar(loc.carroId);
+  const linha=x=>`• ${x.data?fD(x.data):'—'} — ${x.desc} — ${R(x.valor)}`;
+  return `*EXTRATO DE CAUÇÃO*\n`
+    +`Motorista: ${m?.nome||'—'}\nVeículo: ${c?.placa||'—'}${c?.modelo?' — '+c.modelo:''}\nContrato desde: ${fD(loc.inicio)}\nForma: ${d.forma}\n\n`
+    +`*Pagamentos recebidos*\n${d.pagos.length?d.pagos.map(linha).join('\n'):'Nenhum'}\n`
+    +(d.pendentes.length?`\n*A vencer*\n${d.pendentes.map(linha).join('\n')}\n`:'')
+    +`\nCombinado: ${R(d.total)}\nPago: ${R(d.pago)}\nFalta: ${R(d.falta)}\n\n`
+    +`_A caução é uma garantia e será devolvida ao fim do contrato, descontados eventuais débitos previstos em contrato._`;
+}
+
+function _imprimirExtratoCaucao(locId){
+  const loc=DB.locs.find(l=>l.id===locId);if(!loc) return;
+  const d=_dadosExtratoCaucao(loc), m=cMot(loc.motoId), c=cCar(loc.carroId), cfg=DB.config||{};
+  const linhas=arr=>arr.map(x=>`<tr><td>${x.data?fD(x.data):'—'}</td><td>${x.desc}</td><td class="v">${R(x.valor)}</td></tr>`).join('');
+  const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Extrato de caução — ${m?.nome||''}</title>
+<style>body{font-family:Arial,sans-serif;color:#0f172a;max-width:720px;margin:24px auto;padding:0 16px;font-size:13px}
+h1{font-size:18px;margin:0 0 2px}.sub{color:#64748b;font-size:11px;margin-bottom:16px}
+.box{border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin-bottom:14px}
+.row{display:flex;justify-content:space-between;padding:2px 0}.lbl{color:#64748b}
+h2{font-size:13px;margin:16px 0 6px;text-transform:uppercase;letter-spacing:.4px;color:#0d2b3e}
+table{width:100%;border-collapse:collapse}td{padding:6px 4px;border-bottom:1px solid #f1f5f9;vertical-align:top}td.v{text-align:right;white-space:nowrap;font-weight:700}
+.res{display:flex;gap:10px;margin-top:6px}.res div{flex:1;border-radius:8px;padding:8px 10px;background:#f8fafc}.res b{display:block;font-size:15px}
+.nota{margin-top:18px;font-size:11px;color:#475569;border-top:1px solid #e2e8f0;padding-top:10px}
+@media print{body{margin:0}}</style></head><body>
+<h1>Extrato de caução (garantia)</h1>
+<div class="sub">${cfg.nome||cfg.razao||'Locador'} · emitido em ${new Date().toLocaleDateString('pt-BR')}</div>
+<div class="box">
+ <div class="row"><span class="lbl">Motorista</span><span>${m?.nome||'—'}${m?.cpf?' · CPF '+m.cpf:''}</span></div>
+ <div class="row"><span class="lbl">Veículo</span><span>${c?.placa||'—'}${c?.modelo?' — '+c.modelo:''}</span></div>
+ <div class="row"><span class="lbl">Contrato desde</span><span>${fD(loc.inicio)}</span></div>
+ <div class="row"><span class="lbl">Forma combinada</span><span>${d.forma}</span></div>
+</div>
+<div class="res"><div>Combinado<b>${R(d.total)}</b></div><div>Pago<b style="color:#16a34a">${R(d.pago)}</b></div><div>Falta<b style="color:${d.falta>0?'#d97706':'#16a34a'}">${R(d.falta)}</b></div></div>
+<h2>Pagamentos recebidos</h2>
+${d.pagos.length?`<table>${linhas(d.pagos)}</table>`:'<div class="lbl">Nenhum pagamento de caução registrado.</div>'}
+${d.pendentes.length?`<h2>A vencer</h2><table>${linhas(d.pendentes)}</table>`:''}
+<div class="nota">Os valores acima foram recebidos a título de caução (garantia) e serão devolvidos ao término do contrato, descontados eventuais débitos previstos em contrato.</div>
+</body></html>`;
+  const w=window.open('','_blank');
+  if(!w){toast('Permita pop-ups para imprimir o extrato','er');return;}
+  w.document.write(html);w.document.close();
+  setTimeout(()=>{try{w.print();}catch(e){}},400);
+}
+
+function _copiarExtratoCaucao(locId,btn){
+  const loc=DB.locs.find(l=>l.id===locId);if(!loc) return;
+  const texto=_textoExtratoCaucao(loc);
+  const ok=()=>{if(btn){const t=btn.textContent;btn.textContent='Copiado!';setTimeout(()=>btn.textContent=t,2000);}toast('Copiado! Cole no WhatsApp');};
+  navigator.clipboard?.writeText(texto).then(ok).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=texto;document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);ok();
+  });
+}
+
+function _extratoCaucao(locId){
+  const loc=DB.locs.find(l=>l.id===locId);if(!loc) return;
+  const d=_dadosExtratoCaucao(loc), m=cMot(loc.motoId), c=cCar(loc.carroId);
+  const item=(x,cor)=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--bg)">
+      <div><div style="font-size:12.5px;font-weight:600">${x.desc}</div><div style="font-size:10.5px;color:var(--txm)">${x.data?fD(x.data):'sem data'}</div></div>
+      <div style="font-size:13px;font-weight:800;color:${cor};white-space:nowrap">${R(x.valor)}</div></div>`;
+  const card=(t,v,cor,bg)=>`<div style="flex:1;background:${bg};border-radius:9px;padding:8px 10px"><div style="font-size:10px;font-weight:700;color:${cor}">${t}</div><div style="font-size:15px;font-weight:900;color:${cor}">${R(v)}</div></div>`;
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center';
+  overlay.onclick=e=>{if(e.target===overlay)overlay.remove();};
+  overlay.innerHTML=`
+    <div style="background:var(--card);width:100%;max-width:520px;max-height:88vh;overflow-y:auto;border-radius:16px 16px 0 0;padding:18px 16px 28px">
+      <div style="width:40px;height:4px;background:var(--sll);border-radius:99px;margin:0 auto 14px"></div>
+      <div style="font-size:16px;font-weight:900;color:var(--p)">Extrato da caução</div>
+      <div style="font-size:11px;color:var(--txm);margin-bottom:10px">${m?.nome||'—'} · ${c?.placa||''} · desde ${fD(loc.inicio)}</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        ${card('COMBINADO',d.total,'var(--p)','rgba(13,43,62,.06)')}
+        ${card('PAGO',d.pago,'var(--g)','rgba(16,185,129,.08)')}
+        ${card('FALTA',d.falta,d.falta>0?'var(--a)':'var(--g)',d.falta>0?'rgba(245,158,11,.1)':'rgba(16,185,129,.08)')}
+      </div>
+      <div style="font-size:11.5px;color:var(--txm);background:var(--bg);border-radius:8px;padding:8px 10px">Forma combinada: <b style="color:var(--tx)">${d.forma}</b></div>
+      <div style="font-size:12px;font-weight:800;color:var(--p);margin-top:14px">Pagamentos recebidos</div>
+      ${d.pagos.length?d.pagos.map(x=>item(x,'var(--g)')).join(''):'<div style="font-size:12px;color:var(--txm);padding:8px 0">Nenhum pagamento de caução ainda.</div>'}
+      ${d.pendentes.length?`<div style="font-size:12px;font-weight:800;color:var(--p);margin-top:14px">A vencer</div>${d.pendentes.map(x=>item(x,'var(--a)')).join('')}`:''}
+      ${d.naoAgendado>0.009?`<div style="font-size:11px;color:var(--txm);margin-top:8px">${R(d.naoAgendado)} ainda não agendados — o app gera as próximas cobranças conforme a forma combinada.</div>`:''}
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button onclick="_imprimirExtratoCaucao('${loc.id}')" style="flex:1;background:var(--p);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🖨️ Imprimir / PDF</button>
+        <button onclick="_copiarExtratoCaucao('${loc.id}',this)" style="flex:1;background:var(--g);color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Copiar p/ WhatsApp</button>
+      </div>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;background:var(--bg);color:var(--txm);border:1px solid var(--sll);border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px">Fechar</button>
+    </div>`;
+  document.body.appendChild(overlay);
 }
 
 // Caução JÁ PROGRAMADA de um contrato: entrada à vista + caução embutida nas parcelas
@@ -7153,20 +7282,17 @@ function _renderLocsDOM(){
     ${(()=>{
       const caucTotal=Number(l.cauc||0);
       if(!caucTotal) return '';
-      // Recalcula caucPago somando pagamentos reais confirmados (mais confiável que o campo do contrato)
-      const caucPagoReal=DB.pags
-        .filter(p=>p.locId===l.id&&p.pago&&(p.valCauc>0||p.caucAvulso))
-        .reduce((s,p)=>s+Number(p.caucAvulso?p.val:p.valCauc||0),0);
-      const caucPago=Math.max(Number(l.caucPago||0), caucPagoReal);
+      // Mesmo cálculo do encerramento (pagamentos reais + entrada à vista)
+      const caucPago=_caucPagoRealDe(l);
       const quitada=caucPago>=caucTotal;
-      const parcelado=l.caucModo==='parcelado';
+      const parcelado=['parcelado','bloco','mensal'].includes(l.caucModo);
       const pct=caucTotal>0?Math.min(100,Math.round(caucPago/caucTotal*100)):0;
       const corCauc=quitada?'var(--g)':(caucPago>0?'var(--a)':'var(--r)');
       const bgCauc=quitada?'rgba(16,185,129,.08)':(caucPago>0?'rgba(245,158,11,.08)':'rgba(239,68,68,.08)');
       const statusTxt=quitada?'✓ Caução paga':(caucPago>0?`Parcial · ${pct}%`:'⚠️ Caução pendente');
-      return `<div style="background:${bgCauc};border:1px solid ${corCauc}33;border-radius:8px;padding:6px 8px;margin-bottom:6px">
+      return `<div onclick="_extratoCaucao('${l.id}')" title="Ver extrato da caução" style="cursor:pointer;background:${bgCauc};border:1px solid ${corCauc}33;border-radius:8px;padding:6px 8px;margin-bottom:6px">
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <span style="font-size:10px;font-weight:800;color:${corCauc}">${statusTxt}${parcelado?' · parcelada':''}</span>
+          <span style="font-size:10px;font-weight:800;color:${corCauc}">${statusTxt}${parcelado?' · parcelada':''} <span style="font-weight:600;opacity:.75">· extrato ›</span></span>
           <span style="font-size:11px;font-weight:800;color:${corCauc}">${R(caucPago)} / ${R(caucTotal)}</span>
         </div>
         ${parcelado&&!quitada?`<div class="pb" style="margin-top:5px"><div class="pf" style="width:${pct}%;background:${corCauc}"></div></div>`:''}
@@ -11776,9 +11902,12 @@ function setFiltPag(f,el){
 function _defaultPeriod(){
   const hoje=new Date();
   const de=new Date(hoje);de.setDate(hoje.getDate()-21);
-  const ate=new Date(hoje);
+  // Data final: a mais distante entre o próximo sábado e o último dia do mês
+  const proxSab=new Date(hoje);
   const diasSab=(6-hoje.getDay()+7)%7;
-  ate.setDate(hoje.getDate()+(diasSab===0?7:diasSab));
+  proxSab.setDate(hoje.getDate()+(diasSab===0?7:diasSab));
+  const fimMes=new Date(hoje.getFullYear(),hoje.getMonth()+1,0);
+  const ate=proxSab>fimMes?proxSab:fimMes;
   const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   return{de:fmt(de),ate:fmt(ate)};
 }
