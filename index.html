@@ -189,7 +189,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.64</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.66</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -518,7 +518,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
         <input id="busca-pag" type="text" placeholder="🔎 Buscar por motorista ou placa…" oninput="renderHistPag()" style="width:100%;background:#fff;border:1.5px solid var(--sll);border-radius:8px;padding:7px 10px;font-size:13px;color:var(--tx);font-family:inherit;outline:none;margin-bottom:8px">
         <div style="display:flex;gap:5px;margin-bottom:8px;overflow-x:auto;scrollbar-width:none">
           <button id="fpag-todos" class="fpag on" onclick="setFiltPag('todos',this)">Todos</button>
-          <button id="fpag-pend"  class="fpag"    onclick="setFiltPag('pend',this)">Pendente</button>
+          <button id="fpag-pend"  class="fpag"    onclick="setFiltPag('pend',this)">A vencer</button>
           <button id="fpag-atr"   class="fpag"    onclick="setFiltPag('atr',this)">Atrasado</button>
           <button id="fpag-pago"  class="fpag"    onclick="setFiltPag('pago',this)">Pago</button>
         </div>
@@ -7674,7 +7674,7 @@ function _renderHistPagPage(h){
     const dias=_diasAtraso(p);
     const atrasado=!p.pago&&!p.cancelado&&dias>0;
     const corStatus=p.cancelado?'#94a3b8':p.pago?'var(--g)':atrasado?'var(--r)':'var(--a)';
-    const labelStatus=p.cancelado?'Cancelada':p.pago?'Pago':atrasado?(dias+'d atraso'):'Pendente';
+    const labelStatus=p.cancelado?'Cancelada':p.pago?'Pago':atrasado?(dias+'d atraso'):'A vencer';
     const bgStatus=p.cancelado?'rgba(148,163,184,.15)':p.pago?'rgba(16,185,129,.12)':atrasado?'rgba(239,68,68,.1)':'rgba(245,158,11,.12)';
     const d=document.createElement('div');
     d.style.cssText=`background:var(--card);border-radius:9px;margin-bottom:5px;padding:7px 9px;border-left:3px solid ${corStatus}`;
@@ -12398,7 +12398,8 @@ function abrirEditPag(id){
   document.getElementById('ep-sem').value=p.sem||'';
   document.getElementById('ep-venc').value=p.dataVenc||'';
   document.getElementById('ep-val').value=p.val||'';
-  document.getElementById('ep-data').value=p.data||today();
+  // Mostra só a data de pagamento real; parcela sem pagamento abre com o campo vazio
+  document.getElementById('ep-data').value=p.data||'';
   document.getElementById('ep-atr').value=p.atr||0;
   document.getElementById('ep-pago').value=p.pago?'1':'0';
   abrirModal('meditpag',{});
@@ -12406,13 +12407,19 @@ function abrirEditPag(id){
 async function salvarEditPag(){
   const val=Number(document.getElementById('ep-val').value);
   if(!val){toast('Informe o valor','er');return;}
+  const pago=document.getElementById('ep-pago').value==='1';
+  let data=document.getElementById('ep-data').value||'';
+  // Pendente não tem data de pagamento. Pago sem data recebe a de hoje — os
+  // relatórios do mês e do contador usam essa data para contar o recebimento.
+  if(!pago) data='';
+  else if(!data) data=today();
   const dados={
     sem:document.getElementById('ep-sem').value,
     dataVenc:document.getElementById('ep-venc').value||undefined,
     val,
-    data:document.getElementById('ep-data').value,
+    data,
     atr:Number(document.getElementById('ep-atr').value)||0,
-    pago:document.getElementById('ep-pago').value==='1',
+    pago,
   };
   toast('Salvando…');
   const r = await Repo.pagamentos.atualizar(_editPagId, dados);
