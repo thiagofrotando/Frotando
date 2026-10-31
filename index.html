@@ -189,7 +189,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.61</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.64</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -1602,8 +1602,8 @@ const repoContratos = {
   async encerrar(id, dadosEncerramento) {
     const payload = {
       status: 'Encerrada',
-      fim: dadosEncerramento.fim || new Date().toISOString().slice(0, 10),
-      enc_data: dadosEncerramento.encData || new Date().toISOString().slice(0, 10),
+      fim: dadosEncerramento.fim || today(),
+      enc_data: dadosEncerramento.encData || today(),
       enc_motivo: dadosEncerramento.motivo || null,
       enc_km_final: Number(dadosEncerramento.kmFinal) || null,
       enc_combustivel: dadosEncerramento.comb || null,
@@ -1734,7 +1734,7 @@ const repoPagamentos = {
     return _repoExec(
       _sb.from('pagamentos').update({
         pago: true,
-        data_pagamento: dataPagamento || new Date().toISOString().slice(0, 10),
+        data_pagamento: dataPagamento || today(),
         updated_at: new Date().toISOString(),
       }).eq('id', id).eq('owner_id', _userId()).select().single(),
       'marcar pagamento como pago'
@@ -1892,7 +1892,7 @@ const repoFinanciamentos = {
       num_parcelas: np,
       parcelas_pagas: 0,
       valor_parcela: parcela,
-      inicio: dados.inicio || new Date().toISOString().slice(0, 10),
+      inicio: dados.inicio || today(),
       observacao: dados.obs || null,
       status: 'Ativo',
     };
@@ -1919,7 +1919,7 @@ const repoFinanciamentos = {
       taxa_mensal: taxa,
       num_parcelas: np,
       valor_parcela: parcela,
-      inicio: dados.inicio || new Date().toISOString().slice(0, 10),
+      inicio: dados.inicio || today(),
       observacao: dados.obs || null,
       updated_at: new Date().toISOString(),
     };
@@ -2658,38 +2658,55 @@ async function _migrarSeguroParaCarros(){
   const rasGlobal=Number(DB.config.rasVal||0);
   if(segGlobal<=0&&rasGlobal<=0) return;
   if(!DB.carros.length) return;
+  // Só migra carros REAIS do banco, com usuário logado. Dados de demonstração e cache
+  // legado usam ids como 'c1': as atualizações falhariam e o seguro global seria zerado
+  // na config real sem ir para carro nenhum (perda de dado).
+  if(typeof _sbUser==='undefined'||!_sbUser) return;
+  const ehUUID=id=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id||''));
+  if(!DB.carros.every(c=>ehUUID(c.id))) return;
 
   const semSeg=DB.carros.filter(c=>!(Number(c.segVal)>0));
   const semRas=DB.carros.filter(c=>!(Number(c.rasVal)>0));
   const vSeg = semSeg.length ? Math.round(segGlobal/semSeg.length*100)/100 : 0;
   const vRas = semRas.length ? Math.round(rasGlobal/semRas.length*100)/100 : 0;
 
-  let mudou=false;
-  const atualizacoes=[];
-  DB.carros=DB.carros.map(c=>{
-    const n={...c};
+  const planos=[];
+  DB.carros.forEach(c=>{
     const patch={};
     if(segGlobal>0&&!(Number(c.segVal)>0)&&vSeg>0){
-      n.segVal=vSeg;patch.segVal=vSeg;
-      n.segNome=n.segNome||DB.config.segNome||'';patch.segNome=n.segNome;
-      n.segVenc=n.segVenc||DB.config.segVenc||'';patch.segVenc=n.segVenc;
-      mudou=true;
+      patch.segVal=vSeg;
+      patch.segNome=c.segNome||DB.config.segNome||'';
+      patch.segVenc=c.segVenc||DB.config.segVenc||'';
     }
     if(rasGlobal>0&&!(Number(c.rasVal)>0)&&vRas>0){
-      n.rasVal=vRas;patch.rasVal=vRas;
-      n.rasNome=n.rasNome||DB.config.rasNome||'';patch.rasNome=n.rasNome;
-      mudou=true;
+      patch.rasVal=vRas;
+      patch.rasNome=c.rasNome||DB.config.rasNome||'';
     }
-    if(Object.keys(patch).length) atualizacoes.push(Repo.carros.atualizar(c.id,patch));
-    return n;
+    if(Object.keys(patch).length) planos.push({id:c.id,patch});
   });
+  if(!planos.length) return;
 
-  if(mudou){
-    // Zera os campos globais para não contar duas vezes
-    DB.config={...DB.config,segVal:0,rasVal:0};
-    await Promise.all(atualizacoes);
-    await Repo.config.salvar({segVal:0,rasVal:0});
-    setTimeout(()=>toast('Seguro e rastreador migrados para o cadastro de cada veículo','info'),1200);
+  try{
+    const res=await Promise.all(planos.map(x=>Repo.carros.atualizar(x.id,x.patch).catch(e=>({error:true,mensagem:String(e)}))));
+    let migSeg=0, migRas=0, falhas=0;
+    planos.forEach((x,i)=>{
+      if(res[i]&&!res[i].error){
+        DB.carros=DB.carros.map(c=>c.id===x.id?{...c,...x.patch}:c);
+        migSeg+=Number(x.patch.segVal||0); migRas+=Number(x.patch.rasVal||0);
+      } else falhas++;
+    });
+    if(migSeg<=0&&migRas<=0){ console.warn('Migração de seguro: nenhum carro atualizado; config mantida'); return; }
+    // Desconta da config SÓ o que foi gravado. Se algum carro falhou, o restante
+    // continua na config e a próxima tentativa redistribui apenas ele.
+    const restSeg=Math.max(0,Math.round((segGlobal-migSeg)*100)/100);
+    const restRas=Math.max(0,Math.round((rasGlobal-migRas)*100)/100);
+    const rc=await Repo.config.salvar({segVal:restSeg,rasVal:restRas});
+    if(rc&&rc.error){ console.warn('Migração de seguro: falha ao atualizar a config',rc); return; }
+    DB.config={...DB.config,segVal:restSeg,rasVal:restRas};
+    if(falhas) console.warn(`Migração de seguro: ${falhas} carro(s) falharam; restante mantido na config`);
+    else setTimeout(()=>toast('Seguro e rastreador migrados para o cadastro de cada veículo','info'),1200);
+  }catch(e){
+    console.warn('Migração de seguro falhou; config mantida',e);
   }
 }
 
@@ -2984,7 +3001,10 @@ function _sincronizarContadorCarros(){
 const uid=()=>Math.random().toString(36).slice(2,10);
 const R=v=>`R$ ${Number(v||0).toLocaleString('pt-BR')}`;
 const fD=d=>{if(!d)return'—';try{const[y,m,dd]=d.split('-');return`${dd}/${m}/${y}`}catch{return d}};
-const today=()=>new Date().toISOString().split('T')[0];
+// Data no fuso LOCAL (Brasil). toISOString() usa UTC: a partir das 21h devolveria o dia
+// seguinte e pagamentos feitos à noite no último dia do mês cairiam no mês errado.
+const _isoLocal=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const today=()=>_isoLocal(new Date());
 const cCar=id=>DB.carros.find(c=>c.id===id);
 // Caução efetivamente paga de um contrato: o MAIOR entre o campo caucPago (que pode
 // estar defasado) e a soma real dos pagamentos de caução confirmados, limitado ao total.
@@ -4499,7 +4519,7 @@ function renderAdmin(){
     d.innerHTML=`
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
         <div>
-          <div style="font-weight:700;font-size:13px;color:#fff">${u.email||'—'}</div>
+          <div style="font-weight:700;font-size:13px;color:#fff;word-break:break-all">${_escHtml(u.email)||'—'}</div>
           <div style="font-size:10px;color:#64748b;margin-top:2px">Desde ${u.criado_em?new Date(u.criado_em).toLocaleDateString('pt-BR'):'—'}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
@@ -4514,7 +4534,7 @@ function renderAdmin(){
           :`<span style="background:rgba(148,163,184,.12);color:#64748b;border-radius:99px;padding:2px 8px;font-size:10px;font-weight:700">R$ 0/mês</span>`}
         ${u.plano==='trial'&&dias!==null?`<span style="font-size:11px;color:${dias<=5?'#f87171':'#f59e0b'}">Trial: ${dias}d</span>`:''}
       </div>
-      ${u.obs?`<div style="font-size:11px;color:#64748b;margin-bottom:8px;font-style:italic">${u.obs}</div>`:'<div style="margin-bottom:4px"></div>'}
+      ${u.obs?`<div style="font-size:11px;color:#64748b;margin-bottom:8px;font-style:italic">${_escHtml(u.obs)}</div>`:'<div style="margin-bottom:4px"></div>'}
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         ${['trial','mensal','trimestral','semestral','anual','cortesia'].map(p=>`<button onclick="_adminSetPlano('${u.user_id}','${p}')" style="background:${u.plano===p?cor+'33':'rgba(255,255,255,.06)'};color:${u.plano===p?cor:'#94a3b8'};border:1px solid ${u.plano===p?cor+'55':'rgba(255,255,255,.1)'};border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">${p}</button>`).join('')}
         ${_isAdmin()&&u.plano==='cortesia'?`<button onclick="_adminEditarLimite('${u.user_id}',${u.limite_carros})" style="background:rgba(236,72,153,.15);color:#ec4899;border:1px solid rgba(236,72,153,.3);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Limite: ${u.limite_carros}</button>`:''}
@@ -4522,6 +4542,7 @@ function renderAdmin(){
         <button onclick="_adminToggleVistoria('${u.user_id}',${!u.vistoria_ativa})" style="background:${u.vistoria_ativa?'rgba(139,92,246,.2)':'rgba(255,255,255,.06)'};color:${u.vistoria_ativa?'#a78bfa':'#94a3b8'};border:1px solid ${u.vistoria_ativa?'rgba(139,92,246,.4)':'rgba(255,255,255,.1)'};border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🔍 Vistoria: ${u.vistoria_ativa?'ON':'OFF'}</button>
         <button onclick="_adminResetSenha('${(u.email||'').replace(/'/g,"\\'")}')" style="background:rgba(255,255,255,.06);color:#94a3b8;border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🔑 Redefinir senha</button>
         <button onclick="_adminEditarObs('${u.user_id}')" style="background:rgba(255,255,255,.06);color:#94a3b8;border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:inherit">Obs</button>
+        ${!u.is_admin&&u.user_id!==_sbUser?.id?`<button onclick="_adminExcluirUsuario('${u.user_id}')" style="background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.35);border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🗑 Excluir conta</button>`:''}
       </div>`;
     lista.appendChild(d);
   });
@@ -4536,7 +4557,7 @@ async function _adminSetPlano(userId,plano){
     if(inp===null) return;
     limite=Math.min(10,Math.max(1,parseInt(inp)||5));
   }
-  const trialAte=plano==='trial'?new Date(Date.now()+30*86400000).toISOString().slice(0,10):null;
+  const trialAte=plano==='trial'?_isoLocal(new Date(Date.now()+30*86400000)):null;
   const{error}=await _sb.from('frotando_planos').update({plano,limite_carros:limite,trial_ate:trialAte}).eq('user_id',userId);
   if(error){toast('Erro ao atualizar','er');return;}
   _adminData=_adminData.map(u=>u.user_id===userId?{...u,plano,limite_carros:limite}:u);
@@ -4588,6 +4609,92 @@ async function _adminEditarObs(userId){
   if(error){toast('Erro','er');return;}
   _adminData=_adminData.map(u=>u.user_id===userId?{...u,obs}:u);
   renderAdmin();toast('Obs salva ✓');
+}
+
+// Escapa texto vindo do banco antes de ir para innerHTML (e-mail e obs de clientes
+// aparecem no painel admin — sem isso, um cadastro malicioso injetaria código aqui).
+function _escHtml(s){
+  return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ── EXCLUIR CONTA (admin) ─────────────────────────────────────────────────────
+// A exclusão roda na Edge Function admin-excluir-usuario (chave de serviço, travas
+// no servidor). Aqui só a tela: 1) prévia com as contagens; 2) confirmação digitando
+// o e-mail exato da conta.
+async function _adminChamarExclusao(body){
+  const{data:{session}}=await _sb.auth.getSession();
+  if(!session) throw new Error('Sessão expirada. Entre novamente.');
+  const resp=await fetch(`${_SB_URL}/functions/v1/admin-excluir-usuario`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`},
+    body:JSON.stringify(body),
+  });
+  const r=await resp.json().catch(()=>({error:`Resposta inválida (${resp.status})`}));
+  if(!resp.ok||r.error){const e=new Error(r.error||`Erro ${resp.status}`);e.parcial=r.parcial;throw e;}
+  return r;
+}
+
+async function _adminExcluirUsuario(userId){
+  if(!_isAdmin()) return;
+  if(userId===_sbUser?.id){toast('Você não pode excluir a própria conta','er');return;}
+  toast('Levantando os dados da conta…','info');
+  let prev;
+  try{ prev=await _adminChamarExclusao({userId,dryRun:true}); }
+  catch(e){ toast('Não foi possível carregar a conta: '+e.message,'er'); return; }
+
+  const NOMES={pagamentos:'Pagamentos',semana_atual:'Semana atual',eventos:'Eventos',km_registros:'Registros de KM',
+    vistorias:'Vistorias',vistoria_itens:'Itens de vistoria',vistoria_fotos:'Fotos de vistoria',vistoria_pins:'Marcações nas fotos',
+    contrato_avarias:'Avarias',contratos:'Contratos',financiamentos:'Financiamentos',carros:'Carros',motoristas:'Motoristas',
+    config:'Configurações',frotando_data:'Dados legados',frotando_planos:'Plano'};
+  const linhas=Object.entries(prev.contagens||{}).filter(([,n])=>n>0)
+    .map(([t,n])=>`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.06)"><span style="color:#94a3b8">${NOMES[t]||_escHtml(t)}</span><span style="color:#fff;font-weight:700">${n}</span></div>`).join('')
+    ||'<div style="color:#94a3b8;padding:4px 0">Nenhum dado cadastrado.</div>';
+  const email=prev.email||'';
+
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:16px';
+  ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  ov.innerHTML=`
+    <div style="background:#0f2236;border:1px solid rgba(239,68,68,.35);border-radius:14px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;padding:18px 16px">
+      <div style="font-size:16px;font-weight:900;color:#f87171">Excluir conta</div>
+      <div style="font-size:13px;color:#fff;font-weight:700;margin-top:6px;word-break:break-all">${_escHtml(email)||'(sem e-mail)'}</div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:2px">Plano: ${_escHtml(prev.plano||'—')}${prev.temLogin?'':' · login já não existe'}</div>
+      <div style="font-size:12px;color:#cbd5e1;margin:12px 0 6px;font-weight:700">Será excluído, somente desta conta:</div>
+      <div style="font-size:12px">${linhas}</div>
+      ${prev.fotosR2>0?`<div style="font-size:11px;color:#f59e0b;margin-top:8px">${prev.fotosR2} arquivo(s) de foto ficarão no armazenamento de vistorias (não são apagados por esta ação).</div>`:''}
+      ${prev.planoPago
+        ?`<div style="font-size:12px;color:#f87171;background:rgba(239,68,68,.12);border-radius:8px;padding:9px 10px;margin-top:12px">Esta conta tem plano pago. Cancele a assinatura no Stripe e mude o plano para <b>trial</b> antes de excluir.</div>`
+        :`<div style="font-size:12px;color:#cbd5e1;margin-top:12px">Ação <b style="color:#f87171">irreversível</b>. Para confirmar, digite o e-mail da conta:</div>
+          <input id="adm-exc-conf" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${_escHtml(email)}"
+            style="width:100%;box-sizing:border-box;margin-top:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:9px 10px;color:#fff;font-family:inherit;font-size:13px">`}
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button id="adm-exc-cancelar" style="flex:1;background:rgba(255,255,255,.08);color:#cbd5e1;border:1px solid rgba(255,255,255,.15);border-radius:9px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Cancelar</button>
+        ${prev.planoPago?'':`<button id="adm-exc-ok" disabled style="flex:1;background:#dc2626;color:#fff;border:none;border-radius:9px;padding:11px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;opacity:.4">Excluir definitivamente</button>`}
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  ov.querySelector('#adm-exc-cancelar').onclick=()=>ov.remove();
+  const inp=ov.querySelector('#adm-exc-conf'), btn=ov.querySelector('#adm-exc-ok');
+  if(!inp||!btn) return;
+  const confere=()=>email&&inp.value.trim().toLowerCase()===email.toLowerCase();
+  inp.oninput=()=>{btn.disabled=!confere();btn.style.opacity=confere()?'1':'.4';};
+  setTimeout(()=>inp.focus(),50);
+  btn.onclick=async()=>{
+    if(!confere()) return;
+    btn.disabled=true;btn.textContent='Excluindo…';btn.style.opacity='.6';
+    try{
+      const r=await _adminChamarExclusao({userId,confirmEmail:inp.value.trim()});
+      ov.remove();
+      const total=Object.values(r.apagados||{}).reduce((s,n)=>s+n,0);
+      toast(`Conta ${email} excluída: ${total} registro(s)${r.loginExcluido?' e o login':''} ✓`);
+      _adminData=(_adminData||[]).filter(x=>x.user_id!==userId);
+      renderAdmin();
+      _carregarAdmin();
+    }catch(e){
+      btn.textContent='Tentar novamente';btn.disabled=false;btn.style.opacity='1';
+      toast('Exclusão não concluída: '+e.message+(e.parcial?' (pode tentar de novo — continua de onde parou)':''),'er');
+    }
+  };
 }
 
 
@@ -5880,8 +5987,9 @@ async function _confirmarToggleComCauc(semId, locId, valCaucPago, restaCauc){
     // Corrige também as parcelas futuras pendentes em Pagamentos
     const rPend=DB.pags.filter(p=>p.locId===locId&&!p.pago&&p.temCauc);
     for(const p of rPend){
-      const rp=await Repo.pagamentos.atualizar(p.id,{val:loc.val,valCauc:0,temCauc:false});
-      if(!rp.error){ DB.pags=DB.pags.map(x=>x.id===p.id?{...x,val:loc.val,valCauc:0,temCauc:false}:x); }
+      const nv=_valParcelaSemCaucao(p,loc);
+      const rp=await Repo.pagamentos.atualizar(p.id,{val:nv,valCauc:0,temCauc:false});
+      if(!rp.error){ DB.pags=DB.pags.map(x=>x.id===p.id?{...x,val:nv,valCauc:0,temCauc:false}:x); }
     }
     toast('Caução quitado! A partir de agora cobrando somente o aluguel.');
   } else {
@@ -6015,8 +6123,9 @@ async function _salvarCaucAntecip(){
   if(quitou){
     const pendentes=DB.pags.filter(p=>p.locId===locId&&!p.pago&&p.temCauc);
     for(const p of pendentes){
-      const r=await Repo.pagamentos.atualizar(p.id,{val:l.val,valCauc:0,temCauc:false});
-      if(!r.error){ DB.pags=DB.pags.map(x=>x.id===p.id?{...x,val:l.val,valCauc:0,temCauc:false}:x); }
+      const nv=_valParcelaSemCaucao(p,l);
+      const r=await Repo.pagamentos.atualizar(p.id,{val:nv,valCauc:0,temCauc:false});
+      if(!r.error){ DB.pags=DB.pags.map(x=>x.id===p.id?{...x,val:nv,valCauc:0,temCauc:false}:x); }
     }
     const rSem=await Repo.semanaAtual.atualizarPendentesDoContrato(locId,{temCauc:false,valCauc:0});
     if(!rSem.error){
@@ -6088,21 +6197,91 @@ function mevAtualizarAbono(){
     prev.textContent=val>0?'Desconto de '+R(descVal)+' no próximo pagamento de '+(cMot(loc.motoId)?.nome?.split(' ')[0]||'?'):'';
   }
 }
-async function _aplicarAbonoProxPag(ev){
+// ── ABONO DE EVENTO ──────────────────────────────────────────────────────────
+// Regra: o abono de um evento é aplicado em UMA parcela só, e sempre na mesma —
+// a primeira em que foi aplicado (a semana do evento). O vínculo fica gravado na
+// parcela (evento_id). Editar o evento nunca move o desconto para outra semana.
+
+// Valor do desconto do evento em R$, conforme o modo (valor fixo ou diárias).
+function _valorAbonoEvento(ev){
+  if(!ev?.abonoAtivo) return 0;
+  const v=Number(ev.abonoVal||0);
+  if(ev.abonoModo==='valor') return Math.round(v*100)/100;
   const loc=DB.locs.find(l=>l.id===ev.abonoLocId);
-  if(!loc) return;
-  const diaria=(loc.val||0)/7;
-  const descVal=ev.abonoModo==='valor'?ev.abonoVal:Math.round(ev.abonoVal*diaria*100)/100;
-  const pendentes=DB.pags
-    .filter(p=>p.locId===loc.id&&!p.pago)
-    .sort((a,b)=>(a.dataVenc||a.sem||'').localeCompare(b.dataVenc||b.sem||''));
-  if(!pendentes.length) return;
-  const alvo=pendentes[0];
-  const novoVal=Math.max(0,alvo.val-descVal);
-  const r = await Repo.pagamentos.atualizar(alvo.id, {val:novoVal, descAbono:descVal, evId:ev.id});
-  if(r.error){ toast('Evento salvo, mas houve erro ao aplicar o abono no pagamento','er'); return; }
-  DB.pags=DB.pags.map(p=>p.id===alvo.id?{...p,val:novoVal,descAbono:descVal,evId:ev.id}:p);
+  return Math.round(v*((Number(loc?.val)||0)/7)*100)/100;
+}
+
+// Grava o desconto de uma parcela; `base` é o valor da parcela sem desconto.
+async function _gravarAbonoParcela(p, base, desc, evId){
+  const aplicado=Math.min(Math.max(0,desc), Math.max(0,base));
+  const upd={val:Math.round((base-aplicado)*100)/100, descAbono:aplicado, evId:aplicado>0?evId:''};
+  const r=await Repo.pagamentos.atualizar(p.id, upd);
+  if(r.error) return r;
+  DB.pags=DB.pags.map(x=>x.id===p.id?{...x,...upd,evId:upd.evId||undefined}:x);
+  return r;
+}
+
+// Deixa o abono do evento consistente. Chamada ao criar, editar e excluir evento.
+//  - Já aplicado em parcela PENDENTE → ajusta o valor ali mesmo (ou remove, se o
+//    abono foi desligado ou o evento está sendo excluído).
+//  - Já aplicado em parcela PAGA ou CANCELADA → não altera essa parcela e não aplica
+//    em nenhuma outra: o desconto já foi concedido.
+//  - Nunca aplicado → aplica na próxima parcela de aluguel pendente do contrato.
+// Retorna {erro} se uma gravação falhar, ou {aviso} com algo para o usuário saber.
+// Valor da parcela sem a caução: aluguel da própria parcela menos o abono que ela já tem.
+function _valParcelaSemCaucao(p,loc){
+  const alug=Number(p.valAlug??loc?.val??0);
+  return Math.max(0,Math.round((alug-Number(p.descAbono||0))*100)/100);
+}
+async function _sincronizarAbonoEvento(ev,{excluindo=false}={}){
+  const desc=excluindo?0:_valorAbonoEvento(ev);
+  const vinculadas=DB.pags.filter(p=>p.evId===ev.id)
+    .sort((a,b)=>String(a.dataVenc||'').localeCompare(String(b.dataVenc||'')));
+
+  if(vinculadas.length){
+    const orig=vinculadas[0];
+    // Vínculos extras (de versões antigas) em parcelas pendentes: desfaz o desconto duplicado
+    for(const p of vinculadas.slice(1)){
+      if(p.pago||p.cancelado) continue;
+      const r=await _gravarAbonoParcela(p, Number(p.val||0)+Number(p.descAbono||0), 0, ev.id);
+      if(r.error) return {erro:'Falha ao desfazer desconto duplicado: '+r.mensagem};
+    }
+    const descAtual=Number(orig.descAbono||0);
+    const quitada=orig.pago||orig.cancelado;
+    if(quitada){
+      if(excluindo){
+        // Mantém o valor e o desconto registrados (já foram concedidos); só solta o vínculo
+        const r=await Repo.pagamentos.atualizar(orig.id,{evId:''});
+        if(r.error) return {erro:r.mensagem};
+        DB.pags=DB.pags.map(x=>x.id===orig.id?{...x,evId:undefined}:x);
+        return {};
+      }
+      if(Math.abs(desc-descAtual)>0.009||orig.locId!==ev.abonoLocId){
+        return {aviso:`O desconto deste evento já foi aplicado na parcela ${orig.sem||fD(orig.dataVenc)} (${R(descAtual)}), que já está ${orig.pago?'paga':'cancelada'}. Ela não foi alterada e o desconto não foi aplicado de novo.`};
+      }
+      return {};
+    }
+    // Parcela pendente: ajusta no lugar. Se o contrato do abono mudou, desfaz aqui
+    // e aplica na parcela pendente do novo contrato.
+    const base=Number(orig.val||0)+descAtual;
+    const mesmoContrato=orig.locId===ev.abonoLocId;
+    const r=await _gravarAbonoParcela(orig, base, (desc>0&&mesmoContrato)?desc:0, ev.id);
+    if(r.error) return {erro:r.mensagem};
+    markDirty('pag','dash');
+    if(desc<=0||mesmoContrato) return {};
+  }
+
+  if(desc<=0) return {};
+  // Nunca aplicado: próxima parcela de aluguel pendente do contrato, que ainda não
+  // carregue desconto de outro evento.
+  const alvo=DB.pags
+    .filter(p=>p.locId===ev.abonoLocId&&!p.pago&&!p.cancelado&&!p.caucAvulso&&!p.manual&&!p.evId)
+    .sort((a,b)=>String(a.dataVenc||'').localeCompare(String(b.dataVenc||'')))[0];
+  if(!alvo) return {aviso:'Não há parcela pendente deste contrato para aplicar o desconto. Ele será aplicado ao editar o evento depois que a próxima parcela for gerada.'};
+  const r=await _gravarAbonoParcela(alvo, Number(alvo.val||0), desc, ev.id);
+  if(r.error) return {erro:r.mensagem};
   markDirty('pag','dash');
+  return {};
 }
 async function salvarEv(){
   const data=document.getElementById('mev-data').value;
@@ -6126,9 +6305,12 @@ async function salvarEv(){
   if(r.error){ toast('Erro ao registrar evento: '+r.mensagem,'er'); return; }
   const ev=_mapEventoRelacional(r.data);
   DB.evs.unshift(ev);
-  if(abonoAtivo) await _aplicarAbonoProxPag(ev);
+  const sab=abonoAtivo?await _sincronizarAbonoEvento(ev):{};
 
-  markDirty('ev','dash','rel');fecharModal('mev');renderEvs();toast('Evento registrado! ✓');
+  markDirty('ev','dash','rel');fecharModal('mev');renderEvs();
+  if(sab.erro) toast('Evento registrado, mas o desconto não foi aplicado: '+sab.erro,'er');
+  else if(sab.aviso) toast('Evento registrado. '+sab.aviso,'info');
+  else toast('Evento registrado! ✓');
   ['mev-custo','mev-desc'].forEach(i=>document.getElementById(i).value='');
   const chk=document.getElementById('mev-abono-ativo');if(chk) chk.checked=false;
   mevToggleAbono(false);
@@ -6142,27 +6324,19 @@ async function resolverEv(id){
 async function excluirEv(id){
   if(!confirm('Excluir?'))return;
 
-  // Reverte o abono ANTES de excluir o evento, para não perder a referência.
-  // Mesma lógica usada na edição (salvarEditEv).
+  // Desfaz o abono ANTES de excluir o evento, para não perder a referência.
+  // Parcela já paga não é alterada (o desconto já foi concedido).
   const evAntes=DB.evs.find(e=>e.id===id);
-  if(evAntes?.abonoAtivo&&evAntes.abonoLocId){
-    const pagAlvo=DB.pags.find(p=>p.evId===id);
-    if(pagAlvo){
-      const valRevertido=(pagAlvo.val||0)+(pagAlvo.descAbono||0);
-      const rRev = await Repo.pagamentos.atualizar(pagAlvo.id, {val:valRevertido, descAbono:0, evId:''});
-      if(rRev.error){
-        toast('Erro ao reverter o abono — evento não foi excluído','er');
-        return;
-      }
-      DB.pags=DB.pags.map(p=>p.evId===id?{...p,val:valRevertido,descAbono:0,evId:undefined}:p);
-    }
+  if(evAntes){
+    const sab=await _sincronizarAbonoEvento(evAntes,{excluindo:true});
+    if(sab.erro){ toast('Erro ao desfazer o abono — evento não foi excluído','er'); return; }
   }
 
   const r = await Repo.eventos.excluir(id);
   if(r.error){ toast('Erro ao excluir: '+r.mensagem,'er'); return; }
   DB.evs=DB.evs.filter(e=>e.id!==id);
   markDirty('dash','pag','rel');renderEvs();updateBadges();
-  toast('Evento excluído e abono revertido ✓');
+  toast('Evento excluído ✓');
 }
 
 // ── CRUD KM ───────────────────────────────────────────────────────────────────
@@ -8445,6 +8619,20 @@ function _parseValorCSV(s){
   if(str.includes(',')) return parseFloat(str.replace(',','.'));
   return parseFloat(str)||0;
 }
+// Converte a data de um CSV de banco para ISO (AAAA-MM-DD). Aceita dd/mm/aaaa,
+// dd/mm/aa, dd-mm-aaaa, dd.mm.aaaa (com ou sem hora) e o próprio ISO. Data inválida
+// (ex.: 31/02) volta vazia — gravar a string crua corrompia o pagamento (o banco lia
+// no padrão americano: 05/08 virava 8 de maio).
+function _dataCSVparaISO(s){
+  const t=String(s||'').trim();
+  let y,m,d,mt;
+  if((mt=t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))){y=+mt[1];m=+mt[2];d=+mt[3];}
+  else if((mt=t.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/))){d=+mt[1];m=+mt[2];y=+mt[3];if(y<100)y+=2000;}
+  else return '';
+  const dt=new Date(y,m-1,d);
+  if(dt.getFullYear()!==y||dt.getMonth()!==m-1||dt.getDate()!==d) return '';
+  return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
 function parseCSV(t){
   const l=t.split('\n').filter(x=>x.trim());
   if(l.length<2)return[];
@@ -8458,7 +8646,7 @@ function parseCSV(t){
     const v=ln.replace(/"/g,'').split(sep);
     const val=_parseValorCSV(v[iV]);
     const rawData=(v[iD]||'').trim();
-    if(!isNaN(val)&&val>0)return{id:'csv'+i,data:rawData,valor:val,desc:(v[iDe]||'').trim()||ln.trim()};
+    if(!isNaN(val)&&val>0)return{id:'csv'+i,data:_dataCSVparaISO(rawData),valor:val,desc:(v[iDe]||'').trim()||ln.trim()};
     return null;
   }).filter(Boolean);
 }
@@ -8582,7 +8770,7 @@ async function baixarExtratoInline(){
       .sort((a,b)=>(a.dataVenc||a.sem||'').localeCompare(b.dataVenc||b.sem||''));
     if(!pend.length) continue;
     const alvo=pend[0];
-    const dataPag=tx.data&&tx.data.length>=8?tx.data:today();
+    const dataPag=/^\d{4}-\d{2}-\d{2}$/.test(tx.data||'')?tx.data:today();
     const r=await Repo.pagamentos.atualizar(alvo.id,{pago:true,data:dataPag,val:tx.valor});
     if(r.error) continue;
     DB.pags=DB.pags.map(p=>p.id===alvo.id?{...p,pago:true,data:dataPag,val:tx.valor}:p);
@@ -10459,11 +10647,14 @@ async function confirmarPagamentoFin(){
     const novoSaldo=Math.max(0,saldoAtual-valorAmor);
     const restam=f.nparcelas-f.npg;
     let novaF={...f};
+    // Após amortizar, o saldo vira a nova base (vFin) e o contador de pagas recomeça
+    // (npg=0). Por isso nparcelas tem que ser SÓ o que resta — se somar as já pagas
+    // (ou manter o total original), surgem parcelas fantasma e o "Quitado" nunca chega.
     if(modo==='parcelas'){
-      const novasParc=calcNovaParcelas(novoSaldo,f.parcela,f.taxa);
-      novaF.nparcelas=f.npg+novasParc;
+      novaF.nparcelas=calcNovaParcelas(novoSaldo,f.parcela,f.taxa);
     } else {
       novaF.parcela=calcNovaParcelaValor(novoSaldo,restam,f.taxa);
+      novaF.nparcelas=Math.max(0,restam);
     }
     novaF.vFin=novoSaldo;novaF.npg=0;
     novaF.status=novoSaldo<=0?'Quitado':'Ativo';
@@ -11191,18 +11382,6 @@ async function salvarEditEv(id){
   const evAntes=DB.evs.find(e=>e.id===id);
 
   toast('Salvando…');
-  // Se havia abono aplicado antes, reverte o desconto na parcela vinculada
-  if(evAntes?.abonoAtivo&&evAntes.abonoLocId){
-    const pagAlvo=DB.pags.find(p=>p.evId===id);
-    if(pagAlvo){
-      const valRevertido=(pagAlvo.val||0)+(pagAlvo.descAbono||0);
-      const rRev = await Repo.pagamentos.atualizar(pagAlvo.id, {val:valRevertido, descAbono:0, evId:''});
-      if(!rRev.error){
-        DB.pags=DB.pags.map(p=>p.evId===id?{...p,val:valRevertido,descAbono:0,evId:undefined}:p);
-      }
-    }
-  }
-
   const dados={
     tipo:document.getElementById('mev-tipo').value,
     carroId:document.getElementById('mev-carro').value,
@@ -11216,7 +11395,8 @@ async function salvarEditEv(id){
   if(r.error){ toast('Erro ao salvar evento: '+r.mensagem,'er'); return; }
   DB.evs=DB.evs.map(e=>e.id===id?{...e,...dados}:e);
   const evNovo=DB.evs.find(e=>e.id===id);
-  if(abonoAtivo) await _aplicarAbonoProxPag(evNovo);
+  // Verifica se o desconto já foi aplicado antes de aplicar (ver _sincronizarAbonoEvento)
+  const sab=await _sincronizarAbonoEvento(evNovo);
 
   markDirty('ev','dash','rel');
   fecharModal('mev');
@@ -11227,7 +11407,10 @@ async function salvarEditEv(id){
   mevToggleAbono(false);
   const statusWrapReset=document.getElementById('mev-status-wrap');
   if(statusWrapReset) statusWrapReset.style.display='none';
-  renderEvs();toast('Evento atualizado! ✓');
+  renderEvs();
+  if(sab.erro) toast('Evento salvo, mas o desconto não foi ajustado: '+sab.erro,'er');
+  else if(sab.aviso) toast('Evento atualizado. '+sab.aviso,'info');
+  else toast('Evento atualizado! ✓');
 }
 
 
@@ -12066,9 +12249,10 @@ async function gerarParcelasPendentes(){
     if(l.caucModo==='parcelado'&&(l.caucPago||0)>=l.cauc){
       const pendentesComCauc = DB.pags.filter(p=>p.locId===l.id&&!p.pago&&p.temCauc);
       for(const p of pendentesComCauc){
-        const r = await Repo.pagamentos.atualizar(p.id, {val:l.val, valCauc:0, temCauc:false});
+        const nv=_valParcelaSemCaucao(p,l);
+        const r = await Repo.pagamentos.atualizar(p.id, {val:nv, valCauc:0, temCauc:false});
         if(!r.error){
-          DB.pags=DB.pags.map(x=>x.id===p.id?{...x,val:l.val,valCauc:0,temCauc:false}:x);
+          DB.pags=DB.pags.map(x=>x.id===p.id?{...x,val:nv,valCauc:0,temCauc:false}:x);
           alterou=true;
         }
       }
