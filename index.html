@@ -189,7 +189,7 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:22px">🚗</span>
       <span style="font-size:18px;font-weight:900;letter-spacing:-.5px;color:#0d2b3e">Frota<span style="color:#f59e0b">ndo</span></span>
-      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.66</span>
+      <span style="font-size:10px;color:#94a3b8;font-weight:600;background:#f1f5f9;border-radius:99px;padding:2px 8px">v2.19.67</span>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="irParaLogin()" style="background:transparent;color:#0d2b3e;border:1.5px solid #cbd5e1;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Entrar</button>
@@ -509,8 +509,8 @@ body{font-family:-apple-system,system-ui,sans-serif;color:var(--tx);font-size:14
       <!-- KPIs compactos -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:10px">
         <div style="background:var(--card);border-radius:10px;padding:8px 6px;text-align:center"><div style="font-size:9px;color:var(--txm);font-weight:700;text-transform:uppercase">Recebido</div><div style="font-size:13px;font-weight:900;color:var(--g)" id="kpi-rec">R$ 0</div></div>
-        <div style="background:var(--card);border-radius:10px;padding:8px 6px;text-align:center"><div style="font-size:9px;color:var(--txm);font-weight:700;text-transform:uppercase">Pendente</div><div style="font-size:13px;font-weight:900" id="kpi-pend2">R$ 0</div></div>
-        <div style="background:var(--card);border-radius:10px;padding:8px 6px;text-align:center"><div style="font-size:9px;color:var(--txm);font-weight:700;text-transform:uppercase">Atrasado</div><div style="font-size:13px;font-weight:900;color:var(--r)" id="kpi-atr">0</div></div>
+        <div style="background:var(--card);border-radius:10px;padding:8px 6px;text-align:center"><div style="font-size:9px;color:var(--txm);font-weight:700;text-transform:uppercase">A vencer</div><div style="font-size:13px;font-weight:900;color:var(--a)" id="kpi-pend2">R$ 0</div></div>
+        <div style="background:var(--card);border-radius:10px;padding:8px 6px;text-align:center"><div style="font-size:9px;color:var(--txm);font-weight:700;text-transform:uppercase">Atrasado</div><div style="font-size:13px;font-weight:900;color:var(--r)" id="kpi-atr">R$ 0</div><div style="font-size:9px;color:var(--txm)" id="kpi-atr-qtd"></div></div>
         <div style="background:var(--card);border-radius:10px;padding:8px 6px;text-align:center"><div style="font-size:9px;color:var(--txm);font-weight:700;text-transform:uppercase">Total</div><div style="font-size:13px;font-weight:900;color:var(--pl)" id="kpi-tot">0</div></div>
       </div>
       <!-- Filtros -->
@@ -7591,12 +7591,16 @@ function renderHistPag(){
 function _atualizarKpisPag(){
   const base=_pagsBase||[];
   const rec=base.filter(p=>p.pago).reduce((s,p)=>s+_recAluguel(p),0);
-  const pend=base.filter(p=>!p.pago).reduce((s,p)=>s+p.val,0);
-  const atr=base.filter(p=>!p.pago&&_diasAtraso(p)>0).length;
+  // Em aberto = não paga e não cancelada; separada em a vencer e atrasada
+  const aberto=base.filter(p=>!p.pago&&!p.cancelado);
+  const atrasadas=aberto.filter(p=>_diasAtraso(p)>0);
+  const aVencer=aberto.filter(p=>_diasAtraso(p)===0).reduce((s,p)=>s+Number(p.val||0),0);
+  const atrVal=atrasadas.reduce((s,p)=>s+Number(p.val||0),0);
   const recEl=document.getElementById('kpi-rec'); if(recEl) recEl.textContent=R(rec);
-  const pendEl=document.getElementById('kpi-pend2');
-  if(pendEl){pendEl.textContent=R(pend);pendEl.style.color=pend>0?'var(--r)':'var(--g)';}
-  const atrEl=document.getElementById('kpi-atr'); if(atrEl) atrEl.textContent=atr;
+  const pendEl=document.getElementById('kpi-pend2'); if(pendEl) pendEl.textContent=R(aVencer);
+  const atrEl=document.getElementById('kpi-atr'); if(atrEl) atrEl.textContent=R(atrVal);
+  const atrQ=document.getElementById('kpi-atr-qtd');
+  if(atrQ) atrQ.textContent=atrasadas.length?`${atrasadas.length} parcela${atrasadas.length>1?'s':''}`:'';
 }
 
 function _detalharPag(pagId){
